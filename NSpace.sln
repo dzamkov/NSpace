@@ -16,5 +16,40 @@ Global
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = NSpace.csproj
+		Policies = $0
+		$0.StandardHeader = $1
+		$1.Text = @Copyright (c) 2010, Dmitry Zamkov \r\nOpen source under the new BSD License
+		$1.inheritsSet = MITX11License
+		$0.DotNetNamingPolicy = $2
+		$2.DirectoryNamespaceAssociation = Hierarchical
+		$2.ResourceNamePolicy = FileFormatDefault
+		$0.TextStylePolicy = $3
+		$3.inheritsSet = null
+		$3.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $4
+		$4.BeforeMethodCallParentheses = False
+		$4.BeforeMethodDeclarationParentheses = False
+		$4.BeforeConstructorDeclarationParentheses = False
+		$4.BeforeDelegateDeclarationParentheses = False
+		$4.NewParentheses = False
+		$4.IfParentheses = False
+		$4.WhileParentheses = False
+		$4.ForParentheses = False
+		$4.ForeachParentheses = False
+		$4.CatchParentheses = False
+		$4.SwitchParentheses = False
+		$4.LockParentheses = False
+		$4.UsingParentheses = False
+		$4.inheritsSet = Mono
+		$4.inheritsScope = text/x-csharp
+		$4.scope = text/x-csharp
+		$0.TextStylePolicy = $5
+		$5.FileWidth = 120
+		$5.TabWidth = 4
+		$5.inheritsSet = Mono
+		$5.inheritsScope = text/plain
+		$5.scope = text/plain
+		$0.VersionControlPolicy = $6
+		$6.inheritsSet = Mono
 	EndGlobalSection
 EndGlobal
