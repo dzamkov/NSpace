@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NSpace", "NSpace.csproj", "{E2D6FD3D-E0E7-40C2-89B1-FC3A2D0AF239}"
+# Visual C# Express 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NSpace", "NSpace\NSpace.csproj", "{E2D6FD3D-E0E7-40C2-89B1-FC3A2D0AF239}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,6 +13,9 @@ Global
 		{E2D6FD3D-E0E7-40C2-89B1-FC3A2D0AF239}.Debug|x86.Build.0 = Debug|x86
 		{E2D6FD3D-E0E7-40C2-89B1-FC3A2D0AF239}.Release|x86.ActiveCfg = Release|x86
 		{E2D6FD3D-E0E7-40C2-89B1-FC3A2D0AF239}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = NSpace.csproj

@@ -1,11 +1,13 @@
+//----------------------------------------
 // Copyright (c) 2010, Dmitry Zamkov 
 // Open source under the new BSD License
+//----------------------------------------
 using System;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 
-namespace NSpace.Visual
+namespace NSpace
 {
 	public class Window : GameWindow
 	{
