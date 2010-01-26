@@ -15,11 +15,6 @@ namespace NSpace
     /// </summary>
     public class Triangle
     {
-        internal Triangle()
-        {
-
-        }
-
         /// <summary>
         /// Gets an enumerator for all the points in this triangle.
         /// </summary>
@@ -34,19 +29,5 @@ namespace NSpace
         public Point A;
         public Point B;
         public Point C;
-    }
-
-    /// <summary>
-    /// A triangle that contains additional data with an unspecified purpose.
-    /// </summary>
-    /// <typeparam name="T">The type of additional data to store
-    /// with the triangle.</typeparam>
-    public class Triangle<T> : Triangle where T : struct
-    {
-        
-        /// <summary>
-        /// The additional data contained in this triangle.
-        /// </summary>
-        public T Data;
     }
 }

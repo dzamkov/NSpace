@@ -2,6 +2,7 @@
 // Copyright (c) 2010, Dmitry Zamkov 
 // Open source under the new BSD License
 //----------------------------------------
+using System;
 using System.Collections.Generic;
 
 namespace NSpace
@@ -74,6 +75,28 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Gets the type used to define points in this mesh.
+        /// </summary>
+        public virtual Type PointType
+        {
+            get
+            {
+                return typeof(Point);
+            }
+        }
+
+        /// <summary>
+        /// Gets the type used to define triangles in this mesh.
+        /// </summary>
+        public virtual Type TriangleType
+        {
+            get
+            {
+                return typeof(Triangle);
+            }
+        }
+
+        /// <summary>
         /// Adds a triangle to the triangle list. This must be done once a new triangle is
         /// created.
         /// </summary>
@@ -83,5 +106,45 @@ namespace NSpace
         }
 
         private List<Triangle> _Tris;
+    }
+
+    /// <summary>
+    /// Mesh that uses points or triangles with additional information. The supplied types, which
+    /// are derived from point and triangle, will act as the new type of the points and triangles in
+    /// this mesh.
+    /// </summary>
+    /// <typeparam name="P">The type to use for points in this mesh.</typeparam>
+    /// <typeparam name="T">The type to use for triangles in this mesh.</typeparam>
+    public class Mesh<P, T> : Mesh
+        where P : Point, new()
+        where T : Triangle , new()
+    {
+        public override Point CreatePoint()
+        {
+            return new P();
+        }
+
+        public override Triangle CreateTriangle()
+        {
+            T t = new T();
+            this.AddTriangle(t);
+            return t;
+        }
+
+        public override Type PointType
+        {
+            get
+            {
+                return typeof(P);
+            }
+        }
+
+        public override Type TriangleType
+        {
+            get
+            {
+                return typeof(T);
+            }
+        }
     }
 }

@@ -9,15 +9,11 @@ namespace NSpace
     /// <summary>
     /// A single point in a mesh that represents a location relative to other
     /// points in the same mesh. A single point can be used multiple times within
-    /// a mesh by multiple triangles and may contain additional data.
+    /// a mesh by multiple triangles and may contain additional data if this class
+    /// is inherited.
     /// </summary>
     public class Point
     {
-        internal Point()
-        {
-
-        }
-
         /// <summary>
         /// Converts a point into a vector usable by OpenTK.
         /// </summary>
@@ -41,19 +37,5 @@ namespace NSpace
         public double X;
         public double Y;
         public double Z;
-    }
-
-    /// <summary>
-    /// A point that contains additional data with an unspecified purpose.
-    /// </summary>
-    /// <typeparam name="T">The type of additional data to store within
-    /// the point.</typeparam>
-    public class Point<T> : Point where T : struct
-    {
-
-        /// <summary>
-        /// The additional data contained in this point.
-        /// </summary>
-        public T Data;
     }
 }

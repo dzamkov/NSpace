@@ -15,16 +15,22 @@ namespace NSpace
 		{
 			this.WindowBorder = WindowBorder.Fixed;
 
-            // Create a cone
-            this._Mesh = new Mesh();
+            // Enable graphics features
+            GL.Enable(EnableCap.DepthTest);
 
-            int points = 5;
+            // Create a cone
+            Mesh<ColoredPoint, Triangle> mesh = new Mesh<ColoredPoint, Triangle>();
+            this._Mesh = mesh;
+
+            int points = 60;
             Point top = this._Mesh.CreatePoint(0.0, 3.0, 0.0);
+            ((ColoredPoint)(top)).Color = Color.RGB(1.0, 1.0, 1.0);
             Point[] around = new Point[points];
             for (int t = 0; t < points; t++)
             {
                 double ang = (double)t / (double)points * Math.PI * 2.0;
                 around[t] = this._Mesh.CreatePoint(Math.Sin(ang), 0.0, Math.Cos(ang));
+                ((ColoredPoint)(around[t])).Color = Color.HLSA(ang / Math.PI * 180.0, 0.5, 1.0, 1.0);
             }
             for (int t = 0; t < points; t++)
             {
@@ -77,6 +83,11 @@ namespace NSpace
             {
                 foreach (Point point in tri.Points)
                 {
+                    ColoredPoint cp = point as ColoredPoint;
+                    if (cp != null)
+                    {
+                        GL.Color4(cp.Color);
+                    }
                     GL.Vertex3(point);
                 }
             }
