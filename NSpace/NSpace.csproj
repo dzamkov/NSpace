@@ -43,7 +43,10 @@
     <VisualStudio />
   </ProjectExtensions>
   <ItemGroup>
+    <Compile Include="Mesh.cs" />
+    <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Triangle.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>
   <ItemGroup>
