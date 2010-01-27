@@ -19,22 +19,46 @@ namespace NSpace
             GL.Enable(EnableCap.DepthTest);
 
             // Create a cone
-            Mesh<ColoredPoint, Triangle> mesh = new Mesh<ColoredPoint, Triangle>();
-            this._Mesh = mesh;
+            this._Mesh = new Mesh();
+            int points = 6;
 
-            int points = 60;
-            Point top = this._Mesh.CreatePoint(0.0, 3.0, 0.0);
-            ((ColoredPoint)(top)).Color = Color.RGB(1.0, 1.0, 1.0);
-            Point[] around = new Point[points];
+            ColoredPoint top = new ColoredPoint(); 
+            top.SetPoint(0.0, 3.0, 0.0);
+            top.Color = Color.RGBA(1.0, 1.0, 1.0, 1.0);
+
+            ColoredPoint[] around = new ColoredPoint[points];
             for (int t = 0; t < points; t++)
             {
                 double ang = (double)t / (double)points * Math.PI * 2.0;
-                around[t] = this._Mesh.CreatePoint(Math.Sin(ang), 0.0, Math.Cos(ang));
-                ((ColoredPoint)(around[t])).Color = Color.HLSA(ang / Math.PI * 180.0, 0.5, 1.0, 1.0);
+                around[t] = new ColoredPoint();
+                around[t].SetPoint(Math.Sin(ang), 0.0, Math.Cos(ang));
+                around[t].Color = Color.HLSA(ang / Math.PI * 180.0, 0.5, 1.0, 1.0);
+            }
+
+            DivTriangle[] tris = new DivTriangle[points];
+            for (int t = 0; t < points; t++)
+            {
+                tris[t] = new DivTriangle();
+                tris[t].Points[0] = top;
+                tris[t].Points[1] = around[t];
+                tris[t].Points[2] = around[(t + points - 1) % points];
             }
             for (int t = 0; t < points; t++)
             {
-                this._Mesh.CreateTriangle(top, around[(t + points - 1) % points], around[t]);
+                tris[t].Borders[0] = tris[(t + 1) % points];
+                tris[t].Borders[2] = tris[(t + points - 1) % points];
+                this._Mesh.AddTriangle(tris[t]);
+            }
+
+
+            for (int r = 0; r < 4; r++)
+            {
+                Mesh nmesh = new Mesh();
+                foreach (Triangle tri in this._Mesh.Triangles)
+                {
+                    (tri as DivTriangle).Split(nmesh);
+                }
+                this._Mesh = nmesh;
             }
 		}
 
@@ -52,6 +76,7 @@ namespace NSpace
 			// Clear current viewport
 			GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
             GL.CullFace(CullFaceMode.Front);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 			
 			// Set projection and model matrices
 			GL.MatrixMode(MatrixMode.Projection);

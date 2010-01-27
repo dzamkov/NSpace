@@ -11,23 +11,15 @@ namespace NSpace
     /// which side of the triangle is up and visible. When looked at with points in clockwise
     /// order, the up side of the triangle is directed towards the viewer. Triangles may
     /// contain additional data that can be used to manipulate them and change the way
-    /// they are viewed.
+    /// they are viewed in a derived class.
     /// </summary>
     public class Triangle
     {
-        /// <summary>
-        /// Gets an enumerator for all the points in this triangle.
-        /// </summary>
-        public IEnumerable<Point> Points
+        public Triangle()
         {
-            get
-            {
-                return new Point[] { A, B, C };
-            }
+            this.Points = new Point[3];
         }
 
-        public Point A;
-        public Point B;
-        public Point C;
+        public Point[] Points;
     }
 }
