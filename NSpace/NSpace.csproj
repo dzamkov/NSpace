@@ -46,9 +46,10 @@
     <Compile Include="Color.cs" />
     <Compile Include="ColoredPoint.cs" />
     <Compile Include="DivTriangle.cs" />
-    <Compile Include="Mesh.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Source.cs" />
+    <Compile Include="Terrian.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>

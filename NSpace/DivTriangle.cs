@@ -20,11 +20,12 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Splits the triangle and outputs its children to the mesh target. If the target is
-        /// null, the new children are stored but not added to a mesh. If children are already
-        /// stored for this triangle, it simply outputs them.
+        /// Splits the triangle and outputs its children to the sink target. If the target is
+        /// null, the new children are stored but not added to a sink. If children are already
+        /// stored for this triangle, it simply outputs them. Optionally, new points created by
+        /// this split can be outputted to the specified point sink.
         /// </summary>
-        public void Split(Mesh Target)
+        public void Split(ISink<Triangle> Target, ISink<Point> NewPoints)
         {
             // Create children if needed
             if (this.Children == null)
@@ -65,6 +66,10 @@ namespace NSpace
                         // Create new midpoint
                         inner[t] = this.Points[t].Copy();
                         inner[t].Mix(this.Points[(t + 1) % 3], 0.5);
+                        if (NewPoints != null)
+                        {
+                            NewPoints.Add(inner[t]);
+                        }
                     }
                 }
 
@@ -90,7 +95,7 @@ namespace NSpace
             {
                 foreach (DivTriangle tri in this.Children)
                 {
-                    Target.AddTriangle(tri);
+                    Target.Add(tri);
                 }
             }
         }
