@@ -96,8 +96,8 @@ namespace NSpace
             {
                 double ang = (double)x * Math.PI * 2.0 / 3.0;
                 points[x] = new ColoredPoint();
-                points[x].SetPoint(Math.Sin(ang), 0.0, Math.Cos(ang));
-                points[x].Color = Color.HLSA(ang / Math.PI * 180.0, 0.5, 1.0, 1.0);
+                points[x].Position = new Vector(Math.Sin(ang), 0.0, Math.Cos(ang));
+                points[x].Color = Color.HLSA(ang / Math.PI * 180, 0.5, 1.0, 1.0);
                 _AddNoise(points[x], Magnitude);
             }
             if (PointSink != null)
@@ -121,7 +121,7 @@ namespace NSpace
         /// </summary>
         private static void _AddNoise(Point Point, double Magnitude)
         {
-            Point.Y += Magnitude * (PRNG.NextDouble() - 0.5);
+            Point.Position.Y += Magnitude * (PRNG.NextDouble() - 0.5);
         }
 
         private static Random PRNG;

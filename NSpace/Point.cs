@@ -2,6 +2,7 @@
 // Copyright (c) 2010, Dmitry Zamkov 
 // Open source under the new BSD License
 //----------------------------------------
+using System;
 using OpenTK;
 
 namespace NSpace
@@ -15,36 +16,6 @@ namespace NSpace
     public class Point
     {
         /// <summary>
-        /// Sets the x, y and z unit vectors of the point.
-        /// </summary>
-        public void SetPoint(double X, double Y, double Z)
-        {
-            this.X = X;
-            this.Y = Y;
-            this.Z = Z;
-        }
-
-        /// <summary>
-        /// Converts a point into a vector usable by OpenTK.
-        /// </summary>
-        public static implicit operator Vector3d(Point Point)
-        {
-            return new Vector3d(Point.X, Point.Y, Point.Z);
-        }
-
-        /// <summary>
-        /// Converts a point into a less precise vector usable by
-        /// OpenTK.
-        /// </summary>
-        public static implicit operator Vector3(Point Point)
-        {
-            return new Vector3(
-                (float)Point.X,
-                (float)Point.Y,
-                (float)Point.Z);
-        }
-
-        /// <summary>
         /// Mixes this point with another by the specified amount. If the amount is
         /// 0.0, this point will remain unchanged; if the amount is 1.0, the point
         /// will take the state of the other point. Values between the two are
@@ -52,12 +23,8 @@ namespace NSpace
         /// </summary>
         public virtual void Mix(Point Other, double Amount)
         {
-            double xd = Other.X - this.X;
-            double yd = Other.Y - this.Y;
-            double zd = Other.Z - this.Z;
-            this.X += xd * Amount;
-            this.Y += yd * Amount;
-            this.Z += zd * Amount;
+            Vector dif = Other.Position - this.Position;
+            this.Position += dif * Amount;
         }
 
         /// <summary>
@@ -76,13 +43,153 @@ namespace NSpace
         /// </summary>
         protected virtual void Clone(Point Point)
         {
-            Point.X = this.X;
-            Point.Y = this.Y;
-            Point.Z = this.Z;
+            Point.Position = this.Position;
+        }
+
+        /// <summary>
+        /// Points offset from the origin.
+        /// </summary>
+        public Vector Position;
+    }
+
+    /// <summary>
+    /// Represents a vector in three dimensional space.
+    /// </summary>
+    public struct Vector
+    {
+        public Vector(double X, double Y, double Z)
+        {
+            this.X = X;
+            this.Y = Y;
+            this.Z = Z;
+        }
+
+        public Vector(Vector Source)
+        {
+            this.X = Source.X;
+            this.Y = Source.Y;
+            this.Z = Source.Z;
         }
 
         public double X;
         public double Y;
         public double Z;
+
+        /// <summary>
+        /// Converts a vector into a vector usable by OpenTK.
+        /// </summary>
+        public static implicit operator Vector3d(Vector Vector)
+        {
+            return new Vector3d(Vector.X, Vector.Y, Vector.Z);
+        }
+
+        /// <summary>
+        /// Converts a vector into a less precise vector usable by
+        /// OpenTK.
+        /// </summary>
+        public static implicit operator Vector3(Vector Vector)
+        {
+            return new Vector3(
+                (float)Vector.X,
+                (float)Vector.Y,
+                (float)Vector.Z);
+        }
+
+        /// <summary>
+        /// Computes the cross product between two vectors, with the resulting
+        /// vector being the normal.
+        /// </summary>
+        public static Vector Cross(Vector A, Vector B)
+        {
+            return new Vector(
+                (A.Y * B.Z) - (A.Z * B.Y),
+                (A.Z * B.X) - (A.X * B.Z),
+                (A.X * B.Y) - (A.Y * B.X));
+        }
+
+        /// <summary>
+        /// Gets the length of this vector, its distance from the origin.
+        /// </summary>
+        public double Length()
+        {
+            return Math.Sqrt((this.X * this.X) + (this.Y * this.Y) + (this.Z * this.Z));
+        }
+
+        /// <summary>
+        /// Normalizes this vector, making its length one without changing its
+        /// direction.
+        /// </summary>
+        public void Normalize()
+        {
+            this.Divide(this.Length());
+        }
+
+        /// <summary>
+        /// Subtracts another vector from this vector.
+        /// </summary>
+        public void Subtract(Vector Other)
+        {
+            this.X -= Other.X;
+            this.Y -= Other.Y;
+            this.Z -= Other.Z;
+        }
+
+        /// <summary>
+        /// Adds another vector to this vector.
+        /// </summary>
+        public void Add(Vector Other)
+        {
+            this.X += Other.X;
+            this.Y += Other.Y;
+            this.Z += Other.Z;
+        }
+
+        /// <summary>
+        /// Multiplies this vector by a scalar.
+        /// </summary>
+        public void Multiply(double Scalar)
+        {
+            this.X *= Scalar;
+            this.Y *= Scalar;
+            this.Z *= Scalar;
+        }
+
+        /// <summary>
+        /// Divides this vector by a scalar.
+        /// </summary>
+        public void Divide(double Scalar)
+        {
+            this.X /= Scalar;
+            this.Y /= Scalar;
+            this.Z /= Scalar;
+        }
+
+        public static Vector operator -(Vector A, Vector B)
+        {
+            Vector c = new Vector(A);
+            c.Subtract(B);
+            return c;
+        }
+
+        public static Vector operator +(Vector A, Vector B)
+        {
+            Vector c = new Vector(A);
+            c.Add(B);
+            return c;
+        }
+
+        public static Vector operator *(Vector A, double Scalar)
+        {
+            Vector c = new Vector(A);
+            c.Multiply(Scalar);
+            return c;
+        }
+
+        public static Vector operator /(Vector A, double Scalar)
+        {
+            Vector c = new Vector(A);
+            c.Divide(Scalar);
+            return c;
+        }
     }
 }

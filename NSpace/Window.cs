@@ -17,6 +17,16 @@ namespace NSpace
 
             // Enable graphics features
             GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Lighting);
+            GL.Enable(EnableCap.ColorMaterial);
+            GL.ColorMaterial(MaterialFace.Front, ColorMaterialParameter.AmbientAndDiffuse);
+
+            // Lighting
+            GL.Enable(EnableCap.Light0);
+            GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0, 0, 0));
+            GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.5, 0.5, 0.5));
+            GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 1.0, 1.0));
+            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(0.0f, 0.0f, 2.0f, 1.0f));
 
             // Create a terrain
             this._Terrain = new SinkSource<Triangle>();
@@ -66,6 +76,7 @@ namespace NSpace
             GL.Begin(BeginMode.Triangles);
             foreach (Triangle tri in Mesh.Items)
             {
+                GL.Normal3(tri.Normal);
                 foreach (Point point in tri.Points)
                 {
                     ColoredPoint cp = point as ColoredPoint;
@@ -73,7 +84,7 @@ namespace NSpace
                     {
                         GL.Color4(cp.Color);
                     }
-                    GL.Vertex3(point);
+                    GL.Vertex3(point.Position);
                 }
             }
             GL.End();
