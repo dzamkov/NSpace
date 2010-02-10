@@ -19,6 +19,8 @@ namespace NSpace
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Lighting);
             GL.Enable(EnableCap.ColorMaterial);
+            GL.EnableClientState(EnableCap.VertexArray);
+            GL.EnableClientState(EnableCap.NormalArray);
             GL.ColorMaterial(MaterialFace.Front, ColorMaterialParameter.AmbientAndDiffuse);
 
             // Lighting
@@ -29,8 +31,9 @@ namespace NSpace
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(0.0f, 0.0f, 2.0f, 1.0f));
 
             // Create a terrain
-            this._Terrain = new SinkSource<Triangle>();
-            Terrain.Create(this._Terrain, null);
+            this._TerrainMesh = new SinkSource<Triangle>();
+            Terrain.Create(this._TerrainMesh, null);
+            this._TerrainModel = new Model() { Source = this._TerrainMesh };
 		}
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -57,7 +60,7 @@ namespace NSpace
 			// Draw a triangle with colored corner with rotation
             GL.PushMatrix();
             GL.Rotate(this._Rot, 0.0, 1.0, 0.0);
-            this._DrawMesh(this._Terrain);
+            this._TerrainModel.Render();
             GL.PopMatrix();
 			
 			this.SwapBuffers();
@@ -68,29 +71,8 @@ namespace NSpace
             this._Rot += 1;
 		}
 
-        /// <summary>
-        /// Draws the specified mesh(collection of triangles) to the current graphics context.
-        /// </summary>
-        private void _DrawMesh(ISource<Triangle> Mesh)
-        {
-            GL.Begin(BeginMode.Triangles);
-            foreach (Triangle tri in Mesh.Items)
-            {
-                GL.Normal3(tri.Normal);
-                foreach (Point point in tri.Points)
-                {
-                    ColoredPoint cp = point as ColoredPoint;
-                    if (cp != null)
-                    {
-                        GL.Color4(cp.Color);
-                    }
-                    GL.Vertex3(point.Position);
-                }
-            }
-            GL.End();
-        }
-
         private double _Rot = 0.0;
-        private SinkSource<Triangle> _Terrain;
+        private SinkSource<Triangle> _TerrainMesh;
+        private Model _TerrainModel;
 	}
 }
