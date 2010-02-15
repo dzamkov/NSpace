@@ -33,6 +33,7 @@ namespace NSpace
             // Create a terrain
             this._TerrainMesh = new SinkSource<Triangle>();
             Terrain.Create(this._TerrainMesh, null);
+            this._TerrainMaterial = new ColorNormalMaterial(this._TerrainMesh, Color.RGB(0.5, 0.5, 0.5));
             this._TerrainModel = new Model() { Source = this._TerrainMesh };
 		}
 
@@ -60,7 +61,7 @@ namespace NSpace
 			// Draw a triangle with colored corner with rotation
             GL.PushMatrix();
             GL.Rotate(this._Rot, 0.0, 1.0, 0.0);
-            this._TerrainModel.Render();
+            this._TerrainMaterial.Render();
             GL.PopMatrix();
 			
 			this.SwapBuffers();
@@ -73,6 +74,7 @@ namespace NSpace
 
         private double _Rot = 0.0;
         private SinkSource<Triangle> _TerrainMesh;
+        private Material _TerrainMaterial;
         private Model _TerrainModel;
 	}
 }

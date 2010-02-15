@@ -20,6 +20,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>none</DebugType>
@@ -46,6 +47,7 @@
     <Compile Include="Color.cs" />
     <Compile Include="ColoredPoint.cs" />
     <Compile Include="DivTriangle.cs" />
+    <Compile Include="Material.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />

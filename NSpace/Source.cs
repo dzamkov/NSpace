@@ -21,6 +21,11 @@ namespace NSpace
         IEnumerable<T> Items { get; }
 
         /// <summary>
+        /// Gets the amount of items in the source.
+        /// </summary>
+        int Count { get; }
+
+        /// <summary>
         /// Attachs a listener so that its callbacks are called when the source
         /// changes.
         /// </summary>
@@ -149,6 +154,14 @@ namespace NSpace
             get 
             {
                 return this._Items.Keys;
+            }
+        }
+
+        public virtual int Count
+        {
+            get
+            {
+                return this._Items.Count;
             }
         }
 
