@@ -24,7 +24,7 @@ namespace NSpace
         /// </summary>
         public static void Create(ISink<Triangle> TriangleOutput, ISink<Point> PointOutput)
         {
-            int levels = 6;
+            int levels = 5;
             double mag = 2.0;
             double magl = 2.0;
             double magc = 1.1;

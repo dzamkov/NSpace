@@ -33,7 +33,11 @@ namespace NSpace
             // Create a terrain
             this._TerrainMesh = new SinkSource<Triangle>();
             Terrain.Create(this._TerrainMesh, null);
-            this._TerrainMaterial = new ColorNormalMaterial(this._TerrainMesh, Color.RGB(0.5, 0.5, 0.5));
+            SpikyMaterial spikemat = new SpikyMaterial(0.1);
+            ColorNormalMaterial colormat = new ColorNormalMaterial(Color.RGB(0.5, 0.5, 0.5));
+            spikemat.BaseMaterial = colormat;
+            this._TerrainMaterial = spikemat;
+            this._TerrainMaterial.Mesh = this._TerrainMesh;
             this._TerrainModel = new Model() { Source = this._TerrainMesh };
 		}
 

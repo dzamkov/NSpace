@@ -47,6 +47,7 @@
     <Compile Include="Color.cs" />
     <Compile Include="ColoredPoint.cs" />
     <Compile Include="DivTriangle.cs" />
+    <Compile Include="GeometryMaterial.cs" />
     <Compile Include="Material.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Point.cs" />

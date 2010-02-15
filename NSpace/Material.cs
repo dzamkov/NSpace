@@ -15,11 +15,6 @@ namespace NSpace
     /// </summary>
     public abstract class Material
     {
-        public Material(ISource<Triangle> Mesh)
-        {
-            this._Mesh = Mesh;
-        }
-
         /// <summary>
         /// Gets the mesh this material is for.
         /// </summary>
@@ -29,6 +24,19 @@ namespace NSpace
             {
                 return this._Mesh;
             }
+            set
+            {
+                this._Mesh = value;
+                this.OnMeshChange();
+            }
+        }
+
+        /// <summary>
+        /// Called when the mesh this material is associated to changes.
+        /// </summary>
+        protected virtual void OnMeshChange()
+        {
+
         }
 
         /// <summary>
@@ -45,12 +53,6 @@ namespace NSpace
     /// </summary>
     public abstract class BufferedMaterial : Material
     {
-        public BufferedMaterial(ISource<Triangle> Mesh)
-            : base(Mesh)
-        {
-
-        }
-
         /// <summary>
         /// Gets the stride of a single vertex in this material, that is the size of a vertex in the buffer in bytes.
         /// </summary>
@@ -90,6 +92,23 @@ namespace NSpace
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, this._VBO[1]);
             this.SetVertexFormat();
             GL.DrawElements(BeginMode.Triangles, this.Mesh.Count * 3, DrawElementsType.UnsignedShort, 0);
+        }
+
+        protected override void OnMeshChange()
+        {
+            this.ClearBuffers();
+        }
+
+        /// <summary>
+        /// Clears and deletes vertice and indice buffers, freeing memory.
+        /// </summary>
+        public void ClearBuffers()
+        {
+            if (this._VBO != null)
+            {
+                GL.DeleteBuffers(2, this._VBO);
+                this._VBO = null;
+            }
         }
 
         /// <summary>
@@ -191,8 +210,7 @@ namespace NSpace
     /// </summary>
     public class ColorNormalMaterial : BufferedMaterial
     {
-        public ColorNormalMaterial(ISource<Triangle> Mesh, Color DefaultColor)
-            : base(Mesh)
+        public ColorNormalMaterial(Color DefaultColor)
         {
             this._DefaultColor = DefaultColor;
         }
