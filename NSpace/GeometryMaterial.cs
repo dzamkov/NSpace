@@ -74,7 +74,7 @@ namespace NSpace
                         Vector norm = tri.Normal;
                         Point center = tri.Points[0].Copy();
                         center.Mix(tri.Points[1], 0.5);
-                        center.Mix(tri.Points[2], 1.0 - (1.0 / Math.Sqrt(3.0)));
+                        center.Mix(tri.Points[2], 1.0 / 3.0);
                         center.Position += tri.Normal * this._Length;
 
                         for (int t = 0; t < 3; t++)
