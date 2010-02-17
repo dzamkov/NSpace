@@ -79,6 +79,14 @@ namespace NSpace
 
         }
 
+        /// <summary>
+        /// Called before rendering of the buffer.
+        /// </summary>
+        public virtual void PreRender()
+        {
+
+        }
+
         public override void Render()
         {
             if (this._VBO == null)
@@ -91,6 +99,7 @@ namespace NSpace
             GL.BindBuffer(BufferTarget.ArrayBuffer, this._VBO[0]);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, this._VBO[1]);
             this.SetVertexFormat();
+            this.PreRender();
             GL.DrawElements(BeginMode.Triangles, this.Mesh.Count * 3, DrawElementsType.UnsignedShort, 0);
         }
 

@@ -54,6 +54,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Source.cs" />
     <Compile Include="Terrian.cs" />
+    <Compile Include="Texture.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>

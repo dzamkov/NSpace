@@ -19,6 +19,7 @@ namespace NSpace
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Lighting);
             GL.Enable(EnableCap.ColorMaterial);
+            GL.Enable(EnableCap.Texture2D);
             GL.EnableClientState(EnableCap.VertexArray);
             GL.EnableClientState(EnableCap.NormalArray);
             GL.ColorMaterial(MaterialFace.Front, ColorMaterialParameter.AmbientAndDiffuse);
@@ -34,9 +35,9 @@ namespace NSpace
             this._TerrainMesh = new SinkSource<Triangle>();
             Terrain.Create(this._TerrainMesh, null);
             SpikyMaterial spikemat = new SpikyMaterial(0.1);
-            ColorNormalMaterial colormat = new ColorNormalMaterial(Color.RGB(0.5, 0.5, 0.5));
+            Material colormat = new TextureNormalMaterial(Texture.LoadFromFile("../../TestTex.png"));
             spikemat.BaseMaterial = colormat;
-            this._TerrainMaterial = spikemat;
+            this._TerrainMaterial = colormat;
             this._TerrainMaterial.Mesh = this._TerrainMesh;
             this._TerrainModel = new Model() { Source = this._TerrainMesh };
 		}

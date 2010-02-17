@@ -91,13 +91,14 @@ namespace NSpace
         /// </summary>
         private static void _Init(ISink<Triangle> TriSink, ISink<Point> PointSink, double Magnitude)
         {
-            ColoredPoint[] points = new ColoredPoint[3];
+            TexturedPoint[] points = new TexturedPoint[3];
             for (int x = 0; x < 3; x++)
             {
                 double ang = (double)x * Math.PI * 2.0 / 3.0;
-                points[x] = new ColoredPoint();
+                points[x] = new TexturedPoint();
                 points[x].Position = new Vector(Math.Sin(ang), 0.0, Math.Cos(ang));
-                points[x].Color = Color.HLSA(ang / Math.PI * 180, 0.5, 1.0, 1.0);
+                points[x].U = Math.Sin(ang);
+                points[x].V = Math.Cos(ang);
                 _AddNoise(points[x], Magnitude);
             }
             if (PointSink != null)
