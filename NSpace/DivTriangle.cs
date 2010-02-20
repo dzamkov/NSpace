@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 namespace NSpace
 {
+    /*
     /// <summary>
     /// A triangle that can be subdivide and have its relationships with
     /// other triangles stored. The triangle is subdivided into four parts
@@ -104,4 +105,5 @@ namespace NSpace
         public DivTriangle Parent;
         public Triangle[] Borders;
     }
+    */
 }

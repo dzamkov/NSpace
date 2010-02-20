@@ -17,7 +17,7 @@ namespace NSpace
         /// <summary>
         /// Gets the altered geometry created by this material.
         /// </summary>
-        public abstract ISource<Triangle> Output { get; }
+        public abstract Mesh Output { get; }
 
         /// <summary>
         /// Gets or sets the material that is applied to the output of
@@ -39,7 +39,7 @@ namespace NSpace
         {
             if (this._BaseMaterial != null)
             {
-                ISource<Triangle> output = this.Output;
+                Mesh output = this.Output;
                 if (this._BaseMaterial.Mesh != output)
                 {
                     this._BaseMaterial.Mesh = output;
@@ -61,15 +61,16 @@ namespace NSpace
             this._Length = Length;
         }
 
-        public override ISource<Triangle> Output
+        public override Mesh Output
         {
             get
             {
                 if (this._Output == null && this.Mesh != null)
                 {
-                    SinkSource<Triangle> sinksource = new SinkSource<Triangle>();
-                    this._Output = sinksource;
-                    foreach (Triangle tri in this.Mesh.Items)
+                    Mesh output = new SimpleMesh();
+                    this._Output = output;
+                    Mesh.IEditContext ec = output.GetEditContext();
+                    foreach (Triangle tri in this.Mesh.Triangles)
                     {
                         Vector norm = tri.Normal;
                         Point center = tri.Points[0].Copy();
@@ -83,15 +84,16 @@ namespace NSpace
                             ntri.Points[0] = tri.Points[t];
                             ntri.Points[1] = tri.Points[(t + 1) % 3];
                             ntri.Points[2] = center;
-                            sinksource.Add(ntri);
+                            ec.AddTriangle(ntri);
                         }
                     }
+                    ec.Commit();
                 }
                 return this._Output;
             }
         }
 
         private double _Length;
-        private ISource<Triangle> _Output;
+        private Mesh _Output;
     }
 }

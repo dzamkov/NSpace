@@ -7,6 +7,7 @@ using System.Collections.Generic;
 
 namespace NSpace
 {
+    /*
     /// <summary>
     /// Contains methods used to manipulate and interact with a terrain.
     /// </summary>
@@ -127,4 +128,5 @@ namespace NSpace
 
         private static Random PRNG;
     }
+    */
 }

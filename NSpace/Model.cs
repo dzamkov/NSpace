@@ -9,6 +9,7 @@ using OpenTK.Graphics.OpenGL;
 
 namespace NSpace
 {
+    /*
     /// <summary>
     /// A representation of an object made of triangles that can be rendered.
     /// </summary>
@@ -36,4 +37,5 @@ namespace NSpace
 
         private ISource<Triangle> _Source;
     }
+    */
 }

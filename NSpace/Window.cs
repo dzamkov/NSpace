@@ -32,14 +32,34 @@ namespace NSpace
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(0.0f, 0.0f, 2.0f, 1.0f));
 
             // Create a terrain
-            this._TerrainMesh = new SinkSource<Triangle>();
-            Terrain.Create(this._TerrainMesh, null);
+            this._TerrainMesh = new SimpleMesh();
+            Mesh.IEditContext ec = this._TerrainMesh.GetEditContext();
+            ec.AddTriangle(new Triangle()
+            {
+                Points = new Point[] {
+                    new TexturedPoint() {
+                        Position = new Vector(0.0, 1.0, 0.0),
+                        U = 1.0,
+                        V = 0.5
+                    },
+                    new TexturedPoint() {
+                        Position = new Vector(-1.0, 0.0, 0.0),
+                        U = 0.0,
+                        V = 0.0
+                    },
+                    new TexturedPoint() {
+                        Position = new Vector(1.0, 0.0, 0.0),
+                        U = 0.0,
+                        V = 1.0
+                    }
+            }
+            });
+            ec.Commit();
             SpikyMaterial spikemat = new SpikyMaterial(0.1);
             Material colormat = new TextureNormalMaterial(Texture.LoadFromFile("../../TestTex.png"));
             spikemat.BaseMaterial = colormat;
             this._TerrainMaterial = colormat;
             this._TerrainMaterial.Mesh = this._TerrainMesh;
-            this._TerrainModel = new Model() { Source = this._TerrainMesh };
 		}
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -78,8 +98,7 @@ namespace NSpace
 		}
 
         private double _Rot = 0.0;
-        private SinkSource<Triangle> _TerrainMesh;
+        private Mesh _TerrainMesh;
         private Material _TerrainMaterial;
-        private Model _TerrainModel;
 	}
 }

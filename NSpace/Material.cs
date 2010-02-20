@@ -18,7 +18,7 @@ namespace NSpace
         /// <summary>
         /// Gets the mesh this material is for.
         /// </summary>
-        public ISource<Triangle> Mesh
+        public Mesh Mesh
         {
             get
             {
@@ -44,7 +44,7 @@ namespace NSpace
         /// </summary>
         public abstract void Render();
 
-        private ISource<Triangle> _Mesh;
+        private Mesh _Mesh;
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ namespace NSpace
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, this._VBO[1]);
             this.SetVertexFormat();
             this.PreRender();
-            GL.DrawElements(BeginMode.Triangles, this.Mesh.Count * 3, DrawElementsType.UnsignedShort, 0);
+            GL.DrawElements(BeginMode.Triangles, this.Mesh.TriangleCount * 3, DrawElementsType.UnsignedShort, 0);
         }
 
         protected override void OnMeshChange()
@@ -143,7 +143,7 @@ namespace NSpace
         {
             ushort curindex = 0;
             this._PointData = new Dictionary<Point, _PointInfo>();
-            foreach (Triangle tri in this.Mesh.Items)
+            foreach (Triangle tri in this.Mesh.Triangles)
             {
                 foreach (Point p in tri.Points)
                 {
@@ -173,7 +173,7 @@ namespace NSpace
                 GL.BindBuffer(BufferTarget.ArrayBuffer, this._VBO[0]);
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, this._VBO[1]);
                 GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(this.VertexStride * this._PointData.Count), IntPtr.Zero, BufferUsageHint.StaticDraw);
-                GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(sizeof(ushort) * this.Mesh.Count * 3), IntPtr.Zero, BufferUsageHint.StaticDraw);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(sizeof(ushort) * this.Mesh.TriangleCount * 3), IntPtr.Zero, BufferUsageHint.StaticDraw);
             }
         }
 
@@ -184,7 +184,7 @@ namespace NSpace
         {
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, this._VBO[1]);
             ushort* indicedata = (ushort*)(GL.MapBuffer(BufferTarget.ElementArrayBuffer, BufferAccess.WriteOnly).ToPointer());
-            foreach (Triangle tri in this.Mesh.Items)
+            foreach (Triangle tri in this.Mesh.Triangles)
             {
                 foreach (Point p in tri.Points)
                 {
