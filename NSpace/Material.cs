@@ -66,7 +66,7 @@ namespace NSpace
         /// <param name="Point">The point this vertex is meant to represent.</param>
         /// <param name="Usages">The triangles in this material's mesh that have this vertex as
         /// one of their three points.</param>
-        public unsafe virtual void FillVertexData(void* Vertex, Point Point, List<Triangle> Usages)
+        public unsafe virtual void FillVertexData(void* Vertex, Geometry Point, List<Geometry> Usages)
         {
 
         }
@@ -133,7 +133,7 @@ namespace NSpace
             /// <summary>
             /// Triangles that use this point.
             /// </summary>
-            public List<Triangle> Usages;
+            public List<Geometry> Usages;
         }
 
         /// <summary>
@@ -142,17 +142,17 @@ namespace NSpace
         private void _BuildPointData()
         {
             ushort curindex = 0;
-            this._PointData = new Dictionary<Point, _PointInfo>();
-            foreach (Triangle tri in this.Mesh.Triangles)
+            this._PointData = new Dictionary<Geometry, _PointInfo>();
+            foreach (Geometry tri in this.Mesh.Triangles)
             {
-                foreach (Point p in tri.Points)
+                foreach (Geometry p in tri.GetData<Triangle.Data>().Points)
                 {
                     _PointInfo info = null;
                     if (!this._PointData.TryGetValue(p, out info))
                     {
                         info = new _PointInfo();
                         info.Index = curindex;
-                        info.Usages = new List<Triangle>();
+                        info.Usages = new List<Geometry>();
                         this._PointData[p] = info;
                         curindex++;
                     }
@@ -184,9 +184,9 @@ namespace NSpace
         {
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, this._VBO[1]);
             ushort* indicedata = (ushort*)(GL.MapBuffer(BufferTarget.ElementArrayBuffer, BufferAccess.WriteOnly).ToPointer());
-            foreach (Triangle tri in this.Mesh.Triangles)
+            foreach (Geometry tri in this.Mesh.Triangles)
             {
-                foreach (Point p in tri.Points)
+                foreach (Geometry p in tri.GetData<Triangle.Data>().Points)
                 {
                     *indicedata = this._PointData[p].Index;
                     indicedata++;
@@ -202,7 +202,7 @@ namespace NSpace
         {
             GL.BindBuffer(BufferTarget.ArrayBuffer, this._VBO[0]);
             byte* vertexdata = (byte*)GL.MapBuffer(BufferTarget.ArrayBuffer, BufferAccess.WriteOnly).ToPointer();
-            foreach (KeyValuePair<Point, _PointInfo> kvp in this._PointData)
+            foreach (KeyValuePair<Geometry, _PointInfo> kvp in this._PointData)
             {
                 int index = kvp.Value.Index;
                 this.FillVertexData(vertexdata + (index * this.VertexStride), kvp.Key, kvp.Value.Usages);
@@ -211,7 +211,7 @@ namespace NSpace
         }
 
         private uint[] _VBO;
-        private Dictionary<Point, _PointInfo> _PointData;
+        private Dictionary<Geometry, _PointInfo> _PointData;
     }
 
     /// <summary>
@@ -237,20 +237,19 @@ namespace NSpace
             GL.InterleavedArrays(InterleavedArrayFormat.C4fN3fV3f, 0, IntPtr.Zero);
         }
 
-        public override unsafe void FillVertexData(void* Vertex, Point Point, List<Triangle> Usages)
+        public override unsafe void FillVertexData(void* Vertex, Geometry Point, List<Geometry> Usages)
         {
             float* vert = (float*)Vertex;
             Color col = this._DefaultColor;
-            ColoredPoint cp = Point as ColoredPoint;
-            if (cp != null)
-            {
-                col = cp.Color;
-            }
-            Vector pos = Point.Position;
+
+            Point.ColorData coldata = Point.GetData<Point.ColorData>();
+            col = coldata == null ? col : coldata.Color;
+
+            Vector pos = Point.GetData<Point.Data>().Position;
             Vector norm = new Vector();
-            foreach (Triangle tri in Usages)
+            foreach (Geometry tri in Usages)
             {
-                norm = norm + tri.Normal;
+                norm = norm + tri.GetData<Triangle.Data>().Normal;
             }
             norm.Normalize();
 

@@ -23,7 +23,7 @@ namespace NSpace
         /// <summary>
         /// Gets the collection of all triangles within this mesh.
         /// </summary>
-        public abstract IEnumerable<Triangle> Triangles { get; }
+        public abstract IEnumerable<Geometry> Triangles { get; }
 
         /// <summary>
         /// Gets the amount of triangles in this mesh.
@@ -33,28 +33,12 @@ namespace NSpace
             get
             {
                 int a = 0;
-                foreach (Triangle tri in this.Triangles)
+                foreach (Geometry tri in this.Triangles)
                 {
                     a++;
                 }
                 return a;
             }
-        }
-
-        /// <summary>
-        /// Called whenever a triangle is removed.
-        /// </summary>
-        protected void OnRemoveTriangle(Triangle Tri)
-        {
-
-        }
-
-        /// <summary>
-        /// Called whenever a triangle is added.
-        /// </summary>
-        protected void OnAddTriangle(Triangle Tri)
-        {
-
         }
 
         /// <summary>
@@ -80,25 +64,25 @@ namespace NSpace
             /// Adds the specified triangle. Note that this may make a copy of the triangle
             /// and add that instead. Once added, the triangle may not be modified.
             /// </summary>
-            void AddTriangle(Triangle Tri);
+            void AddTriangle(Geometry Tri);
 
             /// <summary>
             /// Modifies a triangle. The supplied triangle is the one to which modification is intended on. This function
             /// will return a triangle with the same data as the specified triangle. All changes to the returned triangle
             /// will be reflected in the mesh.
             /// </summary>
-            Triangle ModifyTriangle(Triangle Tri);
+            Geometry ModifyTriangle(Geometry Tri);
 
             /// <summary>
             /// Removes the specified triangle from the mesh.
             /// </summary>
-            void RemoveTriangle(Triangle Tri);
+            void RemoveTriangle(Geometry Tri);
 
             /// <summary>
             /// This works in a similar way to modifiy triangle and can be used to modify points used by the mesh
             /// and triangles within it.
             /// </summary>
-            Point ModifyPoint(Point Point);
+            Geometry ModifyPoint(Geometry Point);
         }
     }
 }

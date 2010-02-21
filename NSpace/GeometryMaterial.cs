@@ -70,20 +70,23 @@ namespace NSpace
                     Mesh output = new SimpleMesh();
                     this._Output = output;
                     Mesh.IEditContext ec = output.GetEditContext();
-                    foreach (Triangle tri in this.Mesh.Triangles)
+                    foreach (Geometry tri in this.Mesh.Triangles)
                     {
-                        Vector norm = tri.Normal;
-                        Point center = tri.Points[0].Copy();
-                        center.Mix(tri.Points[1], 0.5);
-                        center.Mix(tri.Points[2], 1.0 / 3.0);
-                        center.Position += tri.Normal * this._Length;
+                        Triangle.Data tridata = (Triangle.Data)tri;
+                        Vector norm = tridata.Normal;
+                        Geometry center = tridata[0].Copy();
+                        Point.Data centerdata = (Point.Data)center;
+                        Point.Mix(center, tridata[1], 0.5);
+                        Point.Mix(center, tridata[2], 1.0 / 3.0);
+                        centerdata.Position += norm * this._Length;
 
                         for (int t = 0; t < 3; t++)
                         {
-                            Triangle ntri = new Triangle();
-                            ntri.Points[0] = tri.Points[t];
-                            ntri.Points[1] = tri.Points[(t + 1) % 3];
-                            ntri.Points[2] = center;
+                            Geometry ntri = Triangle.Create(
+                                tridata[t],
+                                tridata[(t + 1) % 3],
+                                center
+                            );
                             ec.AddTriangle(ntri);
                         }
                     }

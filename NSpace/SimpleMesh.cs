@@ -17,10 +17,10 @@ namespace NSpace
     {
         public SimpleMesh()
         {
-            this._Tris = new Dictionary<Triangle, object>();
+            this._Tris = new Dictionary<Geometry, object>();
         }
 
-        public override IEnumerable<Triangle> Triangles
+        public override IEnumerable<Geometry> Triangles
         {
             get 
             {
@@ -41,22 +41,22 @@ namespace NSpace
             
         }
 
-        void Mesh.IEditContext.AddTriangle(Triangle Tri)
+        void Mesh.IEditContext.AddTriangle(Geometry Tri)
         {
-            this._Tris[Tri] = null;
+            this._Tris[new ElasticGeometry(this, Tri)] = null;
         }
 
-        Triangle Mesh.IEditContext.ModifyTriangle(Triangle Tri)
+        Geometry Mesh.IEditContext.ModifyTriangle(Geometry Tri)
         {
             return Tri;
         }
 
-        void Mesh.IEditContext.RemoveTriangle(Triangle Tri)
+        void Mesh.IEditContext.RemoveTriangle(Geometry Tri)
         {
             this._Tris.Remove(Tri);
         }
 
-        Point Mesh.IEditContext.ModifyPoint(Point Point)
+        Geometry Mesh.IEditContext.ModifyPoint(Geometry Point)
         {
             return Point;
         }
@@ -66,6 +66,6 @@ namespace NSpace
             return this;
         }
 
-        private Dictionary<Triangle, object> _Tris; // Simulated set with dictionary
+        private Dictionary<Geometry, object> _Tris; // Simulated set with dictionary
     }
 }

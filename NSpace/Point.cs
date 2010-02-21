@@ -3,53 +3,152 @@
 // Open source under the new BSD License
 //----------------------------------------
 using System;
+using System.Collections.Generic;
 using OpenTK;
 
 namespace NSpace
 {
     /// <summary>
-    /// A single point in a mesh that represents a location relative to other
-    /// points in the same mesh. A single point can be used multiple times within
-    /// a mesh by multiple triangles. Points may contain additional information in
-    /// a derived class.
+    /// Methods and classes for the manipulation of points.
     /// </summary>
-    public class Point
+    public static class Point
     {
         /// <summary>
-        /// Mixes this point with another by the specified amount. If the amount is
-        /// 0.0, this point will remain unchanged; if the amount is 1.0, the point
+        /// A type of data within a point that can be mixed with other data of the same
+        /// type.
+        /// </summary>
+        public interface IMixable : IData
+        {
+            /// <summary>
+            /// Mixes this data with the other data by the specified
+            /// amount. If Amount is 0.0, no change is made. If Amount
+            /// is 1.0, this data will become equivalent to Other.
+            /// </summary>
+            void Mix(IData Other, double Amount);
+        }
+
+        /// <summary>
+        /// A single point in a mesh that represents a location relative to other
+        /// points in the same mesh. A single point can be used multiple times within
+        /// a mesh by multiple triangles.
+        /// </summary>
+        public class Data : IData, IMixable
+        {
+            public Vector Position;
+
+            public IData Copy()
+            {
+                return new Data() { Position = this.Position };
+            }
+
+            public void Mix(IData Other, double Amount)
+            {
+                Data l = (Data)Other;
+                this.Position += (l.Position - this.Position) * Amount;
+            }
+
+            /// <summary>
+            /// Gets the point data from the geometry.
+            /// </summary>
+            public static explicit operator Data(Geometry Geom)
+            {
+                return Geom.GetData<Data>();
+            }
+        }
+
+        /// <summary>
+        /// Color data for a point.
+        /// </summary>
+        public class ColorData : IData, IMixable
+        {
+            public Color Color;
+
+            public IData Copy()
+            {
+                return new ColorData() { Color = this.Color };
+            }
+
+            public void Mix(IData Other, double Amount)
+            {
+                ColorData cd = (ColorData)Other;
+                this.Color = Color.Mix(this.Color, cd.Color, Amount);
+            }
+        }
+
+        /// <summary>
+        /// UV, or texture mapping data for a point.
+        /// </summary>
+        public class UVData : IData, IMixable
+        {
+            public double U;
+            public double V;
+
+            public IData Copy()
+            {
+                return new UVData() { U = this.U, V = this.V };
+            }
+
+            public void Mix(IData Other, double Amount)
+            {
+                UVData ud = (UVData)Other;
+                this.U += (ud.U - this.U) * Amount;
+                this.V += (ud.V - this.V) * Amount;
+            }
+        }
+
+        /// <summary>
+        /// Mixes a point with another by the specified amount. If the amount is
+        /// 0.0, the point will remain unchanged; if the amount is 1.0, the point
         /// will take the state of the other point. Values between the two are
         /// interpolated.
         /// </summary>
-        public virtual void Mix(Point Other, double Amount)
+        public static void Mix(Geometry A, Geometry B, double Amount)
         {
-            Vector dif = Other.Position - this.Position;
-            this.Position += dif * Amount;
+            List<KeyValuePair<Type, IData>> changed = new List<KeyValuePair<Type, IData>>();
+            foreach (KeyValuePair<Type, IData> kvp in A.FullData)
+            {
+                IData o = B.GetData(kvp.Key);
+                IMixable l = kvp.Value as IMixable;
+                l.Mix(o, Amount);
+                changed.Add(new KeyValuePair<Type, IData>(kvp.Key, l));
+            }
+            foreach (KeyValuePair<Type, IData> kvp in changed)
+            {
+                A.SetData(kvp.Key, kvp.Value);
+            }
         }
 
         /// <summary>
-        /// Creates a copy of this point.
+        /// Creates a new point with only position data.
         /// </summary>
-        public virtual Point Copy()
+        public static Geometry Create(Vector Position)
         {
-            Point p = new Point();
-            this.Clone(p);
-            return p;
+            ElasticGeometry geom = new ElasticGeometry(null);
+            geom.SetData<Data>(new Data() { Position = Position });
+            return geom;
         }
 
         /// <summary>
-        /// Clones the state of this point into the state of the
-        /// other specified point.
+        /// Creates a new point with UV data.
         /// </summary>
-        protected virtual void Clone(Point Point)
+        public static Geometry Create(Vector Position, double U, double V)
         {
-            Point.Position = this.Position;
+            Geometry geom = Create(Position);
+            geom.SetData<UVData>(new UVData() { U = U, V = V });
+            return geom;
         }
 
         /// <summary>
-        /// Points offset from the origin.
+        /// Creates a new point with color data.
         /// </summary>
-        public Vector Position;
+        public static Geometry Create(Vector Position, Color Color)
+        {
+            Geometry geom = Create(Position);
+            geom.SetData<ColorData>(new ColorData() { Color = Color });
+            return geom;
+        }
+
+        
     }
 
     /// <summary>

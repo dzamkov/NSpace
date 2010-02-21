@@ -34,26 +34,11 @@ namespace NSpace
             // Create a terrain
             this._TerrainMesh = new SimpleMesh();
             Mesh.IEditContext ec = this._TerrainMesh.GetEditContext();
-            ec.AddTriangle(new Triangle()
-            {
-                Points = new Point[] {
-                    new TexturedPoint() {
-                        Position = new Vector(0.0, 1.0, 0.0),
-                        U = 1.0,
-                        V = 0.5
-                    },
-                    new TexturedPoint() {
-                        Position = new Vector(-1.0, 0.0, 0.0),
-                        U = 0.0,
-                        V = 0.0
-                    },
-                    new TexturedPoint() {
-                        Position = new Vector(1.0, 0.0, 0.0),
-                        U = 0.0,
-                        V = 1.0
-                    }
-            }
-            });
+            ec.AddTriangle(Triangle.Create(
+                Point.Create(new Vector(0.0, 1.0, 0.0), 1.0, 0.5),
+                Point.Create(new Vector(-1.0, 0.0, 0.0), 0.0, 0.0),
+                Point.Create(new Vector(1.0, 0.0, 0.0), 0.0, 1.0)
+            ));
             ec.Commit();
             SpikyMaterial spikemat = new SpikyMaterial(0.1);
             Material colormat = new TextureNormalMaterial(Texture.LoadFromFile("../../TestTex.png"));

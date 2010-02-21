@@ -58,41 +58,6 @@ namespace NSpace
     }
 
     /// <summary>
-    /// Point containing uv and texture data.
-    /// </summary>
-    public class TexturedPoint : Point
-    {
-        public override void Mix(Point Other, double Amount)
-        {
-            TexturedPoint tp = Other as TexturedPoint;
-            if (tp != null)
-            {
-                this.U += (tp.U - this.U) * Amount;
-                this.V += (tp.V - this.V) * Amount;
-            }
-            base.Mix(Other, Amount);
-        }
-
-        public override Point Copy()
-        {
-            TexturedPoint tp = new TexturedPoint();
-            this.Clone(tp);
-            return tp;
-        }
-
-        protected override void Clone(Point Point)
-        {
-            TexturedPoint tp = Point as TexturedPoint;
-            tp.U = this.U;
-            tp.V = this.V;
-            base.Clone(Point);
-        }
-
-        public double U;
-        public double V;
-    }
-
-    /// <summary>
     /// A material that maps a texture onto the supplied mesh.
     /// </summary>
     public class TextureNormalMaterial : BufferedMaterial
@@ -110,22 +75,22 @@ namespace NSpace
             }
         }
 
-        public override unsafe void FillVertexData(void* Vertex, Point Point, List<Triangle> Usages)
+        public override unsafe void FillVertexData(void* Vertex, Geometry Point, List<Geometry> Usages)
         {
             float* vert = (float*)Vertex;
             double u = 0.0;
             double v = 0.0;
-            TexturedPoint tp = Point as TexturedPoint;
-            if (tp != null)
+            Point.UVData uvdata = Point.GetData<Point.UVData>();
+            if (uvdata != null)
             {
-                u = tp.U;
-                v = tp.V;
+                u = uvdata.U;
+                v = uvdata.V;
             }
-            Vector pos = Point.Position;
+            Vector pos = Point.GetData<Point.Data>().Position;
             Vector norm = new Vector();
-            foreach (Triangle tri in Usages)
+            foreach (Geometry tri in Usages)
             {
-                norm = norm + tri.Normal;
+                norm = norm + tri.GetData<Triangle.Data>().Normal;
             }
             norm.Normalize();
 
