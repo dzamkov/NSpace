@@ -34,11 +34,7 @@ namespace NSpace
             // Create a terrain
             this._TerrainMesh = new SimpleMesh();
             Mesh.IEditContext ec = this._TerrainMesh.GetEditContext();
-            ec.AddTriangle(Triangle.Create(
-                Point.Create(new Vector(0.0, 1.0, 0.0), 1.0, 0.5),
-                Point.Create(new Vector(-1.0, 0.0, 0.0), 0.0, 0.0),
-                Point.Create(new Vector(1.0, 0.0, 0.0), 0.0, 1.0)
-            ));
+            Primitive.CreateCube(ec, 1.0);
             ec.Commit();
             SpikyMaterial spikemat = new SpikyMaterial(0.1);
             Material colormat = new TextureNormalMaterial(Texture.LoadFromFile("../../TestTex.png"));
@@ -52,7 +48,7 @@ namespace NSpace
 			// Get variables for view
 			double aspect = (double)this.Width / (double)this.Height;
 			double fov = Math.Atan(0.5);
-			Vector3d eye = new Vector3d(0.0, 4.0, -2.0);
+			Vector3d eye = new Vector3d(0.0, 2.0, -2.0);
 			Vector3d target = new Vector3d(0.0, 0.0, 0.0);
 			Vector3d up = new Vector3d(0.0, 1.0, 0.0);
 			Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(fov, aspect, 0.01, 100.0);

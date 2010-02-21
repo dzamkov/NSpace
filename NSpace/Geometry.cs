@@ -102,30 +102,39 @@ namespace NSpace
     }
 
     /// <summary>
-    /// A higher-level interface to some other geometry.
+    /// Geometry which takes data from one source if it exists, else the data will
+    /// be taken from another.
     /// </summary>
-    public class DerivedGeometry : Geometry
+    public class SuperGeometry : Geometry
     {
-        public DerivedGeometry(Geometry Base)
+        public SuperGeometry(Geometry Super, Geometry Base)
         {
+            this._Super = Super;
             this._Base = Base;
         }
 
         public override IData GetData(Type Type)
         {
-            return this._Base.GetData(Type);
+            IData dat = this._Super.GetData(Type);
+            if (dat != null)
+            {
+                return dat;
+            }
+            else
+            {
+                return this._Base.GetData(Type);
+            }
         }
 
         public override bool SetData(Type Type, IData Data)
         {
-            return this._Base.SetData(Type, Data);
-        }
-
-        public override Mesh Mesh
-        {
-            get 
+            if (this._Super.SetData(Type, Data))
             {
-                return this._Base.Mesh;
+                return true;
+            }
+            else
+            {
+                return this._Base.SetData(Type, Data);
             }
         }
 
@@ -133,13 +142,48 @@ namespace NSpace
         {
             get
             {
-                return this._Base.FullData;
+                Dictionary<Type, IData> dat = new Dictionary<Type, IData>();
+                foreach (KeyValuePair<Type, IData> kvp in this._Base.FullData)
+                {
+                    dat[kvp.Key] = kvp.Value;
+                }
+                foreach (KeyValuePair<Type, IData> kvp in this._Super.FullData)
+                {
+                    dat[kvp.Key] = kvp.Value;
+                }
+                return dat;
+            }
+        }
+
+        public override Mesh Mesh
+        {
+            get 
+            {
+                Mesh m = this._Super.Mesh;
+                if (m != null)
+                {
+                    return m;
+                }
+                else
+                {
+                    return this._Base.Mesh;
+                }
             }
         }
 
         /// <summary>
-        /// Gets the base of this geometry. The base is the geometry this
-        /// geometry gets and sets data from.
+        /// Gets the super geometry, which is the first one that is looked at for data.
+        /// </summary>
+        public Geometry Super
+        {
+            get
+            {
+                return this._Super;
+            }
+        }
+
+        /// <summary>
+        /// Gets the base geometry, which is looked at if the data is not found in super.
         /// </summary>
         public Geometry Base
         {
@@ -149,6 +193,7 @@ namespace NSpace
             }
         }
 
+        private Geometry _Super;
         private Geometry _Base;
     }
 }

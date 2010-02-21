@@ -18,7 +18,6 @@ namespace NSpace
         /// </summary>
         public class Data : IData
         {
-
             public Geometry A;
             public Geometry B;
             public Geometry C;
@@ -31,9 +30,9 @@ namespace NSpace
                 get
                 {
                     return new Geometry[]
-                { 
-                    this.A, this.B, this.C
-                };
+                    { 
+                        this.A, this.B, this.C
+                    };
                 }
             }
 
@@ -143,6 +142,15 @@ namespace NSpace
                 C = C
             });
             return geom;
+        }
+
+        /// <summary>
+        /// Gets the base points in the specified triangle. This ignores triangle superdata and is
+        /// needed if editing is intended on any of the points.
+        /// </summary>
+        public static Geometry[] Points(Geometry Triangle)
+        {
+            return Triangle.GetData<Data>().Points;
         }
     }
 }

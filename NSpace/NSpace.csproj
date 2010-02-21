@@ -45,8 +45,8 @@
   </ProjectExtensions>
   <ItemGroup>
     <Compile Include="Color.cs" />
+    <Compile Include="Primitive.cs" />
     <Compile Include="Data.cs" />
-    <Compile Include="DivTriangle.cs" />
     <Compile Include="GeometryMaterial.cs" />
     <Compile Include="Geometry.cs" />
     <Compile Include="Material.cs" />
@@ -55,7 +55,6 @@
     <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SimpleMesh.cs" />
-    <Compile Include="Terrian.cs" />
     <Compile Include="Texture.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Window.cs" />
