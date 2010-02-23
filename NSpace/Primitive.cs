@@ -40,5 +40,15 @@ namespace NSpace
                 Context.AddTriangle(Triangle.Create(points[1], points[3], points[2]));
             }
         }
+
+        /// <summary>
+        /// Creates a cube in the specified mesh.
+        /// </summary>
+        public static void CreateCube(Mesh Mesh, double EdgeLength)
+        {
+            Mesh.IEditContext ec = Mesh.GetEditContext();
+            CreateCube(ec, EdgeLength);
+            ec.Commit();
+        }
     }
 }

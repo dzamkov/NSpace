@@ -31,16 +31,12 @@ namespace NSpace
             GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 1.0, 1.0));
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(0.0f, 0.0f, 2.0f, 1.0f));
 
-            // Create a terrain
-            this._TerrainMesh = new SimpleMesh();
-            Mesh.IEditContext ec = this._TerrainMesh.GetEditContext();
-            Primitive.CreateCube(ec, 1.0);
-            ec.Commit();
-            SpikyMaterial spikemat = new SpikyMaterial(0.1);
-            Material colormat = new TextureNormalMaterial(Texture.LoadFromFile("../../TestTex.png"));
-            spikemat.BaseMaterial = colormat;
-            this._TerrainMaterial = colormat;
-            this._TerrainMaterial.Mesh = this._TerrainMesh;
+            // Create a cube
+            Mesh m = new SimpleMesh();
+            Primitive.CreateCube(m, 1.0);
+            this._Cube = Model.Create(m,
+                new TextureNormalMaterial(
+                    Texture.LoadFromFile("../../TestTex.png")));
 		}
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -67,7 +63,7 @@ namespace NSpace
 			// Draw a triangle with colored corner with rotation
             GL.PushMatrix();
             GL.Rotate(this._Rot, 0.0, 1.0, 0.0);
-            this._TerrainMaterial.Render();
+            this._Cube.Render();
             GL.PopMatrix();
 			
 			this.SwapBuffers();
@@ -79,7 +75,6 @@ namespace NSpace
 		}
 
         private double _Rot = 0.0;
-        private Mesh _TerrainMesh;
-        private Material _TerrainMaterial;
+        private Model _Cube;
 	}
 }

@@ -42,6 +42,21 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Creates a mesh of the simplest kind and fills it with the specified triangles.
+        /// </summary>
+        public static Mesh Create(IEnumerable<Geometry> Triangles)
+        {
+            SimpleMesh sm = new SimpleMesh();
+            Mesh.IEditContext ec = sm.GetEditContext();
+            foreach (Geometry tri in Triangles)
+            {
+                ec.AddTriangle(tri);
+            }
+            ec.Commit();
+            return sm;
+        }
+
+        /// <summary>
         /// Gets an edit context to use to modify this mesh.
         /// </summary>
         public abstract IEditContext GetEditContext();
