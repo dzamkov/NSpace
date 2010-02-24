@@ -31,50 +31,37 @@ namespace NSpace
             GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 1.0, 1.0));
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(0.0f, 0.0f, 2.0f, 1.0f));
 
+            // Create view
+            this._View = new View();
+
             // Create a cube
             Mesh m = new SimpleMesh();
             Primitive.CreateCube(m, 1.0);
-            this._Cube = Model.Create(m,
-                new TextureNormalMaterial(
-                    Texture.LoadFromFile("../../TestTex.png")));
+            this._View.AddItem(
+                Model.Create(m,
+                    new TextureNormalMaterial(
+                        Texture.LoadFromFile("../../TestTex.png"))));
 		}
 
         protected override void OnRenderFrame(FrameEventArgs e)
 		{
-			// Get variables for view
-			double aspect = (double)this.Width / (double)this.Height;
-			double fov = Math.Atan(0.5);
-			Vector3d eye = new Vector3d(0.0, 2.0, -2.0);
-			Vector3d target = new Vector3d(0.0, 0.0, 0.0);
-			Vector3d up = new Vector3d(0.0, 1.0, 0.0);
-			Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(fov, aspect, 0.01, 100.0);
-			Matrix4d view = Matrix4d.LookAt(eye, target, up);
+            // Clear current viewport
+            GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 			
-			// Clear current viewport
-			GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
-            GL.CullFace(CullFaceMode.Front);
-			
-			// Set projection and model matrices
-			GL.MatrixMode(MatrixMode.Projection);
-			GL.LoadMatrix(ref proj);
-			GL.MatrixMode(MatrixMode.Modelview);
-			GL.LoadMatrix(ref view);
-			
-			// Draw a triangle with colored corner with rotation
-            GL.PushMatrix();
-            GL.Rotate(this._Rot, 0.0, 1.0, 0.0);
-            this._Cube.Render();
-            GL.PopMatrix();
-			
+            // Render view
+            this._View.Eye = new Vector(Math.Sin(this._Rot) * 2.0, Math.Cos(this._Rot) * 2.0, 2.0);
+            this._View.Render();
+
+            // Push graphics to screen
 			this.SwapBuffers();
 		}
 		
 		protected override void OnUpdateFrame (FrameEventArgs e)
 		{
-            this._Rot += 1;
+            this._Rot += 0.01;
 		}
 
         private double _Rot = 0.0;
-        private Model _Cube;
+        private View _View;
 	}
 }
