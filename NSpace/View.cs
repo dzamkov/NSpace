@@ -18,18 +18,18 @@ namespace NSpace
         {
             this._Up = new Vector(0.0, 0.0, 1.0);
             this._Aspect = 1.0;
-            this._FOV = 0.9;
+            this._FOV = Math.PI / 2.0;
             this._Items = new List<IRenderable>();
         }
         
         /// <summary>
         /// Gets the projection matrix used by the view.
         /// </summary>
-        public virtual Matrix4d ProjectionMatrix
+        public virtual Matrix ProjectionMatrix
         {
             get
             {
-                return Matrix4d.CreatePerspectiveFieldOfView(Math.Atan(this._FOV), this._Aspect, 0.01, 100.0);
+                return Matrix.Perspective(this._FOV, this._Aspect, 0.01, 100.0);
             }
         }
 

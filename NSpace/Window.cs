@@ -50,6 +50,7 @@ namespace NSpace
 			
             // Render view
             this._View.Eye = new Vector(Math.Sin(this._Rot) * 2.0, Math.Cos(this._Rot) * 2.0, 2.0);
+            this._View.Aspect = (double)this.Width / (double)this.Height;
             this._View.Render();
 
             // Push graphics to screen
