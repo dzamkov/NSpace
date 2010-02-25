@@ -18,7 +18,7 @@ namespace NSpace
         {
             this._Up = new Vector(0.0, 0.0, 1.0);
             this._Aspect = 1.0;
-            this._FOV = Math.PI / 2.0;
+            this._FOV = Math.PI / 5.0;
             this._Items = new List<IRenderable>();
         }
         

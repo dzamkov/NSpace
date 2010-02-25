@@ -123,7 +123,7 @@ namespace NSpace
         /// </summary>
         public static Matrix Perspective(double FOV, double Aspect, double Near, double Far)
         {
-            double top = Near * Math.Atan(FOV * 0.5);
+            double top = Near * Math.Tan(FOV * 0.5);
             double right = top * Aspect;
             double bottom = -top;
             double left = -right;
