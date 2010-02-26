@@ -55,6 +55,7 @@
     <Compile Include="Model.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Section.cs" />
     <Compile Include="SimpleMesh.cs" />
     <Compile Include="Texture.cs" />
     <Compile Include="Triangle.cs" />

@@ -84,6 +84,59 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Gets the inverse of this matrix. Any transform applied to this matrix can
+        /// be canceled out with the inverse.
+        /// </summary>
+        public Matrix Inverse()
+        {
+            Matrix m = new Matrix();
+            m.M11 = (this.M22 * this.M33 * this.M44) + (this.M23 * this.M34 * this.M42) + (this.M24 * this.M32 * this.M43) -
+                (this.M22 * this.M34 * this.M43) - (this.M23 * this.M32 * this.M44) - (this.M24 * this.M33 * this.M42);
+            m.M12 = (this.M12 * this.M34 * this.M43) + (this.M13 * this.M32 * this.M44) + (this.M14 * this.M33 * this.M42) -
+                (this.M12 * this.M33 * this.M44) - (this.M13 * this.M34 * this.M42) - (this.M14 * this.M32 * this.M43);
+            m.M13 = (this.M12 * this.M23 * this.M44) + (this.M13 * this.M24 * this.M42) + (this.M14 * this.M22 * this.M43) -
+                (this.M12 * this.M24 * this.M43) - (this.M13 * this.M22 * this.M44) - (this.M14 * this.M23 * this.M42);
+            m.M14 = (this.M12 * this.M24 * this.M33) + (this.M13 * this.M22 * this.M34) + (this.M14 * this.M23 * this.M32) -
+                (this.M12 * this.M23 * this.M34) - (this.M13 * this.M24 * this.M32) - (this.M14 * this.M22 * this.M33);
+
+            m.M21 = (this.M21 * this.M34 * this.M43) + (this.M23 * this.M31 * this.M44) + (this.M24 * this.M33 * this.M41) -
+               (this.M21 * this.M33 * this.M44) - (this.M23 * this.M34 * this.M41) - (this.M24 * this.M31 * this.M43);
+            m.M22 = (this.M11 * this.M33 * this.M44) + (this.M13 * this.M34 * this.M41) + (this.M14 * this.M31 * this.M43) -
+                (this.M11 * this.M34 * this.M43) - (this.M13 * this.M31 * this.M44) - (this.M14 * this.M33 * this.M41);
+            m.M23 = (this.M11 * this.M24 * this.M43) + (this.M13 * this.M21 * this.M44) + (this.M14 * this.M23 * this.M41) -
+                (this.M11 * this.M23 * this.M44) - (this.M13 * this.M24 * this.M41) - (this.M14 * this.M21 * this.M43);
+            m.M24 = (this.M11 * this.M23 * this.M34) + (this.M13 * this.M24 * this.M31) + (this.M14 * this.M21 * this.M33) -
+                (this.M11 * this.M24 * this.M33) - (this.M13 * this.M21 * this.M34) - (this.M14 * this.M23 * this.M31);
+
+            m.M31 = (this.M21 * this.M32 * this.M44) + (this.M22 * this.M34 * this.M41) + (this.M24 * this.M31 * this.M42) -
+               (this.M21 * this.M34 * this.M42) - (this.M22 * this.M31 * this.M44) - (this.M24 * this.M32 * this.M41);
+            m.M32 = (this.M11 * this.M34 * this.M42) + (this.M12 * this.M31 * this.M44) + (this.M14 * this.M32 * this.M41) -
+                (this.M11 * this.M32 * this.M44) - (this.M12 * this.M34 * this.M41) - (this.M14 * this.M31 * this.M42);
+            m.M33 = (this.M11 * this.M22 * this.M44) + (this.M12 * this.M24 * this.M41) + (this.M14 * this.M21 * this.M42) -
+                (this.M11 * this.M24 * this.M42) - (this.M12 * this.M21 * this.M44) - (this.M14 * this.M22 * this.M41);
+            m.M34 = (this.M11 * this.M24 * this.M32) + (this.M12 * this.M21 * this.M34) + (this.M14 * this.M22 * this.M31) -
+                (this.M11 * this.M22 * this.M34) - (this.M12 * this.M24 * this.M31) - (this.M14 * this.M21 * this.M32);
+
+            m.M41 = (this.M21 * this.M33 * this.M42) + (this.M22 * this.M31 * this.M43) + (this.M23 * this.M32 * this.M41) -
+               (this.M21 * this.M32 * this.M43) - (this.M22 * this.M33 * this.M41) - (this.M23 * this.M31 * this.M42);
+            m.M42 = (this.M11 * this.M32 * this.M43) + (this.M12 * this.M33 * this.M41) + (this.M13 * this.M31 * this.M42) -
+                (this.M11 * this.M33 * this.M42) - (this.M12 * this.M31 * this.M43) - (this.M13 * this.M32 * this.M41);
+            m.M43 = (this.M11 * this.M23 * this.M42) + (this.M12 * this.M21 * this.M43) + (this.M13 * this.M22 * this.M41) -
+                (this.M11 * this.M22 * this.M43) - (this.M12 * this.M23 * this.M41) - (this.M13 * this.M21 * this.M42);
+            m.M44 = (this.M11 * this.M22 * this.M33) + (this.M12 * this.M23 * this.M31) + (this.M13 * this.M21 * this.M32) -
+                (this.M11 * this.M23 * this.M32) - (this.M12 * this.M21 * this.M33) - (this.M13 * this.M22 * this.M31);
+
+            double det = (this.M11 * m.M11) + (this.M12 * m.M21) + (this.M13 * m.M31) + (this.M14 * m.M41);
+
+            m.M11 /= det; m.M12 /= det; m.M13 /= det; m.M14 /= det;
+            m.M21 /= det; m.M22 /= det; m.M23 /= det; m.M24 /= det;
+            m.M31 /= det; m.M32 /= det; m.M33 /= det; m.M34 /= det;
+            m.M41 /= det; m.M42 /= det; m.M43 /= det; m.M44 /= det;
+
+            return m;
+        }
+
+        /// <summary>
         /// Gets the identity matrix.
         /// </summary>
         public static Matrix Identity
@@ -128,6 +181,17 @@ namespace NSpace
             double bottom = -top;
             double left = -right;
             return Frustum(left, right, -top, -bottom, Near, Far);
+        }
+
+        /// <summary>
+        /// Multiplies a vector by a matrix, effectively transforming it.
+        /// </summary>
+        public static Vector operator *(Matrix A, Vector B)
+        {
+            return new Vector(
+                    (A.M11 * B.X) + (A.M12 * B.Y) + (A.M13 * B.Z) + A.M14,
+                    (A.M21 * B.X) + (A.M22 * B.Y) + (A.M23 * B.Z) + A.M24,
+                    (A.M31 * B.X) + (A.M32 * B.Y) + (A.M33 * B.Z) + A.M34);
         }
 
         /// <summary>

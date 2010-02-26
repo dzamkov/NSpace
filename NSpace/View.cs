@@ -184,4 +184,12 @@ namespace NSpace
         /// </summary>
         void Render();
     }
+
+    /// <summary>
+    /// An object in space that can be rendered.
+    /// </summary>
+    public interface IVisual : IRenderable
+    {
+
+    }
 }
