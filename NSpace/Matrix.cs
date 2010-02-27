@@ -184,6 +184,33 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Multiplies two matricies together, concatenating their transforms.
+        /// </summary>
+        public static Matrix operator *(Matrix A, Matrix B)
+        {
+            return new Matrix(
+                (A.M11 * B.M11) + (A.M12 * B.M21) + (A.M13 * B.M31) + (A.M14 * B.M41),
+                (A.M11 * B.M12) + (A.M12 * B.M22) + (A.M13 * B.M32) + (A.M14 * B.M42),
+                (A.M11 * B.M13) + (A.M12 * B.M23) + (A.M13 * B.M33) + (A.M14 * B.M43),
+                (A.M11 * B.M14) + (A.M12 * B.M24) + (A.M13 * B.M34) + (A.M14 * B.M44),
+
+                (A.M21 * B.M11) + (A.M22 * B.M21) + (A.M23 * B.M31) + (A.M24 * B.M41),
+                (A.M21 * B.M12) + (A.M22 * B.M22) + (A.M23 * B.M32) + (A.M24 * B.M42),
+                (A.M21 * B.M13) + (A.M22 * B.M23) + (A.M23 * B.M33) + (A.M24 * B.M43),
+                (A.M21 * B.M14) + (A.M22 * B.M24) + (A.M23 * B.M34) + (A.M24 * B.M44),
+
+                (A.M31 * B.M11) + (A.M32 * B.M21) + (A.M33 * B.M31) + (A.M34 * B.M41),
+                (A.M31 * B.M12) + (A.M32 * B.M22) + (A.M33 * B.M32) + (A.M34 * B.M42),
+                (A.M31 * B.M13) + (A.M32 * B.M23) + (A.M33 * B.M33) + (A.M34 * B.M43),
+                (A.M31 * B.M14) + (A.M32 * B.M24) + (A.M33 * B.M34) + (A.M34 * B.M44),
+
+                (A.M41 * B.M11) + (A.M42 * B.M21) + (A.M43 * B.M31) + (A.M44 * B.M41),
+                (A.M41 * B.M12) + (A.M42 * B.M22) + (A.M43 * B.M32) + (A.M44 * B.M42),
+                (A.M41 * B.M13) + (A.M42 * B.M23) + (A.M43 * B.M33) + (A.M44 * B.M43),
+                (A.M41 * B.M14) + (A.M42 * B.M24) + (A.M43 * B.M34) + (A.M44 * B.M44));
+        }
+
+        /// <summary>
         /// Multiplies a vector by a matrix, effectively transforming it.
         /// </summary>
         public static Vector operator *(Matrix A, Vector B)
