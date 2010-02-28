@@ -167,6 +167,30 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Creates a matrix that pitches the x axis up or down by the specified angle in radians.
+        /// </summary>
+        public static Matrix Pitch(double Angle)
+        {
+            return Remap(
+                new Vector(Math.Cos(Angle), 0.0, Math.Sin(Angle)),
+                new Vector(0.0, 1.0, 0.0),
+                new Vector(-Math.Sin(Angle), 0.0, Math.Cos(Angle)),
+                new Vector(0.0, 0.0, 0.0));
+        }
+
+        /// <summary>
+        /// Creates a matrix that yaws the x axis left or right by the specified angle in radians.
+        /// </summary>
+        public static Matrix Yaw(double Angle)
+        {
+            return Remap(
+                new Vector(Math.Cos(Angle), Math.Sin(Angle), 0.0),
+                new Vector(-Math.Sin(Angle), Math.Cos(Angle), 0.0),
+                new Vector(0.0, 0.0, 1.0),
+                new Vector(0.0, 0.0, 0.0));
+        }
+
+        /// <summary>
         /// Creates a matrix that translates by the specified amount.
         /// </summary>
         public static Matrix Translate(Vector Amount)
