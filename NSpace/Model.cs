@@ -106,9 +106,12 @@ namespace NSpace
                 }
             }
 
-            void IRenderable.Render()
+            IRenderable IVisualContext.Renderable
             {
-                this.Mat.Render();
+                get
+                {
+                    return this.Mat.Renderable;
+                }
             }
 
             public Material Mat;

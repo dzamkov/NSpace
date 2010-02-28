@@ -18,9 +18,6 @@ namespace NSpace
 
             // Enable graphics features
             GL.Enable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.Lighting);
-            GL.Enable(EnableCap.ColorMaterial);
-            GL.Enable(EnableCap.Texture2D);
             GL.EnableClientState(EnableCap.VertexArray);
             GL.EnableClientState(EnableCap.NormalArray);
             GL.ColorMaterial(MaterialFace.Front, ColorMaterialParameter.AmbientAndDiffuse);
@@ -62,6 +59,7 @@ namespace NSpace
                     }
                 }
             }
+            DebugVisual.CreateLine(new Vector(2.0, 2.0, 2.0), new Vector(-2.0, -2.0, -2.0), this._World);
             this._LastUpdate = DateTime.Now;
 		}
 
@@ -71,10 +69,6 @@ namespace NSpace
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 			
             // Render view
-            /*this._View.InverseParentTransform = Matrix.Lookat(
-                new Vector(0.0, 0.0, 1.0),
-                new Vector(Math.Sin(this._Rot) * 2.0, Math.Cos(this._Rot) * 2.0, 2.0),
-                new Vector(0.0, 0.0, 0.0));*/
             this._View.Aspect = (double)this.Width / (double)this.Height;
             this._View.Render();
 
@@ -92,6 +86,9 @@ namespace NSpace
             Matrix trans = Matrix.Identity;
             double movespeed = 2.0;
             double turnspeed = Math.PI / 2.0;
+            double scalespeed = 0.5;
+            if (this.Keyboard[Key.Q]) trans *= Matrix.Scale(Math.Pow(2.0, updatetime * scalespeed), 1.0, 1.0);
+            if (this.Keyboard[Key.E]) trans *= Matrix.Scale(Math.Pow(2.0, updatetime * -scalespeed), 1.0, 1.0);
             if (this.Keyboard[Key.W]) trans *= Matrix.Translate(new Vector(updatetime * movespeed, 0.0, 0.0));
             if (this.Keyboard[Key.A]) trans *= Matrix.Translate(new Vector(0.0, updatetime * movespeed, 0.0));
             if (this.Keyboard[Key.S]) trans *= Matrix.Translate(new Vector(updatetime * -movespeed, 0.0, 0.0));

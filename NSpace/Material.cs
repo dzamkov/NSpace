@@ -40,9 +40,9 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Renders the material applied to its associated mesh.
+        /// Gets the renderable needed to render this material.
         /// </summary>
-        public abstract void Render();
+        public abstract IRenderable Renderable { get; }
 
         private Mesh _Mesh;
     }
@@ -51,7 +51,7 @@ namespace NSpace
     /// Represents a material that stores vertex or indice data in a set of buffers. On these materials, there is
     /// assumed to be a direct relation between vertices and indices in the buffer and the supplied mesh data.
     /// </summary>
-    public abstract class BufferedMaterial : Material
+    public abstract class BufferedMaterial : Material, IRenderable
     {
         /// <summary>
         /// Gets the stride of a single vertex in this material, that is the size of a vertex in the buffer in bytes.
@@ -87,7 +87,7 @@ namespace NSpace
 
         }
 
-        public override void Render()
+        public void Render()
         {
             if (this._VBO == null)
             {
@@ -263,6 +263,18 @@ namespace NSpace
             vert[7] = (float)pos.X;
             vert[8] = (float)pos.Y;
             vert[9] = (float)pos.Z;
+        }
+
+        public override IRenderable Renderable
+        {
+            get
+            {
+                return new CapabilityRenderable(
+                    new EnableCap[] {
+                        EnableCap.ColorMaterial,
+                        EnableCap.Lighting
+                    }, this);
+            }
         }
 
         private Color _DefaultColor;

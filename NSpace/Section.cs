@@ -282,9 +282,12 @@ namespace NSpace
                 }
             }
 
-            void IRenderable.Render()
+            IRenderable IVisualContext.Renderable
             {
-                
+                get
+                {
+                    return null;
+                }
             }
 
             public ComplexSection For;
@@ -321,13 +324,19 @@ namespace NSpace
     /// applied to the view. This can be uniform for all types of views, giving a simple method of rendering
     /// that doesn't change depending on the way its viewed, or it can be varied and use LOD techinques.
     /// </summary>
-    public interface IVisualContext : IRenderable
+    public interface IVisualContext
     {
         /// <summary>
         /// Gets the sections that must be rendered alongside this visual context. These must be some subset
         /// of child sections of the section this visual is for.
         /// </summary>
         IEnumerable<Section> RenderSections { get; }
+
+        /// <summary>
+        /// Gets the renderable that can be used to render this visual context, or null if the visual context
+        /// requires no rendering.
+        /// </summary>
+        IRenderable Renderable { get; }
     }
 
     /// <summary>

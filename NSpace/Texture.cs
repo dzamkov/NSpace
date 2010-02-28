@@ -104,6 +104,18 @@ namespace NSpace
             vert[7] = (float)pos.Z;
         }
 
+        public override IRenderable Renderable
+        {
+            get 
+            {
+                return new CapabilityRenderable(
+                    new EnableCap[] {
+                        EnableCap.Texture2D,
+                        EnableCap.Lighting
+                    }, this);
+            }
+        }
+
         public override void SetVertexFormat()
         {
             GL.InterleavedArrays(InterleavedArrayFormat.T2fN3fV3f, 0, IntPtr.Zero);

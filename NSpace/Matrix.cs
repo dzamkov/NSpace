@@ -237,6 +237,18 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Creates a matrix which scales each axis by the specified amount.
+        /// </summary>
+        public static Matrix Scale(double X, double Y, double Z)
+        {
+            return new Matrix(
+                X, 0.0, 0.0, 0.0,
+                0.0, Y, 0.0, 0.0,
+                0.0, 0.0, Z, 0.0,
+                0.0, 0.0, 0.0, 1.0);
+        }
+
+        /// <summary>
         /// Creates a frustum projection matrix, which can act as a perspective matrix.
         /// </summary>
         public static Matrix Frustum(double Left, double Right, double Top, double Bottom, double Near, double Far)

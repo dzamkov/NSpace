@@ -86,13 +86,17 @@ namespace NSpace
             if (vis != null)
             {
                 IVisualContext context = vis.GetContext(Matrix.Identity, Bound.Huge, double.PositiveInfinity, this);
+                IRenderable renderable = context.Renderable;
 
                 // Render section
-                GL.PushMatrix();
-                Matrix4d mat = this.GetRelation(Section);
-                GL.MultMatrix(ref mat);
-                context.Render();
-                GL.PopMatrix();
+                if (renderable != null)
+                {
+                    GL.PushMatrix();
+                    Matrix4d mat = this.GetRelation(Section);
+                    GL.MultMatrix(ref mat);
+                    renderable.Render();
+                    GL.PopMatrix();
+                }
 
                 // Render child visual sections
                 IEnumerable<Section> rendersections = context.RenderSections;
@@ -133,17 +137,5 @@ namespace NSpace
 
         private double _Aspect;
         private double _FOV;
-    }
-
-    /// <summary>
-    /// An object that can be rendered, or that can otherwise affect the graphics context directly.
-    /// </summary>
-    public interface IRenderable
-    {
-        /// <summary>
-        /// Renders to the current graphics context. All settings set within render must be reverted
-        /// before the method exits.
-        /// </summary>
-        void Render();
     }
 }
