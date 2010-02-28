@@ -86,6 +86,15 @@ namespace NSpace
             if (vis != null)
             {
                 IVisualContext context = vis.GetContext(Matrix.Identity, Bound.Huge, double.PositiveInfinity, this);
+
+                // Render section
+                GL.PushMatrix();
+                Matrix4d mat = this.GetRelation(Section);
+                GL.MultMatrix(ref mat);
+                context.Render();
+                GL.PopMatrix();
+
+                // Render child visual sections
                 IEnumerable<Section> rendersections = context.RenderSections;
                 if (rendersections != null)
                 {
@@ -94,11 +103,6 @@ namespace NSpace
                         this.ContentRender(s);
                     }
                 }
-                GL.PushMatrix();
-                Matrix4d mat = this.GetRelation(Section);
-                GL.MultMatrix(ref mat);
-                context.Render();
-                GL.PopMatrix();
             }
         }
 
