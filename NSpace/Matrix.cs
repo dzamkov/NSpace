@@ -152,6 +152,55 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Creates a rotation matrix that will bring the new x vector to the specified foward vector
+        /// and the z vector as close to the up vector as possible.
+        /// </summary>
+        public static Matrix Align(Vector Up, Vector Foward)
+        {
+            Vector x = Foward;
+            x.Normalize();
+            Vector y = Vector.Cross(Up, x);
+            y.Normalize();
+            Vector z = Vector.Cross(x, y);
+            z.Normalize();
+            return Remap(x, y, z, new Vector(0.0, 0.0, 0.0));
+        }
+
+        /// <summary>
+        /// Creates a matrix that translates by the specified amount.
+        /// </summary>
+        public static Matrix Translate(Vector Amount)
+        {
+            return new Matrix(
+                1.0, 0.0, 0.0, Amount.X,
+                0.0, 1.0, 0.0, Amount.Y,
+                0.0, 0.0, 1.0, Amount.Z,
+                0.0, 0.0, 0.0, 1.0);
+        }
+
+        /// <summary>
+        /// Creates a matrix that translates to the specified position and rotates to align the x axis
+        /// with the specified target.
+        /// </summary>
+        public static Matrix Lookat(Vector Up, Vector Pos, Vector Target)
+        {
+            return Translate(Pos) * Align(Up, Target - Pos);
+        }
+
+        /// <summary>
+        /// Creates a matrix that remaps all the unit vector to the specified vector and adds the specified
+        /// translation.
+        /// </summary>
+        public static Matrix Remap(Vector X, Vector Y, Vector Z, Vector T)
+        {
+            return new Matrix(
+                X.X, Y.X, Z.X, T.X,
+                X.Y, Y.Y, Z.Y, T.Y,
+                X.Z, Y.Z, Z.Z, T.Z,
+                0.0, 0.0, 0.0, 1.0);
+        }
+
+        /// <summary>
         /// Creates a frustum projection matrix, which can act as a perspective matrix.
         /// </summary>
         public static Matrix Frustum(double Left, double Right, double Top, double Bottom, double Near, double Far)
@@ -222,10 +271,24 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Converts an opentk matrix into a matrix.
+        /// </summary>
+        public static implicit operator Matrix(Matrix4d Matrix)
+        {
+            return new Matrix(
+                Matrix.M11, Matrix.M21, Matrix.M31, Matrix.M41,
+                Matrix.M12, Matrix.M22, Matrix.M32, Matrix.M42,
+                Matrix.M13, Matrix.M23, Matrix.M33, Matrix.M43,
+                Matrix.M14, Matrix.M24, Matrix.M34, Matrix.M44);
+        }
+
+        /// <summary>
         /// Converts a matrix into a matrix usable by OpenTK.
         /// </summary>
         public static implicit operator Matrix4d(Matrix Matrix)
         {
+            // Why does it seem like opentk matricies are always transposed?
+            // its a mystery ill never solve.
             return new Matrix4d(
                 Matrix.M11, Matrix.M21, Matrix.M31, Matrix.M41,
                 Matrix.M12, Matrix.M22, Matrix.M32, Matrix.M42,

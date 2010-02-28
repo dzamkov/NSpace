@@ -12,7 +12,7 @@ namespace NSpace
     /// <summary>
     /// A representation of an object made from a mesh that has a material attached.
     /// </summary>
-    public class Model : IRenderable
+    public class Model : Section
     {
         public Model()
         {
@@ -37,6 +37,14 @@ namespace NSpace
             set
             {
                 this._Mesh = value;
+                if (this._Mesh != null)
+                {
+                    this.Bound = this._Mesh.Bound;
+                }
+                else
+                {
+                    this.Bound = Bound.None;
+                }
                 if (this._Material != null)
                 {
                     this._Material.Mesh = this._Mesh;
@@ -76,16 +84,57 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Visual for a model.
+        /// </summary>
+        public class ModelVisual : IVisual, IVisualContext
+        {
+            public ModelVisual(Material Material)
+            {
+                this.Mat = Material;
+            }
+
+            IVisualContext IVisual.GetContext(Matrix ScreenTransform, Bound ScreenBounds, double Resolution, View View)
+            {
+                return this;
+            }
+
+            IEnumerable<Section> IVisualContext.RenderSections
+            {
+                get 
+                {
+                    return null;
+                }
+            }
+
+            void IRenderable.Render()
+            {
+                this.Mat.Render();
+            }
+
+            public Material Mat;
+        }
+
+        public override IVisual Visual
+        {
+            get
+            {
+                if (this._Material != null && this._Material.Mesh != null)
+                {
+                    return new ModelVisual(this._Material);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        /// <summary>
         /// Creates a new model with the specified mesh and material.
         /// </summary>
         public static Model Create(Mesh Mesh, Material Material)
         {
             return new Model(Mesh, Material);
-        }
-
-        public void Render()
-        {
-            this._Material.Render();
         }
 
         private Mesh _Mesh;

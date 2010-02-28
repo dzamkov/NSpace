@@ -146,5 +146,13 @@ namespace NSpace
             geom.SetData<ColorData>(new ColorData() { Color = Color });
             return geom;
         }
+
+        /// <summary>
+        /// Gets the position of the specified point.
+        /// </summary>
+        public static Vector Position(Geometry Point)
+        {
+            return Point.GetData<Data>().Position;
+        }
     }
 }

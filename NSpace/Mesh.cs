@@ -57,6 +57,25 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Gets the bound of the mesh.
+        /// </summary>
+        public virtual Bound Bound
+        {
+            get
+            {
+                Bound b = Bound.None;
+                foreach (Geometry tri in this.Triangles)
+                {
+                    foreach (Geometry point in Triangle.Points(tri))
+                    {
+                        b.AddVector(Point.Position(point));
+                    }
+                }
+                return b;
+            }
+        }
+
+        /// <summary>
         /// Gets an edit context to use to modify this mesh.
         /// </summary>
         public abstract IEditContext GetEditContext();

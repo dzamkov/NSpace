@@ -10,83 +10,39 @@ using OpenTK.Graphics.OpenGL;
 namespace NSpace
 {
     /// <summary>
-    /// Represents a persistent view of the world.
+    /// Represents a persistent view of the world. The view renders foward to its local
+    /// x vector with the z vector at the top and the y vector to the right.
     /// </summary>
-    public class View : IRenderable
+    public class View : Section, IRenderable
     {
         public View()
         {
-            this._Up = new Vector(0.0, 0.0, 1.0);
             this._Aspect = 1.0;
             this._FOV = Math.PI / 5.0;
-            this._Items = new List<IRenderable>();
         }
         
         /// <summary>
         /// Gets the projection matrix used by the view.
         /// </summary>
-        public virtual Matrix ProjectionMatrix
+        protected virtual Matrix4d ProjectionMatrix
         {
             get
             {
-                return Matrix.Perspective(this._FOV, this._Aspect, 0.01, 100.0);
+                return Matrix4d.Perspective(this._FOV, this._Aspect, 0.01, 100.0);
             }
         }
 
         /// <summary>
         /// Gets the view matrix used by the view.
         /// </summary>
-        public virtual Matrix4d ViewMatrix
+        protected virtual Matrix4d ViewMatrix
         {
             get
             {
-                return Matrix4d.LookAt(this._Eye, this._Target, this._Up);
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the position of the eye in the view.
-        /// </summary>
-        public virtual Vector Eye
-        {
-            get
-            {
-                return this._Eye;
-            }
-            set
-            {
-                this._Eye = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the up vector of the view. This should point upward in
-        /// the world.
-        /// </summary>
-        public virtual Vector Up
-        {
-            get
-            {
-                return this._Up;
-            }
-            set
-            {
-                this._Up = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the position where the view is looking.
-        /// </summary>
-        public virtual Vector Target
-        {
-            get
-            {
-                return this._Target;
-            }
-            set
-            {
-                this._Target = value;
+                return Matrix4d.LookAt(
+                    0.0, 0.0, 0.0,
+                    1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0);
             }
         }
 
@@ -122,22 +78,27 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Manually adds an item to render in this view.
+        /// Renders the specified section.
         /// </summary>
-        public virtual void AddItem(IRenderable Item)
+        public virtual void ContentRender(Section Section)
         {
-            this._Items.Add(Item);
-        }
-
-        /// <summary>
-        /// Renders all items in the view without setting the projection
-        /// or view matricies.
-        /// </summary>
-        public virtual void ContentRender()
-        {
-            foreach (IRenderable item in this._Items)
+            IVisual vis = Section.Visual;
+            if (vis != null)
             {
-                item.Render();
+                IVisualContext context = vis.GetContext(Matrix.Identity, Bound.Huge, double.PositiveInfinity, this);
+                IEnumerable<Section> rendersections = context.RenderSections;
+                if (rendersections != null)
+                {
+                    foreach (Section s in context.RenderSections)
+                    {
+                        this.ContentRender(s);
+                    }
+                }
+                GL.PushMatrix();
+                Matrix4d mat = this.GetRelation(Section);
+                GL.MultMatrix(ref mat);
+                context.Render();
+                GL.PopMatrix();
             }
         }
 
@@ -150,25 +111,22 @@ namespace NSpace
             // Set projection and model matrices
             GL.CullFace(CullFaceMode.Front);
             GL.MatrixMode(MatrixMode.Projection);
+            GL.PushMatrix();
             GL.LoadMatrix(ref proj);
             GL.MatrixMode(MatrixMode.Modelview);
+            GL.PushMatrix();
             GL.LoadMatrix(ref view);
 
             // Render
-            this.ContentRender();
+            this.ContentRender(this.RootParent);
 
             // Reset view
+            GL.PopMatrix();
             GL.MatrixMode(MatrixMode.Projection);
-            GL.LoadIdentity();
-            GL.MatrixMode(MatrixMode.Modelview);
-            GL.LoadIdentity();
+            GL.PopMatrix();
             GL.CullFace(CullFaceMode.FrontAndBack);
         }
 
-        private List<IRenderable> _Items;
-        private Vector _Eye;
-        private Vector _Target;
-        private Vector _Up;
         private double _Aspect;
         private double _FOV;
     }
@@ -183,13 +141,5 @@ namespace NSpace
         /// before the method exits.
         /// </summary>
         void Render();
-    }
-
-    /// <summary>
-    /// An object in space that can be rendered.
-    /// </summary>
-    public interface IVisual : IRenderable
-    {
-
     }
 }

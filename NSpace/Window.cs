@@ -37,10 +37,12 @@ namespace NSpace
             // Create a cube
             Mesh m = new SimpleMesh();
             Primitive.CreateCube(m, 1.0);
-            this._View.AddItem(
+            this._World = new ComplexSection();
+            this._World.AddChild(this._View, Matrix.Identity);
+            this._World.AddChild(
                 Model.Create(m,
                     new TextureNormalMaterial(
-                        Texture.LoadFromFile("../../TestTex.png"))));
+                        Texture.LoadFromFile("../../TestTex.png"))), Matrix.Identity);
 		}
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -49,7 +51,10 @@ namespace NSpace
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 			
             // Render view
-            this._View.Eye = new Vector(Math.Sin(this._Rot) * 2.0, Math.Cos(this._Rot) * 2.0, 2.0);
+            this._View.InverseParentTransform = Matrix.Lookat(
+                new Vector(0.0, 0.0, 1.0),
+                new Vector(Math.Sin(this._Rot) * 2.0, Math.Cos(this._Rot) * 2.0, 2.0),
+                new Vector(0.0, 0.0, 0.0));
             this._View.Aspect = (double)this.Width / (double)this.Height;
             this._View.Render();
 
@@ -63,6 +68,7 @@ namespace NSpace
 		}
 
         private double _Rot = 0.0;
+        private ComplexSection _World;
         private View _View;
 	}
 }
