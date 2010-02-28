@@ -184,7 +184,7 @@ namespace NSpace
         /// </summary>
         public static Matrix Lookat(Vector Up, Vector Pos, Vector Target)
         {
-            return Translate(Pos) * Align(Up, Target - Pos);
+            return Transform(Align(Up, Target - Pos), Translate(Pos));
         }
 
         /// <summary>
@@ -197,6 +197,18 @@ namespace NSpace
                 X.X, Y.X, Z.X, T.X,
                 X.Y, Y.Y, Z.Y, T.Y,
                 X.Z, Y.Z, Z.Z, T.Z,
+                0.0, 0.0, 0.0, 1.0);
+        }
+
+        /// <summary>
+        /// Creates a matrix which scales by the specified amount.
+        /// </summary>
+        public static Matrix Scale(double Amount)
+        {
+            return new Matrix(
+                Amount, 0.0, 0.0, 0.0,
+                0.0, Amount, 0.0, 0.0,
+                0.0, 0.0, Amount, 0.0,
                 0.0, 0.0, 0.0, 1.0);
         }
 
@@ -233,7 +245,16 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Multiplies two matricies together, concatenating their transforms.
+        /// Transforms matrix b by matrix a. This will create a matrix that first applies A and
+        /// next applies B in that order.
+        /// </summary>
+        public static Matrix Transform(Matrix A, Matrix B)
+        {
+            return B * A;
+        }
+
+        /// <summary>
+        /// Multiplies two matricies together, concatenating their transforms(in opposite order).
         /// </summary>
         public static Matrix operator *(Matrix A, Matrix B)
         {

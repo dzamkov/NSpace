@@ -36,13 +36,28 @@ namespace NSpace
 
             // Create a cube
             Mesh m = new SimpleMesh();
+            Texture tex = Texture.LoadFromFile("../../TestTex.png");
             Primitive.CreateCube(m, 1.0);
             this._World = new ComplexSection();
             this._World.AddChild(this._View, Matrix.Identity);
-            this._World.AddChild(
-                Model.Create(m,
-                    new TextureNormalMaterial(
-                        Texture.LoadFromFile("../../TestTex.png"))), Matrix.Identity);
+            Random r = new Random();
+            for (int x = -5; x < 5; x++)
+            {
+                for (int y = -5; y < 5; y++)
+                {
+                    for (int z = -5; z < 5; z++)
+                    {
+                        if (r.Next(0, 10) == 0)
+                        {
+                            Model obj = Model.Create(m, new TextureNormalMaterial(tex));
+                            this._World.AddChild(obj,
+                                Matrix.Transform(
+                                    Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
+                                    Matrix.Scale(0.2)));
+                        }
+                    }
+                }
+            }
 		}
 
         protected override void OnRenderFrame(FrameEventArgs e)

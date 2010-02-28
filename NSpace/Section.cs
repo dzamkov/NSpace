@@ -74,20 +74,20 @@ namespace NSpace
             {
                 if (this._Parent == To._Parent)
                 {
-                    return this.ParentTransform * To.InverseParentTransform;
+                    return Matrix.Transform(To.InverseParentTransform, this.ParentTransform);
                 }
                 else
                 {
-                    return this.ParentTransform * this.Parent.GetRelation(To.Parent) * To.InverseParentTransform;
+                    return Matrix.Transform(Matrix.Transform(To.InverseParentTransform, this.Parent.GetRelation(To.Parent)), this.ParentTransform);
                 }
             }
             if (this.Level > To.Level)
             {
-                return this.ParentTransform * this.Parent.GetRelation(To);
+                return Matrix.Transform(this.Parent.GetRelation(To), this.ParentTransform);
             }
             else
             {
-                return To.InverseParentTransform * this.GetRelation(To.Parent);
+                return Matrix.Transform(To.InverseParentTransform, this.GetRelation(To.Parent));
             }
         }
 
