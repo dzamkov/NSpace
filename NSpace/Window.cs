@@ -29,18 +29,22 @@ namespace NSpace
             GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 1.0, 1.0));
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(0.0f, 0.0f, 2.0f, 1.0f));
 
-            // Create view
-            this._View = new View();
+            // Create world
+            this._World = new Section();
 
-            // Create a cube and world
+            // Create view
+            this._RootVisual = new MultiVisual(this._World);
+            this._View = new View(
+                this._World.AddChild(Matrix.Lookat(
+                    new Vector(0.0, 0.0, 1.0), 
+                    new Vector(10.0, 0.0, 10.0), 
+                    new Vector(0.0, 0.0, 0.0))), 
+                this._RootVisual);
+
+            // Create a cube and add to the world
             Mesh m = new SimpleMesh();
             Texture tex = Texture.LoadFromFile("../../TestTex.png");
             Primitive.CreateCube(m, 1.0);
-            this._World = new ComplexSection();
-            this._World.AddChild(this._View, Matrix.Lookat(
-                new Vector(0.0, 0.0, 1.0), 
-                new Vector(10.0, 0.0, 10.0), 
-                new Vector(0.0, 0.0, 0.0)));
             Random r = new Random();
             for (int x = -5; x < 5; x++)
             {
@@ -50,16 +54,25 @@ namespace NSpace
                     {
                         if (r.Next(0, 10) == 0)
                         {
-                            Model obj = Model.Create(m, new TextureNormalMaterial(tex));
-                            this._World.AddChild(obj,
-                                Matrix.Transform(
-                                    Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
-                                    Matrix.Scale(0.2)));
+                            this._RootVisual.Add(
+                                Model.Create(m, new TextureNormalMaterial(tex)
+                                    ,this._World.AddChild(
+                                        Matrix.Transform(
+                                            Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
+                                            Matrix.Scale(0.2)))));
                         }
                     }
                 }
             }
-            DebugVisual.CreateLine(new Vector(2.0, 2.0, 2.0), new Vector(-2.0, -2.0, -2.0), this._World);
+
+            // Add a little line
+            this._RootVisual.Add(
+                DebugVisual.CreateLine(
+                    new Vector(2.0, 2.0, 2.0), 
+                    new Vector(-2.0, -2.0, -2.0), 
+                    this._World));
+
+            // Initialize update times
             this._LastUpdate = DateTime.Now;
 		}
 
@@ -97,14 +110,15 @@ namespace NSpace
             if (this.Keyboard[Key.Left]) trans *= Matrix.Yaw(updatetime * turnspeed);
             if (this.Keyboard[Key.Down]) trans *= Matrix.Pitch(updatetime * -turnspeed);
             if (this.Keyboard[Key.Right]) trans *= Matrix.Yaw(updatetime * -turnspeed);
-            this._View.InverseParentTransform = Matrix.Transform(trans, this._View.InverseParentTransform);
+            this._View.Section.InverseParentTransform = Matrix.Transform(trans, this._View.Section.InverseParentTransform);
 
             this._Rot += Math.PI / 2.0 * updatetime;
 		}
 
         private DateTime _LastUpdate;
         private double _Rot = 0.0;
-        private ComplexSection _World;
+        private Section _World;
+        private MultiVisual _RootVisual;
         private View _View;
 	}
 }

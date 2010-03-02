@@ -13,12 +13,41 @@ namespace NSpace
     /// Represents a persistent view of the world. The view renders foward to its local
     /// x vector with the z vector at the top and the y vector to the right.
     /// </summary>
-    public class View : Section, IRenderable
+    public class View : IRenderable
     {
-        public View()
+        public View(Section Section, IVisual RootVisual)
         {
             this._Aspect = 1.0;
             this._FOV = Math.PI / 5.0;
+            this._Section = Section;
+            this._RootVisual = RootVisual;
+        }
+
+        /// <summary>
+        /// Gets the section this view is placed on.
+        /// </summary>
+        public Section Section
+        {
+            get
+            {
+                return this._Section;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the root visual, which is the only visual
+        /// to be rendered directly by this view.
+        /// </summary>
+        public IVisual RootVisual
+        {
+            get
+            {
+                return this._RootVisual;
+            }
+            set
+            {
+                this._RootVisual = value;
+            }
         }
         
         /// <summary>
@@ -78,36 +107,51 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Renders the specified section.
+        /// Renders visuals after setting transformation matricies.
         /// </summary>
-        public virtual void ContentRender(Section Section)
+        public virtual void ContentRender()
         {
-            IVisual vis = Section.Visual;
-            if (vis != null)
+            // Get a list of all visuals and renderables rendered.
+            Dictionary<IVisual, IRenderable> rens = new Dictionary<IVisual, IRenderable>();
+            Stack<IVisual> unproc = new Stack<IVisual>();
+            unproc.Push(this._RootVisual);
+            while (unproc.Count > 0)
             {
-                IVisualContext context = vis.GetContext(Matrix.Identity, Bound.Huge, double.PositiveInfinity, this);
-                IRenderable renderable = context.Renderable;
+                IVisual vis = unproc.Pop();
 
-                // Render section
-                if (renderable != null)
+                // Check if used yet
+                if (!rens.ContainsKey(vis))
                 {
-                    GL.PushMatrix();
-                    Matrix4d mat = this.GetRelation(Section);
-                    GL.MultMatrix(ref mat);
-                    renderable.Render();
-                    GL.PopMatrix();
-                }
+                    IVisualContext viscont = vis.GetContext(Matrix.Identity, Bound.Huge, double.PositiveInfinity, this);
 
-                // Render child visual sections
-                IEnumerable<Section> rendersections = context.RenderSections;
-                if (rendersections != null)
-                {
-                    foreach (Section s in context.RenderSections)
+                    // Add child visuals to unprocessed stack
+                    IEnumerable<IVisual> children = viscont.Children;
+                    if (children != null)
                     {
-                        this.ContentRender(s);
+                    foreach (IVisual child in viscont.Children)
+                    {
+                        unproc.Push(child);
+                    }
+                    }
+
+                    // Add entry for visual/renderable
+                    IRenderable rend = viscont.Renderable;
+                    if (rend != null)
+                    {
+                    rens.Add(vis, viscont.Renderable);
                     }
                 }
             }
+            
+            // Actual rendering
+            foreach(KeyValuePair<IVisual, IRenderable> v in rens)
+            {
+                GL.PushMatrix();
+                Matrix4d mat = this._Section.GetRelation(v.Key.Section);
+                GL.MultMatrix(ref mat);
+                v.Value.Render();
+                GL.PopMatrix();
+            }      
         }
 
         public virtual void Render()
@@ -126,7 +170,7 @@ namespace NSpace
             GL.LoadMatrix(ref view);
 
             // Render
-            this.ContentRender(this.RootParent);
+            this.ContentRender();
 
             // Reset view
             GL.PopMatrix();
@@ -135,6 +179,8 @@ namespace NSpace
             GL.CullFace(CullFaceMode.FrontAndBack);
         }
 
+        private Section _Section;
+        private IVisual _RootVisual;
         private double _Aspect;
         private double _FOV;
     }

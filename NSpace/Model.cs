@@ -12,17 +12,13 @@ namespace NSpace
     /// <summary>
     /// A representation of an object made from a mesh that has a material attached.
     /// </summary>
-    public class Model : Section
+    public class Model : IVisual, IVisualContext
     {
-        public Model()
-        {
- 
-        }
-
-        public Model(Mesh Mesh, Material Material)
+        public Model(Mesh Mesh, Material Material, Section Section)
         {
             this.Mesh = Mesh;
             this.Material = Material;
+            this._Section = Section;
         }
 
         /// <summary>
@@ -37,14 +33,6 @@ namespace NSpace
             set
             {
                 this._Mesh = value;
-                if (this._Mesh != null)
-                {
-                    this.Bound = this._Mesh.Bound;
-                }
-                else
-                {
-                    this.Bound = Bound.None;
-                }
                 if (this._Material != null)
                 {
                     this._Material.Mesh = this._Mesh;
@@ -84,63 +72,53 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Visual for a model.
+        /// Creates a new model with the specified mesh and material in the
+        /// specified section.
         /// </summary>
-        public class ModelVisual : IVisual, IVisualContext
+        public static Model Create(Mesh Mesh, Material Material, Section Section)
         {
-            public ModelVisual(Material Material)
-            {
-                this.Mat = Material;
-            }
-
-            IVisualContext IVisual.GetContext(Matrix ScreenTransform, Bound ScreenBounds, double Resolution, View View)
-            {
-                return this;
-            }
-
-            IEnumerable<Section> IVisualContext.RenderSections
-            {
-                get 
-                {
-                    return null;
-                }
-            }
-
-            IRenderable IVisualContext.Renderable
-            {
-                get
-                {
-                    return this.Mat.Renderable;
-                }
-            }
-
-            public Material Mat;
+            return new Model(Mesh, Material, Section);
         }
 
-        public override IVisual Visual
+        public Section Section
         {
-            get
+            get 
             {
-                if (this._Material != null && this._Material.Mesh != null)
-                {
-                    return new ModelVisual(this._Material);
-                }
-                else
-                {
-                    return null;
-                }
+                return this._Section;
             }
         }
 
-        /// <summary>
-        /// Creates a new model with the specified mesh and material.
-        /// </summary>
-        public static Model Create(Mesh Mesh, Material Material)
+        public Bound Bound
         {
-            return new Model(Mesh, Material);
+            get 
+            {
+                return this._Mesh.Bound; 
+            }
+        }
+
+        public IVisualContext GetContext(Matrix ScreenTransform, Bound ScreenBounds, double Resolution, View View)
+        {
+            return this;
+        }
+
+        public IEnumerable<IVisual> Children
+        {
+            get 
+            {
+                return null;
+            }
+        }
+
+        public IRenderable Renderable
+        {
+            get 
+            {
+                return this._Material.Renderable;
+            }
         }
 
         private Mesh _Mesh;
         private Material _Material;
+        private Section _Section;
     }
 }

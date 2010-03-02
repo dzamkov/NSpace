@@ -45,6 +45,7 @@
     <VisualStudio />
   </ProjectExtensions>
   <ItemGroup>
+    <Compile Include="Bound.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="DebugVisual.cs" />
     <Compile Include="Matrix.cs" />
@@ -63,6 +64,7 @@
     <Compile Include="Triangle.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="View.cs" />
+    <Compile Include="Visual.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>
   <ItemGroup>

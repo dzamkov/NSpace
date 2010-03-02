@@ -13,28 +13,22 @@ namespace NSpace
     /// <summary>
     /// Contains visuals that are useful in debugging.
     /// </summary>
-    public abstract class DebugVisual : Section, IVisual, IVisualContext
+    public abstract class DebugVisual : IVisual, IVisualContext
     {
-        public DebugVisual()
+        public DebugVisual(Section Section)
         {
-
+            this._Section = Section;
         }
 
         public abstract IRenderable Renderable { get; }
 
-        public override IVisual Visual
+        public abstract Bound Bound { get; }
+
+        public Section Section 
         {
             get
             {
-                return this;
-            }
-        }
-
-        public IEnumerable<Section> RenderSections
-        {
-            get 
-            {
-                return null;
+                return this._Section;
             }
         }
 
@@ -43,17 +37,25 @@ namespace NSpace
             return this;
         }
 
+        public virtual IEnumerable<IVisual> Children
+        {
+            get
+            {
+                return null;
+            }
+        }
+
         /// <summary>
         /// Draws a line between two points.
         /// </summary>
         public class Line : DebugVisual, IRenderable
         {
-            public Line(Vector PointA, Vector PointB)
+            public Line(Vector PointA, Vector PointB, Section Section) : base(Section)
             {
-                this.PointA = PointA;
-                this.PointB = PointB;
-                this.Color = Color.RGB(1.0, 0.0, 0.0);
-                this.Bound = new Bound(new Vector[] { this.PointA, this.PointB });
+                this._PointA = PointA;
+                this._PointB = PointB;
+                this._Section = Section;
+                this._Color = Color.RGB(1.0, 0.0, 0.0);
             }
 
             public override IRenderable Renderable
@@ -64,28 +66,37 @@ namespace NSpace
                 }
             }
 
+            public override Bound Bound
+            {
+                get 
+                {
+                    return new Bound(new Vector[] { this._PointA, this._PointB });
+                }
+            }
+
             public void Render()
             {
                 GL.Begin(BeginMode.Lines);
-                GL.Color4(this.Color);
-                GL.Vertex3(this.PointA);
-                GL.Vertex3(this.PointB);
+                GL.Color4(this._Color);
+                GL.Vertex3(this._PointA);
+                GL.Vertex3(this._PointB);
                 GL.End();
             }
 
-            public Vector PointA;
-            public Vector PointB;
-            public Color Color;
+            private Vector _PointA;
+            private Vector _PointB;
+            private Color _Color;
         }
 
         /// <summary>
         /// Creates a line between the specified positions with the specified parent section.
         /// </summary>
-        public static DebugVisual CreateLine(Vector PointA, Vector PointB, ComplexSection Parent)
+        public static DebugVisual CreateLine(Vector PointA, Vector PointB, Section Parent)
         {
-            Line l = new Line(PointA, PointB);
-            Parent.AddChild(l, Matrix.Identity);
+            Line l = new Line(PointA, PointB, Parent);
             return l;
         }
+
+        private Section _Section;
     }
 }
