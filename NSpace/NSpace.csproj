@@ -51,6 +51,7 @@
     <Compile Include="Color.cs" />
     <Compile Include="DebugVisual.cs" />
     <Compile Include="Matrix.cs" />
+    <Compile Include="Physics\World.cs" />
     <Compile Include="Primitive.cs" />
     <Compile Include="Data.cs" />
     <Compile Include="Geometry.cs" />

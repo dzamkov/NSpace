@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    /// A volume of space that can have visual and dynamic properties. Sections
+    /// An orientation in space that is related to other Sections. Sections
     /// can be parented to other sections to establish a relation between the parents
     /// and sibblings in coordinate space.
     /// </summary>
@@ -16,7 +16,7 @@ namespace NSpace
     {
         public Section()
         {
-            this._Children = new Dictionary<Section, object>();
+
         }
 
         /// <summary>
@@ -157,17 +157,6 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Gets the little children sections of this section.
-        /// </summary>
-        public IEnumerable<Section> Children
-        {
-            get
-            {
-                return this._Children.Keys;
-            }
-        }
-
-        /// <summary>
         /// Adds a section as a child to this section. The child must
         /// not yet have a parent section. The child is set to have the
         /// specified parent transform offset to this section.
@@ -179,7 +168,6 @@ namespace NSpace
                 Child._Parent = this;
                 Child._ParentTransform = Transform;
                 Child._IParentTransform = Transform.Inverse();
-                this._Children.Add(Child, null);
             }
         }
 
@@ -200,7 +188,6 @@ namespace NSpace
         {
         }
 
-        private Dictionary<Section, object> _Children;
         private Section _Parent;
         private Matrix _ParentTransform;
         private Matrix _IParentTransform;
