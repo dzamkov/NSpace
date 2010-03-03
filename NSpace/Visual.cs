@@ -114,7 +114,7 @@ namespace NSpace
                 Bound b = Bound.None;
                 foreach (IVisual vis in this.Visuals)
                 {
-                    Matrix trans = vis.Section.GetRelation(this._Section);
+                    Matrix trans = vis.Section.GetRelation(this._Section).Inverse();
                     b = Bound.Union(b, Bound.Transform(trans, vis.Bound));
                 }
                 return b;

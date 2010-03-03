@@ -74,20 +74,20 @@ namespace NSpace
             {
                 if (this._Parent == To._Parent)
                 {
-                    return Matrix.Transform(To.InverseParentTransform, this.ParentTransform);
+                    return Matrix.Transform(this.ParentTransform, To.InverseParentTransform);
                 }
                 else
                 {
-                    return Matrix.Transform(Matrix.Transform(To.InverseParentTransform, this.Parent.GetRelation(To.Parent)), this.ParentTransform);
+                    return Matrix.Transform(Matrix.Transform(this.ParentTransform, this.Parent.GetRelation(To.Parent)), To.InverseParentTransform);
                 }
             }
             if (this.Level > To.Level)
             {
-                return Matrix.Transform(this.Parent.GetRelation(To), this.ParentTransform);
+                return Matrix.Transform(this.ParentTransform, this.Parent.GetRelation(To));
             }
             else
             {
-                return Matrix.Transform(To.InverseParentTransform, this.GetRelation(To.Parent));
+                return Matrix.Transform(this.GetRelation(To.Parent), To.InverseParentTransform);
             }
         }
 
@@ -170,15 +170,15 @@ namespace NSpace
         /// <summary>
         /// Adds a section as a child to this section. The child must
         /// not yet have a parent section. The child is set to have the
-        /// specified transform offset from this section.
+        /// specified parent transform offset to this section.
         /// </summary>
         public void AddChild(Section Child, Matrix Transform)
         {
             if (Child.Parent == null)
             {
                 Child._Parent = this;
-                Child._IParentTransform = Transform;
-                Child._ParentTransform = Transform.Inverse();
+                Child._ParentTransform = Transform;
+                Child._IParentTransform = Transform.Inverse();
                 this._Children.Add(Child, null);
             }
         }

@@ -67,13 +67,6 @@ namespace NSpace
                 }
             }
 
-            // Add a little line
-            this._RootVisual.Add(
-                DebugVisual.CreateLine(
-                    new Vector(2.0, 2.0, 2.0), 
-                    new Vector(-2.0, -2.0, -2.0), 
-                    this._World));
-
             // Initialize update times
             this._LastUpdate = DateTime.Now;
 		}
@@ -83,6 +76,42 @@ namespace NSpace
             // Clear current viewport
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 			
+            // Check collisions
+            Vector sr = new Vector(0.0, 0.0, 0.0);
+            Vector sp = new Vector(10.0, 0.0, 0.0);
+            TraceHit? closehit = null;
+            foreach (IVisual vis in this._RootVisual.Visuals)
+            {
+                Model mod = vis as Model;
+                if(mod != null)
+                {
+                    Matrix trans = this._View.Section.GetRelation(mod.Section);
+                    Vector tsr = trans * sr;
+                    Vector tsp = trans * sp;
+                    IEnumerable<TraceHit> hits = new SimpleCollisionMesh(mod.Mesh).Trace(tsr, tsp);
+                    foreach (TraceHit hit in hits)
+                    {
+                        Vector realpos = mod.Section.ParentTransform * hit.Position;
+                        if (closehit == null || closehit.Value.Length > hit.Length)
+                        {
+                            closehit = new TraceHit() { Length = hit.Length, Position = realpos, Triangle = hit.Triangle };
+                        }
+                    }
+                }
+            }
+            if (this._Line != null)
+            {
+                this._RootVisual.Remove(this._Line);
+                this._Line = null;
+            }
+            if (closehit != null)
+            {
+                Vector hitpos = closehit.Value.Position;
+                Vector norm = closehit.Value.Triangle.GetData<Triangle.Data>().Normal * 0.1;
+                this._Line = DebugVisual.CreateLine(hitpos, hitpos + norm, this._World);
+                this._RootVisual.Add(this._Line);
+            }
+
             // Render view
             this._View.Aspect = (double)this.Width / (double)this.Height;
             this._View.Render();
@@ -112,7 +141,7 @@ namespace NSpace
             if (this.Keyboard[Key.Left]) trans *= Matrix.Yaw(updatetime * turnspeed);
             if (this.Keyboard[Key.Down]) trans *= Matrix.Pitch(updatetime * -turnspeed);
             if (this.Keyboard[Key.Right]) trans *= Matrix.Yaw(updatetime * -turnspeed);
-            this._View.Section.InverseParentTransform = Matrix.Transform(trans, this._View.Section.InverseParentTransform);
+            this._View.Section.ParentTransform = Matrix.Transform(trans, this._View.Section.ParentTransform);
 
             this._Rot += Math.PI / 2.0 * updatetime;
 		}
@@ -122,5 +151,6 @@ namespace NSpace
         private Section _World;
         private MultiVisual _RootVisual;
         private View _View;
+        private DebugVisual _Line;
 	}
 }

@@ -128,17 +128,17 @@ namespace NSpace
                     IEnumerable<IVisual> children = viscont.Children;
                     if (children != null)
                     {
-                    foreach (IVisual child in viscont.Children)
-                    {
-                        unproc.Push(child);
-                    }
+                        foreach (IVisual child in viscont.Children)
+                        {
+                            unproc.Push(child);
+                        }
                     }
 
                     // Add entry for visual/renderable
                     IRenderable rend = viscont.Renderable;
                     if (rend != null)
                     {
-                    rens.Add(vis, viscont.Renderable);
+                        rens.Add(vis, viscont.Renderable);
                     }
                 }
             }
@@ -147,7 +147,7 @@ namespace NSpace
             foreach(KeyValuePair<IVisual, IRenderable> v in rens)
             {
                 GL.PushMatrix();
-                Matrix4d mat = this._Section.GetRelation(v.Key.Section);
+                Matrix4d mat = this._Section.GetRelation(v.Key.Section).Inverse();
                 GL.MultMatrix(ref mat);
                 v.Value.Render();
                 GL.PopMatrix();
