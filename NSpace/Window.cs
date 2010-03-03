@@ -3,6 +3,7 @@
 // Open source under the new BSD License
 //----------------------------------------
 using System;
+using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
@@ -18,9 +19,10 @@ namespace NSpace
 
             // Enable graphics features
             GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
             GL.EnableClientState(EnableCap.VertexArray);
             GL.EnableClientState(EnableCap.NormalArray);
-            GL.ColorMaterial(MaterialFace.Front, ColorMaterialParameter.AmbientAndDiffuse);
+            GL.FrontFace(FrontFaceDirection.Ccw);
 
             // Lighting
             GL.Enable(EnableCap.Light0);
@@ -54,12 +56,12 @@ namespace NSpace
                     {
                         if (r.Next(0, 10) == 0)
                         {
-                            this._RootVisual.Add(
-                                Model.Create(m, new TextureNormalMaterial(tex)
-                                    ,this._World.AddChild(
-                                        Matrix.Transform(
-                                            Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
-                                            Matrix.Scale(0.2)))));
+                            Section objsect = 
+                                this._World.AddChild(
+                                    Matrix.Transform(
+                                        Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
+                                        Matrix.Scale(0.2)));
+                            this._RootVisual.Add(Model.Create(m, new TextureNormalMaterial(tex), objsect));
                         }
                     }
                 }

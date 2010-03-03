@@ -36,8 +36,16 @@ namespace NSpace
                     }
                     points[r] = Point.Create(vec * EdgeLength - new Vector(hlength, hlength, hlength), a, b);
                 }
-                Context.AddTriangle(Triangle.Create(points[0], points[1], points[2]));
-                Context.AddTriangle(Triangle.Create(points[1], points[3], points[2]));
+                if (t < 3)
+                {
+                    Context.AddTriangle(Triangle.Create(points[0], points[2], points[1]));
+                    Context.AddTriangle(Triangle.Create(points[1], points[2], points[3]));
+                }
+                else
+                {
+                    Context.AddTriangle(Triangle.Create(points[0], points[1], points[2]));
+                    Context.AddTriangle(Triangle.Create(points[1], points[3], points[2]));
+                }
             }
         }
 

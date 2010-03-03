@@ -127,7 +127,6 @@ namespace NSpace
             GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvMode.Modulate);
         }
 
-
         private Texture _Texture;
     }
 }

@@ -161,7 +161,6 @@ namespace NSpace
             Matrix4d view = this.ViewMatrix;
 
             // Set projection and model matrices
-            GL.CullFace(CullFaceMode.Front);
             GL.MatrixMode(MatrixMode.Projection);
             GL.PushMatrix();
             GL.LoadMatrix(ref proj);
@@ -176,7 +175,6 @@ namespace NSpace
             GL.PopMatrix();
             GL.MatrixMode(MatrixMode.Projection);
             GL.PopMatrix();
-            GL.CullFace(CullFaceMode.FrontAndBack);
         }
 
         private Section _Section;

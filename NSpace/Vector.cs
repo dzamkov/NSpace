@@ -64,6 +64,14 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Computes the dot product between two vectors.
+        /// </summary>
+        public static double Dot(Vector A, Vector B)
+        {
+            return (A.X * B.X) + (A.Y * B.Y) + (A.Z * B.Z);
+        }
+
+        /// <summary>
         /// Gets the length of this vector, its distance from the origin.
         /// </summary>
         public double Length()

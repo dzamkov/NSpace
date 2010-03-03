@@ -13,31 +13,25 @@ namespace NSpace
     /// A collection of geometry to which operations can be performed. The triangles and points
     /// within a mesh are only valid for that mesh and may not be used elsewhere.
     /// </summary>
-    public abstract class Mesh
+    public abstract class Mesh : IMesh
     {
         public Mesh()
         {
 
         }
 
-        /// <summary>
-        /// Gets the collection of all triangles within this mesh.
-        /// </summary>
         public abstract IEnumerable<Geometry> Triangles { get; }
 
-        /// <summary>
-        /// Gets the amount of triangles in this mesh.
-        /// </summary>
         public virtual int TriangleCount
         {
-            get
+            get 
             {
-                int a = 0;
+                int c = 0;
                 foreach (Geometry tri in this.Triangles)
                 {
-                    a++;
+                    c++;
                 }
-                return a;
+                return c;
             }
         }
 
@@ -118,5 +112,61 @@ namespace NSpace
             /// </summary>
             Geometry ModifyPoint(Geometry Point);
         }
+    }
+
+    /// <summary>
+    /// A mesh that inherits triangles from another mesh to extend its functionality.
+    /// </summary>
+    public class DerivedMesh : IMesh
+    {
+        public DerivedMesh(Mesh Base)
+        {
+            this._Base = Base;
+        }
+
+        public virtual IEnumerable<Geometry> Triangles
+        {
+            get
+            {
+                return this._Base.Triangles;
+            }
+        }
+
+        public virtual int TriangleCount
+        {
+            get
+            {
+                return this._Base.TriangleCount;
+            }
+        }
+
+        /// <summary>
+        /// Gets the base of this derived mesh.
+        /// </summary>
+        public Mesh Base
+        {
+            get
+            {
+                return this._Base;
+            }
+        }
+
+        private Mesh _Base;
+    }
+
+    /// <summary>
+    /// A collection of geometry.
+    /// </summary>
+    public interface IMesh
+    {
+        /// <summary>
+        /// Gets the collection of all triangles within this mesh.
+        /// </summary>
+        IEnumerable<Geometry> Triangles { get; }
+
+        /// <summary>
+        /// Gets the amount of triangles in this mesh.
+        /// </summary>
+        int TriangleCount { get; }
     }
 }

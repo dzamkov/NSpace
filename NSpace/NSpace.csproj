@@ -46,6 +46,8 @@
   </ProjectExtensions>
   <ItemGroup>
     <Compile Include="Bound.cs" />
+    <Compile Include="BoundTree.cs" />
+    <Compile Include="Collision.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="DebugVisual.cs" />
     <Compile Include="Matrix.cs" />
