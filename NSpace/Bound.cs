@@ -11,7 +11,7 @@ namespace NSpace
     /// A 3d orthographical rectangular volume that specifies the location where
     /// items may be contained.
     /// </summary>
-    public struct Bound
+    public struct Bound : IBound<Bound>
     {
         public Bound(Vector Min, Vector Max)
         {
@@ -46,6 +46,20 @@ namespace NSpace
         /// the corner of the bounds with the highest values.
         /// </summary>
         public Vector Max;
+
+        /// <summary>
+        /// Gets the volume of the bound in cubic units.
+        /// </summary>
+        public double Volume
+        {
+            get
+            {
+                return
+                    (this.Max.X - this.Min.X) *
+                    (this.Max.Y - this.Min.Y) *
+                    (this.Max.Z - this.Min.Z);
+            }
+        }
 
         /// <summary>
         /// Adds a vector to be bounded by this bounds. This will not have an
@@ -97,6 +111,17 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Gets if the two bounds intersect.
+        /// </summary>
+        public static bool Intersects(Bound A, Bound B)
+        {
+            return
+                A.Max.X > B.Min.X && A.Min.X < B.Max.X &&
+                A.Max.Y > B.Min.Y && A.Min.Y < B.Max.Y &&
+                A.Max.Z > B.Min.Z && A.Min.Z < B.Max.Z;
+        }
+
+        /// <summary>
         /// Gets a bound that encompasses everything in all coordinate spaces.
         /// </summary>
         public static Bound Huge
@@ -109,6 +134,11 @@ namespace NSpace
                     new Vector(ninf, ninf, ninf),
                     new Vector(inf, inf, inf));
             }
+        }
+
+        public Bound Union(Bound Other)
+        {
+            return Bound.Union(this, Other);
         }
 
         /// <summary>
@@ -124,6 +154,36 @@ namespace NSpace
                     new Vector(inf, inf, inf),
                     new Vector(ninf, ninf, ninf));
             }
+        }
+    }
+
+    /// <summary>
+    /// Intersect test to see if two bounds intersect.
+    /// </summary>
+    public struct BoundIntersectTest : IIntersectTest<Bound>
+    {
+        public BoundIntersectTest(Bound Bound)
+        {
+            this._Bound = Bound;
+        }
+
+        public bool Intersects(Bound Bound)
+        {
+            return Bound.Intersects(this._Bound, Bound);
+        }
+
+        private Bound _Bound;
+    }
+
+    /// <summary>
+    /// A type of bound tree for bounds that tries to minimize volume.
+    /// </summary>
+    public class VolumeBoundTree<O> : BoundTree<Bound, O>
+        where O : class
+    {
+        public override double GetScore(Bound Bound)
+        {
+            return Bound.Volume;
         }
     }
 }
