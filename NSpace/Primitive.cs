@@ -4,6 +4,7 @@
 //----------------------------------------
 using System;
 using System.Collections.Generic;
+using OpenTK.Graphics.OpenGL;
 
 namespace NSpace
 {
@@ -13,50 +14,93 @@ namespace NSpace
     public static class Primitive
     {
         /// <summary>
-        /// Creates a cube in the specified edit context. This does not commit the
-        /// changes made. The cube will have uv data.
+        /// Represents a textured cube.
         /// </summary>
-        public static void CreateCube(Mesh.IEditContext Context, double EdgeLength)
+        public class Cube : ICollisionShape, IVisualShape
         {
-            double hlength = EdgeLength / 2.0;
-            for (int t = 0; t < 6; t++)
+            public Cube(double EdgeLength, Texture Texture)
             {
-                Geometry[] points = new Geometry[4];
-                for (int r = 0; r < 4; r++)
+                this._Texture = Texture;
+
+                // Create mesh for cube
+                double hl = EdgeLength / 2.0;
+
+                this._VBO = new VBO(InterleavedArrayFormat.T2fN3fV3f, 8, 4 * 6, 2 * 3 * 6);
+                VBO.EditContext ec = this._VBO.Lock();
+                int[] indices = new int[2 * 3 * 6];
+                Vector[] vertexs = new Vector[8];
+
+                for (int t = 0; t < 8; t++)
                 {
-                    double a = (r % 2) < 1 ? 0.0 : 1.0;
-                    double b = (r % 4) < 2 ? 0.0 : 1.0;
-                    double c = (t % 6) < 3 ? 0.0 : 1.0;
-                    Vector vec = new Vector();
-                    switch (t % 3)
+                    vertexs[t] = new Vector(
+                        (t % 8) < 4 ? hl : -hl,
+                        (t % 4) < 2 ? hl : -hl,
+                        (t % 2) < 1 ? hl : -hl);
+                }
+                for (int t = 0; t < 6; t++)
+                {
+                    int[] faceinds = new int[4];
+                    int m = (t / 2); m = (2 << m) / 2;
+                    int r = (t % 2);
+                    for (int l = 0; l < 4; l++)
                     {
-                        case 0: vec = new Vector(a, b, c); break;
-                        case 1: vec = new Vector(b, c, a); break;
-                        case 2: vec = new Vector(c, a, b); break;
+                        faceinds[l] = (m * r) + (l / m) * m + (l % m);
+                        Vector pos = vertexs[faceinds[l]];
+                        Vector norm = pos; norm.Normalize();
+                        double u = (l % 4) < 2 ? 0.0 : 1.0; double v = (l % 2) < 1 ? 0.0 : 1.0;
+                        ec.SetVertexData((uint)(l + t * 4), new float[]
+                        {
+                            (float)u,
+                            (float)v,
+                            (float)norm.X,
+                            (float)norm.Y,
+                            (float)norm.Z,
+                            (float)pos.X,
+                            (float)pos.Y,
+                            (float)pos.Z
+                        });
                     }
-                    points[r] = Point.Create(vec * EdgeLength - new Vector(hlength, hlength, hlength), a, b);
+                    indices[t * 6 + 0] = faceinds[0]; ec.SetIndiceData((uint)(t * 6 + 0), (uint)(t * 4 + 0));
+                    indices[t * 6 + 1] = faceinds[1]; ec.SetIndiceData((uint)(t * 6 + 1), (uint)(t * 4 + 1));
+                    indices[t * 6 + 2] = faceinds[2]; ec.SetIndiceData((uint)(t * 6 + 2), (uint)(t * 4 + 2));
+                    indices[t * 6 + 3] = faceinds[1]; ec.SetIndiceData((uint)(t * 6 + 3), (uint)(t * 4 + 1));
+                    indices[t * 6 + 4] = faceinds[3]; ec.SetIndiceData((uint)(t * 6 + 4), (uint)(t * 4 + 3));
+                    indices[t * 6 + 5] = faceinds[2]; ec.SetIndiceData((uint)(t * 6 + 5), (uint)(t * 4 + 2));
                 }
-                if (t < 3)
+                this._Mesh = new SimpleMesh(indices, vertexs);
+                this._VBO.Unlock();
+            }
+
+            public IEnumerable<TraceHit> Trace(Vector Start, Vector Stop)
+            {
+                return this._Mesh.Trace(Start, Stop);
+            }
+
+
+            public Bound Bound
+            {
+                get
                 {
-                    Context.AddTriangle(Triangle.Create(points[0], points[2], points[1]));
-                    Context.AddTriangle(Triangle.Create(points[1], points[2], points[3]));
-                }
-                else
-                {
-                    Context.AddTriangle(Triangle.Create(points[0], points[1], points[2]));
-                    Context.AddTriangle(Triangle.Create(points[1], points[3], points[2]));
+                    return this._Mesh.Bound;
                 }
             }
-        }
 
-        /// <summary>
-        /// Creates a cube in the specified mesh.
-        /// </summary>
-        public static void CreateCube(Mesh Mesh, double EdgeLength)
-        {
-            Mesh.IEditContext ec = Mesh.GetEditContext();
-            CreateCube(ec, EdgeLength);
-            ec.Commit();
+            public IRenderable Renderable
+            {
+                get
+                {
+                    return 
+                        new CapabilityRenderable(new EnableCap[] {
+                            EnableCap.Lighting,
+                            EnableCap.Texture2D
+                        }, new TextureRenderable(this._Texture,
+                            this._VBO.GetRenderable(0, 12)));
+                }
+            }
+
+            private SimpleMesh _Mesh;
+            private VBO _VBO;
+            private Texture _Texture;
         }
     }
 }

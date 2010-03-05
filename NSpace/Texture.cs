@@ -58,67 +58,33 @@ namespace NSpace
     }
 
     /// <summary>
-    /// A material that maps a texture onto the supplied mesh.
+    /// A renderable that sets the texture for the enclosed renderables.
     /// </summary>
-    public class TextureNormalMaterial : BufferedMaterial
+    public class TextureRenderable : NestedRenderable
     {
-        public TextureNormalMaterial(Texture Texture)
+        public TextureRenderable(Texture Texture, IRenderable Inner)
         {
             this._Texture = Texture;
+            this._Inner = Inner;
         }
-        
-        public override int VertexStride
+
+        /// <summary>
+        /// Gets the texture this renders with.
+        /// </summary>
+        public Texture Texture
+        {
+            get
+            {
+                return this._Texture;
+            }
+        }
+
+        public override IEnumerable<IRenderable> Nested
         {
             get 
             {
-                return 8 * sizeof(float); 
+                return new IRenderable[] { this._Inner }; 
             }
-        }
-
-        public override unsafe void FillVertexData(void* Vertex, Geometry Point, List<Geometry> Usages)
-        {
-            float* vert = (float*)Vertex;
-            double u = 0.0;
-            double v = 0.0;
-            Point.UVData uvdata = Point.GetData<Point.UVData>();
-            if (uvdata != null)
-            {
-                u = uvdata.U;
-                v = uvdata.V;
-            }
-            Vector pos = Point.GetData<Point.Data>().Position;
-            Vector norm = new Vector();
-            foreach (Geometry tri in Usages)
-            {
-                norm = norm + tri.GetData<Triangle.Data>().Normal;
-            }
-            norm.Normalize();
-
-            vert[0] = (float)u;
-            vert[1] = (float)v;
-            vert[2] = (float)norm.X;
-            vert[3] = (float)norm.Y;
-            vert[4] = (float)norm.Z;
-            vert[5] = (float)pos.X;
-            vert[6] = (float)pos.Y;
-            vert[7] = (float)pos.Z;
-        }
-
-        public override IRenderable Renderable
-        {
-            get 
-            {
-                return new CapabilityRenderable(
-                    new EnableCap[] {
-                        EnableCap.Texture2D,
-                        EnableCap.Lighting
-                    }, this);
-            }
-        }
-
-        public override void SetVertexFormat()
-        {
-            GL.InterleavedArrays(InterleavedArrayFormat.T2fN3fV3f, 0, IntPtr.Zero);
         }
 
         public override void PreRender()
@@ -127,6 +93,12 @@ namespace NSpace
             GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvMode.Modulate);
         }
 
+        public override void PostRender()
+        {
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+        }
+
         private Texture _Texture;
+        private IRenderable _Inner;
     }
 }

@@ -54,20 +54,20 @@
     <Compile Include="Physics\World.cs" />
     <Compile Include="Primitive.cs" />
     <Compile Include="Data.cs" />
-    <Compile Include="Geometry.cs" />
-    <Compile Include="Material.cs" />
     <Compile Include="Mesh.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Renderable.cs" />
     <Compile Include="Section.cs" />
+    <Compile Include="Shape.cs" />
     <Compile Include="SimpleMesh.cs" />
     <Compile Include="Texture.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="View.cs" />
     <Compile Include="Visual.cs" />
+    <Compile Include="VBO.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>
   <ItemGroup>

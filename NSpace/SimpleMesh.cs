@@ -10,62 +10,107 @@ using OpenTK.Graphics.OpenGL;
 namespace NSpace
 {
     /// <summary>
-    /// Mesh that can perform all operations, but with no optimization. This mesh
-    /// is not thread safe.
+    /// A mesh with raw triangle and point data stored in an array.
     /// </summary>
-    public class SimpleMesh : Mesh, Mesh.IEditContext
+    public class SimpleMesh : IMesh, ICollisionShape
     {
-        public SimpleMesh()
+        public SimpleMesh(int[] Indices, Vector[] Vertices)
         {
-            this._Tris = new Dictionary<Geometry, object>();
+            this._Indices = Indices;
+            this._Vertices = Vertices;
+            this._Bound = new Bound(Vertices);
         }
 
-        public override IEnumerable<Geometry> Triangles
+        public IEnumerable<TraceHit> Trace(Vector Start, Vector Stop)
+        {
+            LinkedList<TraceHit> res = new LinkedList<TraceHit>();
+            for (int t = 0; t < this._Indices.Length; t += 3)
+            {
+                double len = 0.0;
+                Vector norm = new Vector();
+                Vector pos = new Vector();
+
+                // Test intersection
+                if (TraceHit.IntersectTriangle(
+                    this._Vertices[this._Indices[t + 0]],
+                    this._Vertices[this._Indices[t + 1]],
+                    this._Vertices[this._Indices[t + 2]],
+                    Start, Stop,
+                    ref len, ref pos, ref norm))
+                {
+                    // Add as hit in correct spot along list
+                    TraceHit th = new TraceHit();
+                    th.Length = len;
+                    th.Position = pos;
+                    th.Normal = norm;
+
+                    LinkedListNode<TraceHit> node = res.First;
+                    while (true)
+                    {
+                        if (node != null)
+                        {
+                            if (node.Value.Length > len)
+                            {
+                                res.AddBefore(node, th);
+                                break;
+                            }
+                            node = node.Next;
+                        }
+                        else
+                        {
+                            res.AddLast(th);
+                            break;
+                        }
+                    }
+                }
+            }
+            return res;
+        }
+
+        public Bound Bound
+        {
+            get 
+            { 
+                return this._Bound;
+            }
+        }
+
+        public IEnumerable<Triangle> Triangles
         {
             get 
             {
-                return this._Tris.Keys;
+                Dictionary<int, Point> points = new Dictionary<int, Point>();
+                for (int t = 0; t < this._Indices.Length; t += 3)
+                {
+                    Triangle tri = new Triangle();
+                    Point[] tripoints = new Point[3];
+                    for (int l = 0; l < 3; l++)
+                    {
+                        int pointindex = this._Indices[t + l];
+                        Point p;
+                        if (!points.TryGetValue(pointindex, out p))
+                        {
+                            p = new Point(this._Vertices[pointindex]);
+                            points[pointindex] = p;
+                        }
+                        tripoints[l] = p;
+                    }
+                    tri.Points = tripoints;
+                    yield return tri;
+                }
             }
         }
 
-        public override int TriangleCount
+        public int TriangleCount
         {
-            get
+            get 
             {
-                return this._Tris.Count;
+                return this._Indices.Length / 3;
             }
         }
 
-        void Mesh.IEditContext.Commit()
-        {
-            
-        }
-
-        void Mesh.IEditContext.AddTriangle(Geometry Tri)
-        {
-            this._Tris[new ElasticGeometry(this, Tri)] = null;
-        }
-
-        Geometry Mesh.IEditContext.ModifyTriangle(Geometry Tri)
-        {
-            return Tri;
-        }
-
-        void Mesh.IEditContext.RemoveTriangle(Geometry Tri)
-        {
-            this._Tris.Remove(Tri);
-        }
-
-        Geometry Mesh.IEditContext.ModifyPoint(Geometry Point)
-        {
-            return Point;
-        }
-
-        public override Mesh.IEditContext GetEditContext()
-        {
-            return this;
-        }
-
-        private Dictionary<Geometry, object> _Tris; // Simulated set with dictionary
+        private int[] _Indices;
+        private Vector[] _Vertices;
+        private Bound _Bound;
     }
 }

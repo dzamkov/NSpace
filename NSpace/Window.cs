@@ -44,9 +44,7 @@ namespace NSpace
                 this._RootVisual);
 
             // Create a cube and add to the world
-            Mesh m = new SimpleMesh();
-            Texture tex = Texture.LoadFromFile("../../TestTex.png");
-            Primitive.CreateCube(m, 1.0);
+            Primitive.Cube c = new Primitive.Cube(2.0, Texture.LoadFromFile("../../TestTex.png"));
             Random r = new Random();
             for (int x = -5; x < 5; x++)
             {
@@ -61,11 +59,12 @@ namespace NSpace
                                     Matrix.Transform(
                                         Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
                                         Matrix.Scale(0.2)));
-                            this._RootVisual.Add(Model.Create(m, new TextureNormalMaterial(tex), objsect));
+                            this._RootVisual.Add(Model.Create(c, objsect));
                         }
                     }
                 }
             }
+            this._RootVisual.Add(DebugVisual.CreateLine(new Vector(2.0, 2.0, 2.0), new Vector(-2.0, -2.0, -2.0), this._World));
 
             // Initialize update times
             this._LastUpdate = DateTime.Now;
@@ -88,13 +87,13 @@ namespace NSpace
                     Matrix trans = this._View.Section.GetRelation(mod.Section);
                     Vector tsr = trans * sr;
                     Vector tsp = trans * sp;
-                    IEnumerable<TraceHit> hits = new SimpleCollisionMesh(mod.Mesh).Trace(tsr, tsp);
+                    IEnumerable<TraceHit> hits = ((Primitive.Cube)(mod.Shape)).Trace(tsr, tsp);
                     foreach (TraceHit hit in hits)
                     {
                         Vector realpos = mod.Section.ParentTransform * hit.Position;
                         if (closehit == null || closehit.Value.Length > hit.Length)
                         {
-                            closehit = new TraceHit() { Length = hit.Length, Position = realpos, Triangle = hit.Triangle };
+                            closehit = new TraceHit() { Length = hit.Length, Position = realpos, Normal = hit.Normal };
                         }
                     }
                 }
@@ -107,7 +106,7 @@ namespace NSpace
             if (closehit != null)
             {
                 Vector hitpos = closehit.Value.Position;
-                Vector norm = closehit.Value.Triangle.GetData<Triangle.Data>().Normal * 0.1;
+                Vector norm = closehit.Value.Normal;
                 this._Line = DebugVisual.CreateLine(hitpos, hitpos + norm, this._World);
                 this._RootVisual.Add(this._Line);
             }

@@ -8,9 +8,9 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    /// A mesh that can be used for traces or checking for collisions.
+    /// A shape that can be used for traces or checking for collisions.
     /// </summary>
-    public interface ICollisionMesh : IMesh
+    public interface ICollisionShape : IShape
     {
         /// <summary>
         /// Performs a trace on the mesh. A trace is a test that gives the
@@ -20,15 +20,10 @@ namespace NSpace
     }
 
     /// <summary>
-    /// Information given when the frontside of a triangle is hit with a trace line.
+    /// Information given when the frontside of a surface is hit with a trace line.
     /// </summary>
     public struct TraceHit
     {
-        /// <summary>
-        /// The triangle that was hit.
-        /// </summary>
-        public Geometry Triangle;
-
         /// <summary>
         /// The relative amount along the line where the hit was at. A value of 0.0 indicates
         /// the hit was at start and a value at 1.0 indicates the hit was at stop.
@@ -36,16 +31,26 @@ namespace NSpace
         public double Length;
 
         /// <summary>
-        /// The position at which the triangle was hit.
+        /// The position at which the surface was hit.
         /// </summary>
         public Vector Position;
 
         /// <summary>
+        /// The normal of the surface hit.
+        /// </summary>
+        public Vector Normal;
+
+        /// <summary>
         /// Tests the intersection between a triangle with a line. If they intersect, this will return
-        /// true and set Length and Position to the correct values. If there is no intersection, this will return
+        /// true and set Length, Normal and Position to the correct values. If there is no intersection, this will return
         /// false and possibly alter some ref values. This can only test the frontside of a triangle.
         /// </summary>
-        public static bool Intersect(Vector A, Vector B, Vector C, Vector Start, Vector Stop, ref double Length, ref Vector Position)
+        public static bool IntersectTriangle(
+            Vector A, Vector B, Vector C, 
+            Vector Start, Vector Stop, 
+            ref double Length, 
+            ref Vector Position, 
+            ref Vector Normal)
         {
             Vector u = B - A;
             Vector v = C - A;
@@ -61,6 +66,7 @@ namespace NSpace
             if (r >= 0.0 && r <= 1.0 && b < 0.0)
             {
                 Length = r;
+                Normal = n;
                 Position = Start + (raydir * r);
 
                 // Check if point is in triangle.
@@ -83,65 +89,6 @@ namespace NSpace
                 }
             }
             return false;
-        }
-    }
-
-    /// <summary>
-    /// Collision mesh that uses no optimization and will check every triangle for
-    /// every trace.
-    /// </summary>
-    public class SimpleCollisionMesh : DerivedMesh, ICollisionMesh
-    {
-        public SimpleCollisionMesh(Mesh Base)
-            : base(Base)
-        {
-
-        }
-
-        public IEnumerable<TraceHit> Trace(Vector Start, Vector Stop)
-        {
-            LinkedList<TraceHit> res = new LinkedList<TraceHit>();
-            foreach (Geometry tri in this.Triangles)
-            {
-                Triangle.Data data = tri.GetData<Triangle.Data>();
-                double len = 0.0;
-                Vector pos = new Vector();
-
-                // Test intersection
-                if(TraceHit.Intersect(
-                    Point.Position(data.A),
-                    Point.Position(data.B),
-                    Point.Position(data.C),
-                    Start, Stop,
-                    ref len, ref pos))
-                {
-                    // Add as hit in correct spot along list
-                    TraceHit th = new TraceHit();
-                    th.Length = len;
-                    th.Position = pos;
-                    th.Triangle = tri;
-
-                    LinkedListNode<TraceHit> node = res.First;
-                    while (true)
-                    {
-                        if (node != null)
-                        {
-                            if (node.Value.Length < len)
-                            {
-                                res.AddBefore(node, th);
-                                break;
-                            }
-                            node = node.Next;
-                        }
-                        else
-                        {
-                            res.AddLast(th);
-                            break;
-                        }
-                    }
-                }
-            }
-            return res;
         }
     }
 }
