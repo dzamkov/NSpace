@@ -60,6 +60,7 @@
     <Compile Include="Model.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Quaternion.cs" />
     <Compile Include="Renderable.cs" />
     <Compile Include="Section.cs" />
     <Compile Include="SimpleMesh.cs" />
@@ -74,6 +75,7 @@
     <Reference Include="OpenTK, Version=0.9.9.5, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Programs\OpenTk\Binaries\OpenTK\Release\OpenTK.dll</HintPath>
+      <HintPath>..\..\..\SDK\OpenTK\Binaries\OpenTK\Debug\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">

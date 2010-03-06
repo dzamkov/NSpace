@@ -137,10 +137,10 @@ namespace NSpace
             if (this.Keyboard[Key.A]) trans *= Matrix.Translate(new Vector(0.0, updatetime * movespeed, 0.0));
             if (this.Keyboard[Key.S]) trans *= Matrix.Translate(new Vector(updatetime * -movespeed, 0.0, 0.0));
             if (this.Keyboard[Key.D]) trans *= Matrix.Translate(new Vector(0.0, updatetime * -movespeed, 0.0));
-            if (this.Keyboard[Key.Up]) trans *= Matrix.Pitch(updatetime * turnspeed);
-            if (this.Keyboard[Key.Left]) trans *= Matrix.Yaw(updatetime * turnspeed);
-            if (this.Keyboard[Key.Down]) trans *= Matrix.Pitch(updatetime * -turnspeed);
-            if (this.Keyboard[Key.Right]) trans *= Matrix.Yaw(updatetime * -turnspeed);
+            if (this.Keyboard[Key.Up]) trans *= Quaternion.AxisRotate(new Vector(0.0, 1.0, 0.0), -updatetime * turnspeed).ToMatrix();
+            if (this.Keyboard[Key.Left]) trans *= Quaternion.AxisRotate(new Vector(0.0, 0.0, 1.0), updatetime * turnspeed).ToMatrix();
+            if (this.Keyboard[Key.Down]) trans *= Quaternion.AxisRotate(new Vector(0.0, 1.0, 0.0), updatetime * turnspeed).ToMatrix();
+            if (this.Keyboard[Key.Right]) trans *= Quaternion.AxisRotate(new Vector(0.0, 0.0, 1.0), -updatetime * turnspeed).ToMatrix();
             this._View.Section.ParentTransform = Matrix.Transform(trans, this._View.Section.ParentTransform);
 
             this._Rot += Math.PI / 2.0 * updatetime;
