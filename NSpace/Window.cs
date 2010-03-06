@@ -88,13 +88,13 @@ namespace NSpace
                     Matrix trans = this._View.Section.GetRelation(mod.Section);
                     Vector tsr = trans * sr;
                     Vector tsp = trans * sp;
-                    IEnumerable<TraceHit> hits = new SimpleCollisionMesh(mod.Mesh).Trace(tsr, tsp);
+                    IEnumerable<TraceHit> hits = new MeshSurface(mod.Mesh).Trace(tsr, tsp);
                     foreach (TraceHit hit in hits)
                     {
                         Vector realpos = mod.Section.ParentTransform * hit.Position;
                         if (closehit == null || closehit.Value.Length > hit.Length)
                         {
-                            closehit = new TraceHit() { Length = hit.Length, Position = realpos, Triangle = hit.Triangle };
+                            closehit = new TraceHit() { Length = hit.Length, Position = realpos, Normal = hit.Normal };
                         }
                     }
                 }
@@ -107,7 +107,7 @@ namespace NSpace
             if (closehit != null)
             {
                 Vector hitpos = closehit.Value.Position;
-                Vector norm = closehit.Value.Triangle.GetData<Triangle.Data>().Normal * 0.1;
+                Vector norm = closehit.Value.Normal * 0.1;
                 this._Line = DebugVisual.CreateLine(hitpos, hitpos + norm, this._World);
                 this._RootVisual.Add(this._Line);
             }

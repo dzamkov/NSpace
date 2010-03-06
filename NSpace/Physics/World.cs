@@ -8,14 +8,13 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// An area containing a set of physics objects and the rules governing their
-    /// interactions.
+    /// A set of objects and the rules governing their interactions.
     /// </summary>
     public class World
     {
-        public World(Section Section)
+        public World()
         {
-            this._Section = Section;
+
         }
 
         /// <summary>
@@ -26,19 +25,6 @@ namespace NSpace.Physics
 
         }
 
-        /// <summary>
-        /// Gets the section this world runs its simulations in. This is not relevant to
-        /// how objects in the world are handled but must be specified to provide a common
-        /// coordinate system between objects.
-        /// </summary>
-        public Section Section
-        {
-            get
-            {
-                return this._Section;
-            }
-        }
-
-        private Section _Section;
+        
     }
 }

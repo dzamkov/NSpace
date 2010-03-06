@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    /// A 3d orthographical rectangular volume that specifies the location where
+    /// A three-dimensional orthographical rectangular volume that specifies the location where
     /// items may be contained.
     /// </summary>
     public struct Bound : IBound<Bound>
@@ -19,13 +19,14 @@ namespace NSpace
             this.Max = Max;
         }
 
-        public Bound(Vector[] Points)
+        public Bound(IEnumerable<Vector> Points)
         {
-            this.Min = Points[0];
-            this.Max = Points[0];
-            for (int t = 1; t < Points.Length; t++)
+            Bound none = None;
+            this.Min = none.Min;
+            this.Max = none.Max;
+            foreach (Vector v in Points)
             {
-                this.AddVector(Points[t]);
+                this.AddVector(v);
             }
         }
 

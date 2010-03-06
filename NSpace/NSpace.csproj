@@ -50,6 +50,7 @@
     <Compile Include="Collision.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="DebugVisual.cs" />
+    <Compile Include="Shape.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Physics\World.cs" />
     <Compile Include="Primitive.cs" />
