@@ -8,6 +8,7 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 using OpenTK.Graphics.OpenGL;
+using NSpace.Physics;
 
 namespace NSpace
 {
@@ -32,12 +33,13 @@ namespace NSpace
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(0.0f, 0.0f, 2.0f, 1.0f));
 
             // Create world
-            this._World = new Section();
+            this._WorldSect = new Section();
+            this._World = new World();
 
             // Create view
-            this._RootVisual = new MultiVisual(this._World);
+            this._RootVisual = new MultiVisual(this._WorldSect);
             this._View = new View(
-                this._World.AddChild(Matrix.Lookat(
+                this._WorldSect.AddChild(Matrix.Lookat(
                     new Vector(0.0, 0.0, 1.0), 
                     new Vector(10.0, 0.0, 10.0), 
                     new Vector(0.0, 0.0, 0.0))), 
@@ -47,6 +49,7 @@ namespace NSpace
             Mesh m = new SimpleMesh();
             Texture tex = Texture.LoadFromFile("../../TestTex.png");
             Primitive.CreateCube(m, 1.0);
+            this._Cubes = new List<CompanionCube>();
             Random r = new Random();
             for (int x = -5; x < 5; x++)
             {
@@ -56,12 +59,20 @@ namespace NSpace
                     {
                         if (r.Next(0, 10) == 0)
                         {
+                            CompanionCube cc = new CompanionCube();
                             Section objsect = 
-                                this._World.AddChild(
+                                this._WorldSect.AddChild(
                                     Matrix.Transform(
                                         Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
                                         Matrix.Scale(0.2)));
-                            this._RootVisual.Add(Model.Create(m, new TextureNormalMaterial(tex), objsect));
+                            this._RootVisual.Add(cc.Model = Model.Create(m, new TextureNormalMaterial(tex), objsect));
+                            cc.Body = new RigidBody(5.0, new Vector(0.0, 0.0, 0.0), new MeshSurface(m));
+                            this._World.AddBody(cc.Body.CreateImage(objsect, 
+                                new Vector(
+                                    r.NextDouble(), 
+                                    r.NextDouble(), 
+                                    r.NextDouble())));
+                            this._Cubes.Add(cc);
                         }
                     }
                 }
@@ -76,26 +87,24 @@ namespace NSpace
             // Clear current viewport
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 			
-            // Check collisions
+            // Check collisions/ update models
             Vector sr = new Vector(0.0, 0.0, 0.0);
             Vector sp = new Vector(10.0, 0.0, 0.0);
             TraceHit? closehit = null;
-            foreach (IVisual vis in this._RootVisual.Visuals)
+            foreach (CompanionCube cc in this._Cubes)
             {
-                Model mod = vis as Model;
-                if(mod != null)
+                Section sect = this._World[cc.Body].Section;
+                cc.Model.Section = sect;
+                Matrix trans = this._View.Section.GetRelation(sect);
+                Vector tsr = trans * sr;
+                Vector tsp = trans * sp;
+                IEnumerable<TraceHit> hits = (cc.Body.Shape as ISurface).Trace(tsr, tsp);
+                foreach (TraceHit hit in hits)
                 {
-                    Matrix trans = this._View.Section.GetRelation(mod.Section);
-                    Vector tsr = trans * sr;
-                    Vector tsp = trans * sp;
-                    IEnumerable<TraceHit> hits = new MeshSurface(mod.Mesh).Trace(tsr, tsp);
-                    foreach (TraceHit hit in hits)
+                    Vector realpos = sect.ParentTransform * hit.Position;
+                    if (closehit == null || closehit.Value.Length > hit.Length)
                     {
-                        Vector realpos = mod.Section.ParentTransform * hit.Position;
-                        if (closehit == null || closehit.Value.Length > hit.Length)
-                        {
-                            closehit = new TraceHit() { Length = hit.Length, Position = realpos, Normal = hit.Normal };
-                        }
+                        closehit = new TraceHit() { Length = hit.Length, Position = realpos, Normal = hit.Normal };
                     }
                 }
             }
@@ -108,7 +117,7 @@ namespace NSpace
             {
                 Vector hitpos = closehit.Value.Position;
                 Vector norm = closehit.Value.Normal * 0.1;
-                this._Line = DebugVisual.CreateLine(hitpos, hitpos + norm, this._World);
+                this._Line = DebugVisual.CreateLine(hitpos, hitpos + norm, this._WorldSect);
                 this._RootVisual.Add(this._Line);
             }
 
@@ -125,6 +134,9 @@ namespace NSpace
             DateTime curtime = DateTime.Now;
             double updatetime = (curtime - this._LastUpdate).TotalSeconds;
             this._LastUpdate = curtime;
+
+            // World update
+            this._World.Update(updatetime);
 
             // Keyboard movement
             Matrix trans = Matrix.Identity;
@@ -146,9 +158,21 @@ namespace NSpace
             this._Rot += Math.PI / 2.0 * updatetime;
 		}
 
+        /// <summary>
+        /// Data used to represent a companion cube.
+        /// </summary>
+        public struct CompanionCube
+        {
+            public Model Model;
+            public RigidBody Body;
+        }
+
+        private List<CompanionCube> _Cubes;
+        private World _World;
+
         private DateTime _LastUpdate;
         private double _Rot = 0.0;
-        private Section _World;
+        private Section _WorldSect;
         private MultiVisual _RootVisual;
         private View _View;
         private DebugVisual _Line;

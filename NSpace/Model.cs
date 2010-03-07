@@ -86,6 +86,10 @@ namespace NSpace
             {
                 return this._Section;
             }
+            set
+            {
+                this._Section = value;
+            }
         }
 
         public Bound Bound

@@ -92,6 +92,18 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Creates a section related by the specified matrix such that the result of GetRelation
+        /// with the section returned by this function will be the specified matrix.
+        /// </summary>
+        public Section CreateRelation(Matrix Transform)
+        {
+            Section res = new Section();
+            res.Parent = this._Parent;
+            res.InverseParentTransform = Matrix.Transform(this.InverseParentTransform, Transform);
+            return res;
+        }
+
+        /// <summary>
         /// Gets how many levels deep into the section tree this section is. This will be
         /// 0 at the root section, 1 at a child of the root section, 2 if its the child of
         /// a child of the root section and so on.
@@ -131,7 +143,7 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Gets the parent section for this section. The parent
+        /// Gets or sets the parent section for this section. The parent
         /// should be overall larger then the child and have siblings of
         /// about the same size. This system is used to organize objects
         /// in space.
@@ -141,6 +153,10 @@ namespace NSpace
             get
             {
                 return this._Parent;
+            }
+            set
+            {
+                this._Parent = value;
             }
         }
 

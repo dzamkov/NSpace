@@ -35,7 +35,7 @@ namespace NSpace
     /// A shape that can be divided into some amount of child shapes that together
     /// make up the original.
     /// </summary>
-    public interface IDivisible : IShape
+    public interface IDivisibleShape : IShape
     {
         /// <summary>
         /// Gets a set of shapes that make up this shape or itself if this
