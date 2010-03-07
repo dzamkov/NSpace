@@ -25,10 +25,11 @@ namespace NSpace
     public interface ISurface : IShape
     {
         /// <summary>
-        /// Performs a trace on the surface. A trace is a test that gives the
-        /// points on the surface in order that are hit by the specified line.
+        /// Traces a moving point(line) across the surface from the start to the stop position and
+        /// returns true and sets the result if it hits part of the surface. This, like every other
+        /// trace function returns the closest hit point.
         /// </summary>
-        IEnumerable<TraceHit> Trace(Vector Start, Vector Stop);
+        bool TracePoint(Vector Start, Vector Stop, ref TraceHit Result);
     }
 
     /// <summary>

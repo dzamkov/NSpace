@@ -98,8 +98,8 @@ namespace NSpace
                 Matrix trans = this._View.Section.GetRelation(sect);
                 Vector tsr = trans * sr;
                 Vector tsp = trans * sp;
-                IEnumerable<TraceHit> hits = (cc.Body.Shape as ISurface).Trace(tsr, tsp);
-                foreach (TraceHit hit in hits)
+                TraceHit hit = new TraceHit();
+                if ((cc.Body.Shape as ISurface).TracePoint(tsr, tsp, ref hit))
                 {
                     Vector realpos = sect.ParentTransform * hit.Position;
                     if (closehit == null || closehit.Value.Length > hit.Length)

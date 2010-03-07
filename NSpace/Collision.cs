@@ -9,12 +9,12 @@ namespace NSpace
 {
 
     /// <summary>
-    /// Information given when the frontside of a surface is hit with a trace line.
+    /// Information given when the frontside of a surface is hit with a trace.
     /// </summary>
     public struct TraceHit
     {
         /// <summary>
-        /// The relative amount along the line where the hit was at. A value of 0.0 indicates
+        /// The relative amount along the trace where the hit was at. A value of 0.0 indicates
         /// the hit was at start and a value at 1.0 indicates the hit was at stop.
         /// </summary>
         public double Length;
@@ -30,16 +30,14 @@ namespace NSpace
         public Vector Normal;
 
         /// <summary>
-        /// Tests the intersection between a triangle with a line. If they intersect, this will return
-        /// true and set Length, Normal and Position to the correct values. If there is no intersection, this will return
-        /// false and possibly alter some ref values. This can only test the frontside of a triangle.
+        /// Tests the trace of a moving point(line) with a static triangle. If they intersect, this will return
+        /// true and set Result to the result of the trace. This will only check for intersections on the frontside face
+        /// of the triangle.
         /// </summary>
-        public static bool TriangleIntersect(
+        public static bool PointTriangleTrace(
             Vector A, Vector B, Vector C, 
             Vector Start, Vector Stop, 
-            ref double Length, 
-            ref Vector Position,
-            ref Vector Normal)
+            ref TraceHit Result)
         {
             Vector u = B - A;
             Vector v = C - A;
@@ -54,12 +52,12 @@ namespace NSpace
 
             if (r >= 0.0 && r <= 1.0 && b < 0.0)
             {
-                Length = r;
-                Position = Start + (raydir * r);
-                Normal = n;
+                Result.Length = r;
+                Result.Position = Start + (raydir * r);
+                Result.Normal = n;
 
                 // Check if point is in triangle.
-                Vector w = Position - A;
+                Vector w = Result.Position - A;
                 double uu = Vector.Dot(u, u);
                 double uv = Vector.Dot(u, v);
                 double vv = Vector.Dot(v, v);
@@ -109,51 +107,28 @@ namespace NSpace
             }
         }
 
-        public IEnumerable<TraceHit> Trace(Vector Start, Vector Stop)
+        public bool TracePoint(Vector Start, Vector Stop, ref TraceHit Result)
         {
-            LinkedList<TraceHit> res = new LinkedList<TraceHit>();
+            Result.Length = double.NegativeInfinity;
+            bool hashit = false;
             foreach (Geometry tri in this.Triangles)
             {
                 Triangle.Data data = tri.GetData<Triangle.Data>();
-                double len = 0.0;
-                Vector pos = new Vector();
-                Vector norm = new Vector();
+                TraceHit hit = new TraceHit();
 
                 // Test intersection
-                if(TraceHit.TriangleIntersect(
+                if(TraceHit.PointTriangleTrace(
                     Point.Position(data.A),
                     Point.Position(data.B),
                     Point.Position(data.C),
                     Start, Stop,
-                    ref len, ref pos, ref norm))
+                    ref hit) && Result.Length < hit.Length)
                 {
-                    // Add as hit in correct spot along list
-                    TraceHit th = new TraceHit();
-                    th.Length = len;
-                    th.Position = pos;
-                    th.Normal = norm;
-
-                    LinkedListNode<TraceHit> node = res.First;
-                    while (true)
-                    {
-                        if (node != null)
-                        {
-                            if (node.Value.Length < len)
-                            {
-                                res.AddBefore(node, th);
-                                break;
-                            }
-                            node = node.Next;
-                        }
-                        else
-                        {
-                            res.AddLast(th);
-                            break;
-                        }
-                    }
+                    Result = hit;
+                    hashit = true;
                 }
             }
-            return res;
+            return hashit;
         }
     }
 }
