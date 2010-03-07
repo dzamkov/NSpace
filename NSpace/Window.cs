@@ -4,6 +4,8 @@
 //----------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
@@ -138,11 +140,28 @@ namespace NSpace
             // World update
             this._World.Update(updatetime);
 
-            // Keyboard movement
+            // Navigation
             Matrix trans = Matrix.Identity;
             double movespeed = 2.0;
             double turnspeed = Math.PI / 2.0;
             double scalespeed = 0.5;
+
+            // Mouse navigation
+            if (this.Keyboard[Key.Tab])
+            {
+                int width = this.Width; // Mouse navigation, thanks to cobra
+                int height = this.Height;
+                int xoffset = width / 2 - this.Mouse.X;
+                int yoffset = height / 2 - this.Mouse.Y;
+
+                trans *= Quaternion.AxisRotate(new Vector(0.0, 0.0, 1.0), 0.025 * xoffset * 0.2).ToMatrix();
+                trans *= Quaternion.AxisRotate(new Vector(0.0, 1.0, 0.0), 0.025 * -yoffset * 0.2).ToMatrix();
+
+                System.Drawing.Point pos = PointToScreen(new System.Drawing.Point(Width / 2, Height / 2));
+                Cursor.Position = pos;
+            }
+
+            // Keyboard navigation
             if (this.Keyboard[Key.Q]) trans *= Matrix.Scale(Math.Pow(2.0, updatetime * scalespeed), 1.0, 1.0);
             if (this.Keyboard[Key.E]) trans *= Matrix.Scale(Math.Pow(2.0, updatetime * -scalespeed), 1.0, 1.0);
             if (this.Keyboard[Key.W]) trans *= Matrix.Translate(new Vector(updatetime * movespeed, 0.0, 0.0));
@@ -154,6 +173,8 @@ namespace NSpace
             if (this.Keyboard[Key.Down]) trans *= Quaternion.AxisRotate(new Vector(0.0, 1.0, 0.0), updatetime * turnspeed).ToMatrix();
             if (this.Keyboard[Key.Right]) trans *= Quaternion.AxisRotate(new Vector(0.0, 0.0, 1.0), -updatetime * turnspeed).ToMatrix();
             this._View.Section.ParentTransform = Matrix.Transform(trans, this._View.Section.ParentTransform);
+
+            
 
             this._Rot += Math.PI / 2.0 * updatetime;
 		}
