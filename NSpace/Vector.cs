@@ -27,6 +27,11 @@ namespace NSpace
             this.Z = Source.Z;
         }
 
+        public override string ToString()
+        {
+            return "(" + this.X.ToString() + " ," + this.Y.ToString() + " ," + this.Z.ToString() + ")";
+        }
+
         public double X;
         public double Y;
         public double Z;

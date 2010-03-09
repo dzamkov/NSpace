@@ -68,12 +68,7 @@ namespace NSpace
                                         Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
                                         Matrix.Scale(0.2)));
                             this._RootVisual.Add(cc.Model = Model.Create(m, new TextureNormalMaterial(tex), objsect));
-                            cc.Body = new RigidBody(5.0, new Vector(0.0, 0.0, 0.0), new MeshSurface(m));
-                            this._World.AddBody(cc.Body.CreateImage(objsect, 
-                                new Vector(
-                                    r.NextDouble(), 
-                                    r.NextDouble(), 
-                                    r.NextDouble())));
+                            cc.Body = new RigidBody(objsect, 5.0, new Vector(0.0, 0.0, 0.0), new MeshSurface(m));
                             this._Cubes.Add(cc);
                         }
                     }
@@ -95,7 +90,7 @@ namespace NSpace
             TraceHit? closehit = null;
             foreach (CompanionCube cc in this._Cubes)
             {
-                Section sect = this._World[cc.Body].Section;
+                Section sect = cc.Body.GetSection(this._World.CurrentTime);
                 cc.Model.Section = sect;
                 Matrix trans = this._View.Section.GetRelation(sect);
                 Vector tsr = trans * sr;
@@ -119,6 +114,7 @@ namespace NSpace
             {
                 Vector hitpos = closehit.Value.Position;
                 Vector norm = closehit.Value.Normal * 0.1;
+                Console.WriteLine(hitpos.ToString());
                 this._Line = DebugVisual.CreateLine(hitpos, hitpos + norm, this._WorldSect);
                 this._RootVisual.Add(this._Line);
             }

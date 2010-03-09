@@ -13,8 +13,12 @@ namespace NSpace.Physics
     /// </summary>
     public class RigidBody
     {
-        public RigidBody(double Mass, Vector MassCenter, IShape Shape)
+        public RigidBody(Section Section, double Mass, Vector MassCenter, IShape Shape)
         {
+            this._Force = new ConstantCurve(new Vector(0.0, 0.0, -9.8));
+            this._Velocity = this._Force.Integral(new Vector(0.0, 0.0, 0.0));
+
+            this._Section = Section;
             this._Mass = Mass;
             this._MassCenter = MassCenter;
             this._Shape = Shape;
@@ -55,75 +59,16 @@ namespace NSpace.Physics
         }
 
         /// <summary>
-        /// Creates an image for this rigid body.
+        /// Gets the section for this body at the specified world time.
         /// </summary>
-        public Image CreateImage(Section Section, Vector Velocity)
+        public Section GetSection(double Time)
         {
-            return new Image(Section, this, Velocity);
+            return this._Section.CreateRelation(Matrix.Translate(this._Velocity.Integral(new Vector(0.0, 0.0, 0.0)).GetPoint(Time)));
         }
 
-        /// <summary>
-        /// An image, or snapshot of the state of a rigid body.
-        /// </summary>
-        public class Image
-        {
-            internal Image(Section Section, RigidBody Body, Vector Velocity)
-            {
-                this._Section = Section;
-                this._Body = Body;
-                this._Vel = Velocity;
-            }
-
-            /// <summary>
-            /// Gets the section the rigid body image and the shape for
-            /// it is in.
-            /// </summary>
-            public Section Section
-            {
-                get
-                {
-                    return this._Section;
-                }
-            }
-
-            /// <summary>
-            /// Gets the rigid body that this image is based off.
-            /// </summary>
-            public RigidBody Body
-            {
-                get
-                {
-                    return this._Body;
-                }
-            }
-
-            /// <summary>
-            /// Gets the velocity of the image in parent section units per second.
-            /// </summary>
-            public Vector Velocity
-            {
-                get
-                {
-                    return this._Vel;
-                }
-            }
-
-            /// <summary>
-            /// Gets the image that represents the state of the rigid body in the specified
-            /// amount of seconds after this image.
-            /// </summary>
-            public Image Next(double Seconds)
-            {
-                return new Image(
-                    this._Section.CreateRelation(Matrix.Translate(this._Vel * Seconds)), 
-                    this._Body, this._Vel);
-            }
-
-            private Section _Section;
-            private RigidBody _Body;
-            private Vector _Vel;
-        }
-
+        private Section _Section;
+        private ICurve _Velocity;
+        private ICurve _Force;
         private Vector _MassCenter;
         private IShape _Shape;
         private double _Mass;

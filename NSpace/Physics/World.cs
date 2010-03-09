@@ -14,18 +14,7 @@ namespace NSpace.Physics
     {
         public World()
         {
-            this._Bodies = new Dictionary<RigidBody, RigidBody.Image>();
-        }
 
-        /// <summary>
-        /// Gets the current image for a body.
-        /// </summary>
-        public RigidBody.Image this[RigidBody Body]
-        {
-            get
-            {
-                return this._Bodies[Body];
-            }
         }
 
         /// <summary>
@@ -33,23 +22,20 @@ namespace NSpace.Physics
         /// </summary>
         public void Update(double Time)
         {
-            Dictionary<RigidBody, RigidBody.Image> next = new Dictionary<RigidBody, RigidBody.Image>();
-            foreach (RigidBody.Image im in this._Bodies.Values)
-            {
-                RigidBody.Image nextim = im.Next(Time);
-                next.Add(nextim.Body, nextim);
-            }
-            this._Bodies = next;
+            this._CurTime += Time;
         }
 
         /// <summary>
-        /// Adds a rigid body to the world.
+        /// Gets the current time in seconds in the world.
         /// </summary>
-        public void AddBody(RigidBody.Image Image)
+        public double CurrentTime
         {
-            this._Bodies.Add(Image.Body, Image);
+            get
+            {
+                return this._CurTime;
+            }
         }
 
-        private Dictionary<RigidBody, RigidBody.Image> _Bodies;
+        private double _CurTime;
     }
 }
