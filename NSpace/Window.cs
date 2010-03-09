@@ -114,7 +114,6 @@ namespace NSpace
             {
                 Vector hitpos = closehit.Value.Position;
                 Vector norm = closehit.Value.Normal * 0.1;
-                Console.WriteLine(hitpos.ToString());
                 this._Line = DebugVisual.CreateLine(hitpos, hitpos + norm, this._WorldSect);
                 this._RootVisual.Add(this._Line);
             }
@@ -169,7 +168,6 @@ namespace NSpace
             if (this.Keyboard[Key.Down]) trans *= Quaternion.AxisRotate(new Vector(0.0, 1.0, 0.0), updatetime * turnspeed).ToMatrix();
             if (this.Keyboard[Key.Right]) trans *= Quaternion.AxisRotate(new Vector(0.0, 0.0, 1.0), -updatetime * turnspeed).ToMatrix();
             this._View.Section.ParentTransform = Matrix.Transform(trans, this._View.Section.ParentTransform);
-
             
 
             this._Rot += Math.PI / 2.0 * updatetime;
