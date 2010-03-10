@@ -67,6 +67,7 @@
     <Compile Include="Renderable.cs" />
     <Compile Include="Section.cs" />
     <Compile Include="SimpleMesh.cs" />
+    <Compile Include="Span.cs" />
     <Compile Include="Texture.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Vector.cs" />
