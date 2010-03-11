@@ -11,7 +11,7 @@ namespace NSpace
     /// A three-dimensional orthographical rectangular volume that specifies the location where
     /// items may be contained.
     /// </summary>
-    public struct Bound : IBound<Bound>
+    public struct Bound : IBound<Bound>, IIntersectTest<Bound>
     {
         public Bound(Vector Min, Vector Max)
         {
@@ -34,6 +34,14 @@ namespace NSpace
         {
             this.Min = Source.Min;
             this.Max = Source.Max;
+        }
+
+        public bool Intersects(Bound Bound)
+        {
+            return
+                this.Max.X > Bound.Min.X && this.Min.X < Bound.Max.X &&
+                this.Max.Y > Bound.Min.Y && this.Min.Y < Bound.Max.Y &&
+                this.Max.Z > Bound.Min.Z && this.Min.Z < Bound.Max.Z;
         }
 
         /// <summary>
@@ -112,17 +120,6 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Gets if the two bounds intersect.
-        /// </summary>
-        public static bool Intersects(Bound A, Bound B)
-        {
-            return
-                A.Max.X > B.Min.X && A.Min.X < B.Max.X &&
-                A.Max.Y > B.Min.Y && A.Min.Y < B.Max.Y &&
-                A.Max.Z > B.Min.Z && A.Min.Z < B.Max.Z;
-        }
-
-        /// <summary>
         /// Gets a bound that encompasses everything in all coordinate spaces.
         /// </summary>
         public static Bound Huge
@@ -156,24 +153,8 @@ namespace NSpace
                     new Vector(ninf, ninf, ninf));
             }
         }
-    }
 
-    /// <summary>
-    /// Intersect test to see if two bounds intersect.
-    /// </summary>
-    public struct BoundIntersectTest : IIntersectTest<Bound>
-    {
-        public BoundIntersectTest(Bound Bound)
-        {
-            this._Bound = Bound;
-        }
-
-        public bool Intersects(Bound Bound)
-        {
-            return Bound.Intersects(this._Bound, Bound);
-        }
-
-        private Bound _Bound;
+        
     }
 
     /// <summary>

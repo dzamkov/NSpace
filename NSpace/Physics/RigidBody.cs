@@ -11,13 +11,10 @@ namespace NSpace.Physics
     /// A physics object whose collision is defined by a single shape that does
     /// not change over the lifetime of the body.
     /// </summary>
-    public class RigidBody
+    public class RigidBody : PhysicsObject
     {
         public RigidBody(Section Section, double Mass, Vector MassCenter, IShape Shape)
         {
-            this._Force = new ConstantCurve(new Vector(0.0, 0.0, -9.8));
-            this._Velocity = this._Force.Integral(new Vector(0.0, 0.0, 0.0));
-
             this._Section = Section;
             this._Mass = Mass;
             this._MassCenter = MassCenter;
@@ -59,17 +56,19 @@ namespace NSpace.Physics
         }
 
         /// <summary>
-        /// Gets the section for this body at the specified world time.
+        /// Gets the section this rigid body is in.
         /// </summary>
-        public Section GetSection(double Time)
+        public Section Section
         {
-            return this._Section.CreateRelation(Matrix.Translate(this._Velocity.Integral(new Vector(0.0, 0.0, 0.0)).GetPoint(Time)));
+            get
+            {
+                return this._Section;
+            }
         }
 
         private Section _Section;
-        private ICurve _Velocity;
-        private ICurve _Force;
         private Vector _MassCenter;
+        private Bound _ShapeBound;
         private IShape _Shape;
         private double _Mass;
     }

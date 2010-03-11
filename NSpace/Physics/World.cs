@@ -14,7 +14,7 @@ namespace NSpace.Physics
     {
         public World()
         {
-
+            this._Objects = new Marker();
         }
 
         /// <summary>
@@ -22,20 +22,17 @@ namespace NSpace.Physics
         /// </summary>
         public void Update(double Time)
         {
-            this._CurTime += Time;
+
         }
 
         /// <summary>
-        /// Gets the current time in seconds in the world.
+        /// Adds a physics object to be processed directly by the world.
         /// </summary>
-        public double CurrentTime
+        public void AddPhysicsObject(PhysicsObject Object)
         {
-            get
-            {
-                return this._CurTime;
-            }
+            this._Objects.Mark(Object);
         }
 
-        private double _CurTime;
+        private Marker _Objects;
     }
 }
