@@ -56,12 +56,11 @@ namespace NSpace.Physics
     {
         public Marker()
         {
-            this._Objs = new TimeBoundTree<PhysicsObject>();
+            this._Objs = new DynamicBoundMap<TimeBound, PhysicsObject>();
         }
 
-        public Marker(IEnumerable<PhysicsObject> Objs)
+        public Marker(IEnumerable<PhysicsObject> Objs) : this()
         {
-            this._Objs = new TimeBoundTree<PhysicsObject>();
             foreach (PhysicsObject obj in Objs)
             {
                 obj._Markers.Add(this);
@@ -70,9 +69,8 @@ namespace NSpace.Physics
             this._Objs.Balanace();
         }
 
-        public Marker(PhysicsObject Obj)
+        public Marker(PhysicsObject Obj) : this()
         {
-            this._Objs = new TimeBoundTree<PhysicsObject>();
             this.Mark(Obj);
         }
 
@@ -101,7 +99,7 @@ namespace NSpace.Physics
             this._Objs[Obj] = Obj.TimeBound;
         }
 
-        private TimeBoundTree<PhysicsObject> _Objs;
+        private DynamicBoundMap<TimeBound, PhysicsObject> _Objs;
     }
 
     /// <summary>

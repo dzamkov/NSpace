@@ -8,76 +8,105 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    ///  A tree for organizing bounded objects.
+    ///  A map for organizing bounded objects by their bounds.
     /// </summary>
     /// <typeparam name="T">The type of bounds used in this bound tree.</typeparam>
     /// <typeparam name="O">The type of object stored along with bounds.</typeparam>
-    public abstract class BoundTree<T, O>
+    public class BoundMap<T, O>
         where T : IBound<T>
-        where O : class
+        where O : struct
     {
-        public BoundTree()
+        public BoundMap(IBoundScorer<T> Scorer)
         {
-            this._ObjectNodes = new Dictionary<O, Node>();
+            this._Scorer = Scorer;
         }
 
         /// <summary>
-        /// Gets the "score" of a bound. The bound tree will try to minimize the score
-        /// of bounds when storing bounded objects.
+        /// A node within a bound map used to store a bound/object pair.
         /// </summary>
-        public abstract double GetScore(T Bound);
-
-        /// <summary>
-        /// A node within a bound tree.
-        /// </summary>
-        private class Node
+        public class Node
         {
+            /// <summary>
+            /// Gets the bound of this node.
+            /// </summary>
+            public T Bound
+            {
+                get
+                {
+                    return this._Bound;
+                }
+            }
+
+            /// <summary>
+            /// Gets the object represented by this node.
+            /// </summary>
+            public O Object
+            {
+                get
+                {
+                    return this._Object.Value;
+                }
+            }
+
+            /// <summary>
+            /// Removes this node from the bound map, which must be specified.
+            /// </summary>
+            public void Remove(BoundMap<T, O> Map)
+            {
+                Map._RemoveNode(this);
+            }
+
+            /// <summary>
+            /// Adds all the leaf nodes that are a child of this node. Leaf nodes have an
+            /// object and no child nodes.
+            /// </summary>
+            internal void _LeafNodes(List<Node> List)
+            {
+                if (this._Object == null)
+                {
+                    this._A._LeafNodes(List);
+                    this._B._LeafNodes(List);
+                }
+                else
+                {
+                    List.Add(this);
+                }
+            }
+
             /// <summary>
             /// The bound of this node.
             /// </summary>
-            public T Bound;
+            internal T _Bound;
 
             /// <summary>
             /// The object this node represents or null if this node
             /// is a combination of other nodes.
             /// </summary>
-            public O Object;
+            internal O? _Object;
 
             /// <summary>
             /// One of the nodes that makes up this node or null if this
             /// node has no children.
             /// </summary>
-            public Node A;
+            internal Node _A;
 
             /// <summary>
             /// See A.
             /// </summary>
-            public Node B;
+            internal Node _B;
 
             /// <summary>
             /// The parent node of this node.
             /// </summary>
-            public Node Parent;
+            internal Node _Parent;
         }
 
         /// <summary>
-        /// Gets or sets the bound for the specified object.
+        /// Adds a bounded object to this bound map.
         /// </summary>
-        public T this[O Key]
+        public Node Add(T Bound, O Object)
         {
-            get
-            {
-                return this._ObjectNodes[Key].Bound;
-            }
-            set
-            {
-                Node n = null;
-                if(this._ObjectNodes.TryGetValue(Key, out n))
-                {
-                    this._RemoveNode(n);
-                }
-                this._ObjectNodes[Key] = this._AddNode(Key, value);
-            }
+            return this._AddNode(Object, Bound);
         }
 
         /// <summary>
@@ -91,9 +120,11 @@ namespace NSpace
 
 
             // Initial nodes
-            foreach (Node n in this._ObjectNodes.Values)
+            List<Node> leafnodes = new List<BoundMap<T, O>.Node>();
+            this._Root._LeafNodes(leafnodes);
+            foreach (Node n in leafnodes)
             {
-                scores.AddFirst(new KeyValuePair<Node, double>(n, this.GetScore(n.Bound)));
+                scores.AddFirst(new KeyValuePair<Node, double>(n, this._Scorer.GetScore(n._Bound)));
             }
             this._QSort(scores);
 
@@ -113,18 +144,18 @@ namespace NSpace
                     if (next != null && next.Value.Value < canidatescore)
                     {
                         Node b = next.Value.Key;
-                        T abbound = a.Bound.Union(b.Bound);
-                        double score = this.GetScore(abbound);
+                        T abbound = a._Bound.Union(b._Bound);
+                        double score = this._Scorer.GetScore(abbound);
                         if (score < canidatescore)
                         {
                             canidatenode = next;
                             canidatescore = score;
                             canidate = new Node();
-                            canidate.Bound = abbound;
-                            canidate.A = a;
-                            canidate.B = b;
-                            a.Parent = canidate;
-                            b.Parent = canidate;
+                            canidate._Bound = abbound;
+                            canidate._A = a;
+                            canidate._B = b;
+                            a._Parent = canidate;
+                            b._Parent = canidate;
                         }
                         cur = next;
                     }
@@ -206,16 +237,16 @@ namespace NSpace
         /// </summary>
         private void _Intersect(List<O> Res, IIntersectTest<T> Test, Node Root)
         {
-            if (Test.Intersects(Root.Bound))
+            if (Test.Intersects(Root._Bound))
             {
-                if (Root.Object != null)
+                if (Root._Object != null)
                 {
-                    Res.Add(Root.Object);
+                    Res.Add(Root._Object.Value);
                 }
                 else
                 {
-                    this._Intersect(Res, Test, Root.A);
-                    this._Intersect(Res, Test, Root.B);
+                    this._Intersect(Res, Test, Root._A);
+                    this._Intersect(Res, Test, Root._B);
                 }
             }
         }
@@ -223,29 +254,29 @@ namespace NSpace
         /// <summary>
         /// Removes the specified node from the node tree.
         /// </summary>
-        private void _RemoveNode(Node Node)
+        internal void _RemoveNode(Node Node)
         {
-            Node par = Node.Parent;
+            Node par = Node._Parent;
             if (par != null)
             {
                 // Remove references of node from parent.
-                Node grampa = par.Parent;
+                Node grampa = par._Parent;
                 Node other;
-                if (par.A == Node)
+                if (par._A == Node)
                 {
-                    other = par.B;
+                    other = par._B;
                 }
                 else
                 {
-                    other = par.A;
+                    other = par._A;
                 }
-                if (grampa.A == par)
+                if (grampa._A == par)
                 {
-                    grampa.A = other;
+                    grampa._A = other;
                 }
                 else
                 {
-                    grampa.B = other;
+                    grampa._B = other;
                 }
             }
             else
@@ -258,24 +289,24 @@ namespace NSpace
         /// <summary>
         /// Adds a node to the node tree without rebalancing.
         /// </summary>
-        private Node _AddNode(O Object, T Bound)
+        internal Node _AddNode(O Object, T Bound)
         {
             // Make node for the object
             Node objnode = new Node();
-            objnode.Bound = Bound;
-            objnode.Object = Object;
+            objnode._Bound = Bound;
+            objnode._Object = Object;
 
             // Has root?
             if (this._Root != null)
             {
                 // Combine root with new node
                 Node parnode = new Node();
-                parnode.A = objnode;
-                parnode.B = this._Root;
-                parnode.Bound = objnode.Bound.Union(this._Root.Bound);
+                parnode._A = objnode;
+                parnode._B = this._Root;
+                parnode._Bound = objnode._Bound.Union(this._Root._Bound);
 
-                objnode.Parent = parnode;
-                this._Root.Parent = parnode;
+                objnode._Parent = parnode;
+                this._Root._Parent = parnode;
                 this._Root = parnode;
             }
             else
@@ -287,7 +318,7 @@ namespace NSpace
         }
 
         private Node _Root;
-        private Dictionary<O, Node> _ObjectNodes;
+        private IBoundScorer<T> _Scorer;
     }
 
     /// <summary>
@@ -316,5 +347,80 @@ namespace NSpace
         /// Gets if the specified bound was intersect.
         /// </summary>
         bool Intersects(T Bound);
+    }
+
+    /// <summary>
+    /// An score system that can score a bound based on its effectiveness. An example
+    /// of this would be a scorer that gives bounds with a low area a lower score.
+    /// </summary>
+    /// <typeparam name="T">The type of bounds this can score.</typeparam>
+    public interface IBoundScorer<T>
+        where T : IBound<T>
+    {
+        /// <summary>
+        /// Gets the "score" of a bound. The bound map will try to minimize the score
+        /// of bounds when storing bounded objects.
+        /// </summary>
+        double GetScore(T Bound);
+    }
+
+    /// <summary>
+    /// A bound map for reference types that can change over time. The bounds for objects
+    /// can be changed without the removal of them.
+    /// </summary>
+    /// <typeparam name="T">The type of bounds objects have.</typeparam>
+    /// <typeparam name="O">The type of objects to store.</typeparam>
+    public class DynamicBoundMap<T, O>
+        where T : IBound<T>
+        where O : class
+    {
+        public DynamicBoundMap(IBoundScorer<T> Scorer)
+        {
+            this._BoundMap = new BoundMap<T, DynamicBoundMap<T, O>.Object>(Scorer);
+            this._ObjectNodes = new Dictionary<O, BoundMap<T, DynamicBoundMap<T, O>.Object>.Node>();
+        }
+
+        /// <summary>
+        /// The type of object stored in the base bound map. This really shouldnt be touched.
+        /// </summary>
+        private struct Object
+        {
+            public O Ref;
+        }
+
+        /// <summary>
+        /// Returns all objects whose bounds are intersected by the specified test.
+        /// </summary>
+        public IEnumerable<O> Intersect(IIntersectTest<T> Test)
+        {
+            IEnumerable<Object> objs = this._BoundMap.Intersect(Test);
+            foreach (Object o in objs)
+            {
+                yield return o.Ref;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the bounds for a specified object in this bound map.
+        /// </summary>
+        public T this[O Obj]
+        {
+            get
+            {
+                return this._ObjectNodes[Obj].Bound;
+            }
+            set
+            {
+                BoundMap<T, Object>.Node node;
+                if(this._ObjectNodes.TryGetValue(Obj, out node))
+                {
+                    node.Remove(this._BoundMap);
+                }
+                this._ObjectNodes[Obj] = node = this._BoundMap.Add(value, new Object() { Ref = Obj });
+            }
+        }
+
+        private BoundMap<T, Object> _BoundMap;
+        private Dictionary<O, BoundMap<T, Object>.Node> _ObjectNodes;
     }
 }

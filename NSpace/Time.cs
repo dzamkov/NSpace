@@ -113,12 +113,12 @@ namespace NSpace
     }
 
     /// <summary>
-    /// Bound tree that organizes objects by time.
+    /// Scorer for time bounds that tries to minimize the size, or period of the time
+    /// bounds.
     /// </summary>
-    public class TimeBoundTree<O> : BoundTree<TimeBound, O>
-        where O : class
+    public struct TimeBoundScorer : IBoundScorer<TimeBound>
     {
-        public override double GetScore(TimeBound Bound)
+        public double GetScore(TimeBound Bound)
         {
             // Minimize timebound size
             return Bound.Size.Seconds;

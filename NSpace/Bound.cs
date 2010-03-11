@@ -158,12 +158,11 @@ namespace NSpace
     }
 
     /// <summary>
-    /// A type of bound tree for bounds that tries to minimize volume.
+    /// Scorer that tries to minimize volume of bounds.
     /// </summary>
-    public class VolumeBoundTree<O> : BoundTree<Bound, O>
-        where O : class
+    public struct VolumeBoundScorer : IBoundScorer<Bound>
     {
-        public override double GetScore(Bound Bound)
+        public double GetScore(Bound Bound)
         {
             return Bound.Volume;
         }
