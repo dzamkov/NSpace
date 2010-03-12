@@ -121,7 +121,10 @@ namespace NSpace
 
             // Initial nodes
             List<Node> leafnodes = new List<BoundMap<T, O>.Node>();
-            this._Root._LeafNodes(leafnodes);
+            if (this._Root != null)
+            {
+                this._Root._LeafNodes(leafnodes);
+            }
             foreach (Node n in leafnodes)
             {
                 scores.AddFirst(new KeyValuePair<Node, double>(n, this._Scorer.GetScore(n._Bound)));
@@ -216,6 +219,25 @@ namespace NSpace
                     {
                         List.AddLast(val);
                     }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets all objects in this bound map.
+        /// </summary>
+        public IEnumerable<O> Objects
+        {
+            get
+            {
+                List<Node> nodes = new List<Node>();
+                if(this._Root != null)
+                {
+                    this._Root._LeafNodes(nodes);
+                }
+                foreach (Node n in nodes)
+                {
+                    yield return n.Object;
                 }
             }
         }
@@ -386,6 +408,17 @@ namespace NSpace
         private struct Object
         {
             public O Ref;
+        }
+
+        /// <summary>
+        /// Gets all objects in this dynamic bound map.
+        /// </summary>
+        public IEnumerable<O> Objects
+        {
+            get
+            {
+                return this._ObjectNodes.Keys;
+            }
         }
 
         /// <summary>

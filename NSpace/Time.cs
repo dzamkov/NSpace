@@ -108,6 +108,15 @@ namespace NSpace
             }
         }
 
+        /// <summary>
+        /// Gets the distance across the bound a certain time is with 0.0 indicating the time
+        /// is at the start of the bound and 1.0 indicating the time is at the end of the bound.
+        /// </summary>
+        public double BoundRelation(Time Time)
+        {
+            return (TimeStart.Seconds + Time.Seconds) / (TimeEnd - TimeStart).Seconds;
+        }
+
         public Time TimeStart;
         public Time TimeEnd;
     }

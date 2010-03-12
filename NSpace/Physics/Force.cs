@@ -13,20 +13,31 @@ namespace NSpace.Physics
     /// will produce velocity which will be factored into object movement. Forces must
     /// be finite and applied within a finite amount of time.
     /// </summary>
-    public abstract class Force : PhysicsObject
+    public interface IForce
     {
         /// <summary>
         /// Applies the force to the specified point defined with position over time, velocity
         /// over time and the start and end times for those curves. This function returns an acceleration 
         /// over time that should be added to the forces acting upon the object.
         /// </summary>
-        public abstract ICurve Apply(double TimeStart, double TimeEnd, Section Section, ICurve Position, ICurve Velocity);
+        ICurve Apply(TimeBound Time, double Mass, Section Section, ICurve Position, ICurve Velocity);
+    }
+
+    /// <summary>
+    /// A physics object that can apply a force.
+    /// </summary>
+    public interface IForceObject
+    {
+        /// <summary>
+        /// Gets the forces produced by this physics object.
+        /// </summary>
+        IEnumerable<IForce> Forces { get; }
     }
 
     /// <summary>
     /// A force which presents a constant attraction to a direction in space.
     /// </summary>
-    public class Gravity : Force
+    public class Gravity : IForce
     {
         public Gravity(Section WorldSection, Vector Force)
         {
@@ -59,21 +70,47 @@ namespace NSpace.Physics
             }
         }
 
-        public override ICurve Apply(double TimeStart, double TimeEnd, Section Section, ICurve Position, ICurve Velocity)
+        public ICurve Apply(TimeBound Time, double Mass, Section Section, ICurve Position, ICurve Velocity)
         {
-            Vector forceinbody = this._WorldSection.GetRelation(Section) * this._Force;
+            Vector forceinbody = this._WorldSection.GetRelation(Section) * this._Force * Mass;
             return new ConstantCurve(forceinbody);
+        }
+
+        private Section _WorldSection;
+        private Vector _Force;
+    }
+
+    /// <summary>
+    /// A physics object that applies a force across an entire world.
+    /// </summary>
+    public class GlobalForceObject : PhysicsObject, IForceObject
+    {
+        public GlobalForceObject(IForce Force)
+        {
+            this._Force = Force;
         }
 
         public override TimeBound TimeBound
         {
-            get 
+            get
             {
                 return TimeBound.Huge;
             }
         }
 
-        private Section _WorldSection;
-        private Vector _Force;
+        public override void Interact(PhysicsObject Other)
+        {
+            
+        }
+
+        public IEnumerable<IForce> Forces
+        {
+            get 
+            {
+                return new IForce[1] { this._Force };
+            }
+        }
+
+        private IForce _Force;
     }
 }

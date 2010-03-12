@@ -11,14 +11,74 @@ namespace NSpace.Physics
     /// A physics object whose collision is defined by a single shape that does
     /// not change over the lifetime of the body.
     /// </summary>
-    public class RigidBody : PhysicsObject
+    public class RigidBody : PhysicsObject, IExtendableObject
     {
-        public RigidBody(Section Section, double Mass, Vector MassCenter, IShape Shape)
+        private RigidBody()
         {
-            this._Section = Section;
-            this._Mass = Mass;
-            this._MassCenter = MassCenter;
-            this._Shape = Shape;
+
+        }
+
+        public override TimeBound TimeBound
+        {
+            get 
+            {
+                return this._TimeBound;
+            }
+        }
+
+        public override void Interact(PhysicsObject Other)
+        {
+            
+        }
+
+        public void Extend(TimeSpan Time)
+        {
+            RigidBody rb = new RigidBody();
+            rb._Mass = this._Mass;
+            rb._MassCenter = this._MassCenter;
+            rb._Shape = this._Shape;
+            rb._Section = this.GetSectionAtTime(this._TimeBound.TimeEnd);
+            rb._TimeBound = new TimeBound(this._TimeBound.TimeEnd, this._TimeBound.TimeEnd + Time);
+            Init(new Vector(0.0, 0.0, 0.0), rb, null);
+        }
+
+        /// <summary>
+        /// Creates and initializes a rigid body in the specified world.
+        /// </summary>
+        public static RigidBody Create(World World, Section Section, double Mass, Vector MassCenter, IShape Shape)
+        {
+            RigidBody rb = new RigidBody();
+            rb._Mass = Mass;
+            rb._MassCenter = MassCenter;
+            rb._Shape = Shape;
+            rb._Section = Section;
+            rb._TimeBound = new TimeBound(World.CurrentTime, World.CurrentTime + new TimeSpan(5.0));
+            Init(new Vector(0.0, 0.0, 0.0), rb, World);
+            World.AddPhysicsObject(rb);
+            return rb;
+        }
+
+        /// <summary>
+        /// Initializes a rigid body within a world by simulating its interaction with other objects.
+        /// </summary>
+        private static void Init(Vector InitVelocity, RigidBody Body, World World)
+        {
+            foreach (PhysicsObject physobj in World.Parts)
+            {
+                IForceObject forceobj = physobj as IForceObject;
+                if (forceobj != null)
+                {
+                    foreach (IForce force in forceobj.Forces)
+                    {
+                        ICurve accel = force.Apply(Body._TimeBound, Body._Mass, Body._Section, null, null);
+                        ICurve vel = accel.Integral(InitVelocity);
+                        ICurve pos = vel.Integral(new Vector(0.0, 0.0, 0.0));
+                        Body._Position = pos;
+                        break;
+                    }
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -66,9 +126,19 @@ namespace NSpace.Physics
             }
         }
 
+        /// <summary>
+        /// Gets the section that shows the orientation of the rigid body
+        /// at the specified time within the rigid bodies time bounds.
+        /// </summary>
+        public Section GetSectionAtTime(Time Time)
+        {
+            return this._Section.CreateRelation(Matrix.Translate(this._Position.GetPoint(this._TimeBound.BoundRelation(Time))));
+        }
+
+        private TimeBound _TimeBound;
+        private ICurve _Position;
         private Section _Section;
         private Vector _MassCenter;
-        private Bound _ShapeBound;
         private IShape _Shape;
         private double _Mass;
     }

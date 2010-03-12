@@ -23,6 +23,12 @@ namespace NSpace.Physics
         public abstract TimeBound TimeBound { get; }
 
         /// <summary>
+        /// Causes this physics object to interact with another. This produces changes on
+        /// the physics object without affect any other.
+        /// </summary>
+        public abstract void Interact(PhysicsObject Other);
+
+        /// <summary>
         /// Updates the bounds of the physics object when it is changed. Whenever
         /// the bound of the object changes, this must be called.
         /// </summary>
@@ -56,7 +62,7 @@ namespace NSpace.Physics
     {
         public Marker()
         {
-            this._Objs = new DynamicBoundMap<TimeBound, PhysicsObject>();
+            this._Objs = new DynamicBoundMap<TimeBound, PhysicsObject>(new TimeBoundScorer());
         }
 
         public Marker(IEnumerable<PhysicsObject> Objs) : this()
@@ -66,7 +72,6 @@ namespace NSpace.Physics
                 obj._Markers.Add(this);
                 this._Objs[obj] = obj.TimeBound;
             }
-            this._Objs.Balanace();
         }
 
         public Marker(PhysicsObject Obj) : this()
@@ -86,9 +91,20 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the marked physics objects at the specified time.
         /// </summary>
-        public IEnumerable<PhysicsObject> Objects(Time Time)
+        public IEnumerable<PhysicsObject> GetObjects(Time Time)
         {
             return this._Objs.Intersect(Time);
+        }
+
+        /// <summary>
+        /// Gets all objects that are marked by this marker.
+        /// </summary>
+        public IEnumerable<PhysicsObject> Objects
+        {
+            get
+            {
+                return this._Objs.Objects;
+            }
         }
 
         /// <summary>
@@ -129,13 +145,25 @@ namespace NSpace.Physics
     }
 
     /// <summary>
+    /// A physics object that is composed of several other physics objects. A physics object is only
+    /// a composite physics object if its behavior is determined entirely by its parts.
+    /// </summary>
+    public interface ICompositeObject
+    {
+        /// <summary>
+        /// Gets the physics objects that make up this physics object.
+        /// </summary>
+        IEnumerable<PhysicsObject> Parts { get; }
+    }
+
+    /// <summary>
     /// A physics object that can be extended in time.
     /// </summary>
-    public interface IExtendable
+    public interface IExtendableObject
     {
         /// <summary>
         /// Extends the life of the physics object by the specified amount of time.
         /// </summary>
-        void Extend(double Time);
+        void Extend(TimeSpan Time);
     }
 }
