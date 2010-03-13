@@ -52,7 +52,7 @@ namespace NSpace.Physics
                 if (nexttime > o.TimeBound.TimeEnd)
                 {
                     IExtendableObject ext = o as IExtendableObject;
-                    ext.Extend(new TimeSpan(5.0));
+                    ext.Extend(new TimeSpan(5.0), this);
                 }
             }
             this._CurTime = nexttime;

@@ -97,6 +97,20 @@ namespace NSpace.Physics
         }
 
         /// <summary>
+        /// Gets a marked physics object at the specified time. If only one object
+        /// is marked at a time, this makes sense, if not, dont use this.
+        /// </summary>
+        public PhysicsObject GetObject(Time Time)
+        {
+            IEnumerable<PhysicsObject> objs = this._Objs.Intersect(Time);
+            foreach(PhysicsObject po in objs)
+            {
+                return po;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Gets all objects that are marked by this marker.
         /// </summary>
         public IEnumerable<PhysicsObject> Objects
@@ -164,6 +178,6 @@ namespace NSpace.Physics
         /// <summary>
         /// Extends the life of the physics object by the specified amount of time.
         /// </summary>
-        void Extend(TimeSpan Time);
+        void Extend(TimeSpan Time, World World);
     }
 }

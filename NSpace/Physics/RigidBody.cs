@@ -31,7 +31,7 @@ namespace NSpace.Physics
             
         }
 
-        public void Extend(TimeSpan Time)
+        public void Extend(TimeSpan Time, World World)
         {
             RigidBody rb = new RigidBody();
             rb._Mass = this._Mass;
@@ -39,7 +39,8 @@ namespace NSpace.Physics
             rb._Shape = this._Shape;
             rb._Section = this.GetSectionAtTime(this._TimeBound.TimeEnd);
             rb._TimeBound = new TimeBound(this._TimeBound.TimeEnd, this._TimeBound.TimeEnd + Time);
-            Init(new Vector(0.0, 0.0, 0.0), rb, null);
+            Init(new Vector(0.0, 0.0, 0.0), rb, World);
+            this.Mark(rb);
         }
 
         /// <summary>

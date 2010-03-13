@@ -37,6 +37,7 @@ namespace NSpace
             // Create world
             this._WorldSect = new Section();
             this._World = new World();
+            this._World.AddPhysicsObject(new GlobalForceObject(new Gravity(this._WorldSect, new Vector(0.0, 0.0, -9.8))));
 
             // Create view
             this._RootVisual = new MultiVisual(this._WorldSect);
@@ -68,7 +69,7 @@ namespace NSpace
                                         Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
                                         Matrix.Scale(0.2)));
                             this._RootVisual.Add(cc.Model = Model.Create(m, new TextureNormalMaterial(tex), objsect));
-                            cc.Body = new RigidBody(objsect, 5.0, new Vector(0.0, 0.0, 0.0), new MeshSurface(m));
+                            cc.Body = new Marker(RigidBody.Create(this._World, objsect, 1.0, new Vector(0.0, 0.0, 0.0), new MeshSurface(m)));
                             this._Cubes.Add(cc);
                         }
                     }
@@ -90,13 +91,14 @@ namespace NSpace
             TraceHit? closehit = null;
             foreach (CompanionCube cc in this._Cubes)
             {
-                Section sect = cc.Body.GetSection(this._World.CurrentTime);
+                RigidBody body = (cc.Body.GetObject(this._World.CurrentTime) as RigidBody);
+                Section sect = body.GetSectionAtTime(this._World.CurrentTime);
                 cc.Model.Section = sect;
                 Matrix trans = this._View.Section.GetRelation(sect);
                 Vector tsr = trans * sr;
                 Vector tsp = trans * sp;
                 TraceHit hit = new TraceHit();
-                if ((cc.Body.Shape as ISurface).TracePoint(tsr, tsp, ref hit))
+                if ((body.Shape as ISurface).TracePoint(tsr, tsp, ref hit))
                 {
                     Vector realpos = sect.ParentTransform * hit.Position;
                     if (closehit == null || closehit.Value.Length > hit.Length)
@@ -133,7 +135,7 @@ namespace NSpace
             this._LastUpdate = curtime;
 
             // World update
-            this._World.Update(updatetime);
+            this._World.Update(new TimeSpan(updatetime));
 
             // Navigation
             Matrix trans = Matrix.Identity;
@@ -179,7 +181,7 @@ namespace NSpace
         public struct CompanionCube
         {
             public Model Model;
-            public RigidBody Body;
+            public Marker Body;
         }
 
         private List<CompanionCube> _Cubes;
