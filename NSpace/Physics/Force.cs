@@ -72,7 +72,7 @@ namespace NSpace.Physics
 
         public ICurve Apply(TimeBound Time, double Mass, Section Section, ICurve Position, ICurve Velocity)
         {
-            Vector forceinbody = this._WorldSection.GetRelation(Section) * this._Force * Mass;
+            Vector forceinbody = this._WorldSection.GetRelation(Section).LinearTransform(this._Force) * Mass;
             return new ConstantCurve(forceinbody);
         }
 

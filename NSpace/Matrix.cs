@@ -137,6 +137,18 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Linear transforms a vector and returns the result. Such a transform will not apply translation
+        /// and is useful for converting direction vectors.
+        /// </summary>
+        public Vector LinearTransform(Vector Vector)
+        {
+            return new Vector(
+                (this.M11 * Vector.X) + (this.M12 * Vector.Y) + (this.M13 * Vector.Z),
+                (this.M21 * Vector.X) + (this.M22 * Vector.Y) + (this.M23 * Vector.Z),
+                (this.M31 * Vector.X) + (this.M32 * Vector.Y) + (this.M33 * Vector.Z));
+        }
+
+        /// <summary>
         /// Gets the identity matrix.
         /// </summary>
         public static Matrix Identity

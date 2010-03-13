@@ -39,7 +39,7 @@ namespace NSpace.Physics
             rb._Shape = this._Shape;
             rb._Section = this.GetSectionAtTime(this._TimeBound.TimeEnd);
             rb._TimeBound = new TimeBound(this._TimeBound.TimeEnd, this._TimeBound.TimeEnd + Time);
-            Init(new Vector(0.0, 0.0, 0.0), rb, World);
+            Init(this._Velocity.GetPoint(this._TimeBound.Size.Seconds), rb, World);
             this.Mark(rb);
         }
 
@@ -75,6 +75,7 @@ namespace NSpace.Physics
                         ICurve vel = accel.Integral(InitVelocity);
                         ICurve pos = vel.Integral(new Vector(0.0, 0.0, 0.0));
                         Body._Position = pos;
+                        Body._Velocity = vel;
                         break;
                     }
                     break;
@@ -138,6 +139,7 @@ namespace NSpace.Physics
 
         private TimeBound _TimeBound;
         private ICurve _Position;
+        private ICurve _Velocity;
         private Section _Section;
         private Vector _MassCenter;
         private IShape _Shape;
