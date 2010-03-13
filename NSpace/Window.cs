@@ -69,7 +69,11 @@ namespace NSpace
                                         Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
                                         Matrix.Scale(0.2)));
                             this._RootVisual.Add(cc.Model = Model.Create(m, new TextureNormalMaterial(tex), objsect));
-                            cc.Body = new Marker(RigidBody.Create(this._World, objsect, 1.0, new Vector(0.0, 0.0, 0.0), new MeshSurface(m)));
+                            cc.Body = new Marker(RigidBody.Create(this._World, objsect, 
+                                new RigidBody.Property(
+                                    new MeshSurface(m),
+                                    new Vector(0.0, 0.0, 0.0),
+                                    1.0)));
                             this._Cubes.Add(cc);
                         }
                     }
@@ -98,7 +102,7 @@ namespace NSpace
                 Vector tsr = trans * sr;
                 Vector tsp = trans * sp;
                 TraceHit hit = new TraceHit();
-                if ((body.Shape as ISurface).TracePoint(tsr, tsp, ref hit))
+                if ((body.Properties.Shape as ISurface).TracePoint(tsr, tsp, ref hit))
                 {
                     Vector realpos = sect.ParentTransform * hit.Position;
                     if (closehit == null || closehit.Value.Length > hit.Length)

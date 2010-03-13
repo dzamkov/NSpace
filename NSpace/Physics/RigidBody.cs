@@ -34,9 +34,7 @@ namespace NSpace.Physics
         public void Extend(TimeSpan Time, World World)
         {
             RigidBody rb = new RigidBody();
-            rb._Mass = this._Mass;
-            rb._MassCenter = this._MassCenter;
-            rb._Shape = this._Shape;
+            rb._Properties = this._Properties;
             rb._Section = this.GetSectionAtTime(this._TimeBound.TimeEnd);
             rb._TimeBound = new TimeBound(this._TimeBound.TimeEnd, this._TimeBound.TimeEnd + Time);
             Init(this._Velocity.GetPoint(this._TimeBound.Size.Seconds), rb, World);
@@ -44,14 +42,23 @@ namespace NSpace.Physics
         }
 
         /// <summary>
+        /// Gets the properties of the rigid body.
+        /// </summary>
+        public Property Properties
+        {
+            get
+            {
+                return this._Properties;
+            }
+        }
+
+        /// <summary>
         /// Creates and initializes a rigid body in the specified world.
         /// </summary>
-        public static RigidBody Create(World World, Section Section, double Mass, Vector MassCenter, IShape Shape)
+        public static RigidBody Create(World World, Section Section, Property Properties)
         {
             RigidBody rb = new RigidBody();
-            rb._Mass = Mass;
-            rb._MassCenter = MassCenter;
-            rb._Shape = Shape;
+            rb._Properties = Properties;
             rb._Section = Section;
             rb._TimeBound = new TimeBound(World.CurrentTime, World.CurrentTime + new TimeSpan(5.0));
             Init(new Vector(0.0, 0.0, 0.0), rb, World);
@@ -71,7 +78,7 @@ namespace NSpace.Physics
                 {
                     foreach (IForce force in forceobj.Forces)
                     {
-                        ICurve accel = force.Apply(Body._TimeBound, Body._Mass, Body._Section, null, null);
+                        ICurve accel = force.Apply(Body._TimeBound, Body._Properties.Mass, Body._Section, null, null);
                         ICurve vel = accel.Integral(InitVelocity);
                         ICurve pos = vel.Integral(new Vector(0.0, 0.0, 0.0));
                         Body._Position = pos;
@@ -80,40 +87,6 @@ namespace NSpace.Physics
                     }
                     break;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Gets the mass of the body in kilograms.
-        /// </summary>
-        public double Mass
-        {
-            get
-            {
-                return this._Mass;
-            }
-        }
-
-        /// <summary>
-        /// Gets the center of mass for the body in local
-        /// coordinates of its shape.
-        /// </summary>
-        public Vector MassCenter
-        {
-            get
-            {
-                return this._MassCenter;
-            }
-        }
-
-        /// <summary>
-        /// Gets the shape of the rigid body.
-        /// </summary>
-        public IShape Shape
-        {
-            get
-            {
-                return this._Shape;
             }
         }
 
@@ -137,12 +110,39 @@ namespace NSpace.Physics
             return this._Section.CreateRelation(Matrix.Translate(this._Position.GetPoint(this._TimeBound.BoundRelation(Time))));
         }
 
+        /// <summary>
+        /// Properties of a rigid body such as shape, mass, etc.
+        /// </summary>
+        public struct Property
+        {
+            public Property(IShape Shape, Vector MassCenter, double Mass)
+            {
+                this.Shape = Shape;
+                this.MassCenter = MassCenter;
+                this.Mass = Mass;
+            }
+
+            /// <summary>
+            /// The shape of the rigid body, used for collisions.
+            /// </summary>
+            public IShape Shape;
+
+            /// <summary>
+            /// The center of mass for the body in local
+            /// coordinates of its shape.
+            /// </summary>
+            public Vector MassCenter;
+
+            /// <summary>
+            /// The mass of the body in  kilograms.
+            /// </summary>
+            public double Mass;
+        }
+
         private TimeBound _TimeBound;
         private ICurve _Position;
         private ICurve _Velocity;
         private Section _Section;
-        private Vector _MassCenter;
-        private IShape _Shape;
-        private double _Mass;
+        private Property _Properties;
     }
 }
