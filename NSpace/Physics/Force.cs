@@ -21,6 +21,14 @@ namespace NSpace.Physics
         /// over time that should be added to the forces acting upon the object.
         /// </summary>
         ICurve Apply(TimeBound Time, double Mass, Section Section, ICurve Position, ICurve Velocity);
+
+        /// <summary>
+        /// Combines the effects of this force with that of another. Since it is practically impossible to
+        /// know what every combination of forces does to each other, it is somewhat suggested that a generalization
+        /// of the forces is made. This function may be destructive to both of the supplied forces as long as it
+        /// returns a force that represents the combination of them.
+        /// </summary>
+        IForce Combine(IForce Other);
     }
 
     /// <summary>
@@ -76,8 +84,31 @@ namespace NSpace.Physics
             return new ConstantCurve(forceinbody);
         }
 
+        public IForce Combine(IForce Other)
+        {
+            return this;
+        }
+
         private Section _WorldSection;
         private Vector _Force;
+    }
+
+    /// <summary>
+    /// A force that tries to keep the any object its applied to static.
+    /// </summary>
+    public class Staticness : IForce
+    {
+        public ICurve Apply(TimeBound Time, double Mass, Section Section, ICurve Position, ICurve Velocity)
+        {
+            ICurve force = Velocity.Derivative();
+            force.Negate();
+            return force;
+        }
+
+        public IForce Combine(IForce Other)
+        {
+            return this;
+        }
     }
 
     /// <summary>

@@ -94,6 +94,16 @@ namespace NSpace
         }
 
         /// <summary>
+        /// Negates the vector.
+        /// </summary>
+        public void Negate()
+        {
+            this.X = -this.X;
+            this.Y = -this.Y;
+            this.Z = -this.Z;
+        }
+
+        /// <summary>
         /// Subtracts another vector from this vector.
         /// </summary>
         public void Subtract(Vector Other)

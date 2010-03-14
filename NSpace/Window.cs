@@ -38,6 +38,7 @@ namespace NSpace
             this._WorldSect = new Section();
             this._World = new World();
             this._World.AddPhysicsObject(new GlobalForceObject(new Gravity(this._WorldSect, new Vector(0.0, 0.0, -9.8))));
+            this._World.AddPhysicsObject(new GlobalForceObject(new Staticness()));
 
             // Create view
             this._RootVisual = new MultiVisual(this._WorldSect);
@@ -64,8 +65,8 @@ namespace NSpace
                         {
                             this._AddCompanionCube(
                                 Matrix.Transform(
-                                        Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
-                                        Matrix.Scale(0.2)),
+                                    Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
+                                    Matrix.Scale(0.2)),
                                 tex, m);
                         }
                     }

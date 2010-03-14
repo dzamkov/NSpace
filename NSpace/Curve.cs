@@ -28,6 +28,11 @@ namespace NSpace
         /// C. This is the inverse operation of derivative.
         /// </summary>
         ICurve Integral(Vector C);
+
+        /// <summary>
+        /// Negates the curve and causes the old this.GetPoint(x) to return -this.GetPoint(x).
+        /// </summary>
+        void Negate();
     }
 
     /// <summary>
@@ -98,6 +103,14 @@ namespace NSpace
             return new BezierCurve(npoints);
         }
 
+        public void Negate()
+        {
+            for (int t = 0; t < this._ControlPoints.Length; t++)
+            {
+                this._ControlPoints[t].Negate();
+            }
+        }
+
         private Vector[] _ControlPoints;
     }
 
@@ -124,6 +137,11 @@ namespace NSpace
         public ICurve Integral(Vector C)
         {
             return new BezierCurve(new Vector[] { C, C + this._Value });
+        }
+
+        public void Negate()
+        {
+            this._Value.Negate();
         }
 
         private Vector _Value;

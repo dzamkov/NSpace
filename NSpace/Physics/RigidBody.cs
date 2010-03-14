@@ -71,6 +71,7 @@ namespace NSpace.Physics
         /// </summary>
         private static void Init(Vector InitVelocity, RigidBody Body, World World)
         {
+            IForce totalforce = null;
             foreach (PhysicsObject physobj in World.Parts)
             {
                 IForceObject forceobj = physobj as IForceObject;
@@ -78,16 +79,24 @@ namespace NSpace.Physics
                 {
                     foreach (IForce force in forceobj.Forces)
                     {
-                        ICurve accel = force.Apply(Body._TimeBound, Body._Properties.Mass, Body._Section, null, null);
-                        ICurve vel = accel.Integral(InitVelocity);
-                        ICurve pos = vel.Integral(new Vector(0.0, 0.0, 0.0));
-                        Body._Position = pos;
-                        Body._Velocity = vel;
-                        break;
+                        if (totalforce == null)
+                        {
+                            totalforce = force.Combine(totalforce);
+                        }
+                        else
+                        {
+                            totalforce = force;
+                        }
                     }
-                    break;
                 }
             }
+            ICurve olvel = new ConstantCurve(InitVelocity);
+            ICurve olpos = olvel.Integral(new Vector());
+            ICurve accel = totalforce.Apply(Body._TimeBound, Body._Properties.Mass, Body._Section, olpos, olvel);
+            ICurve vel = accel.Integral(InitVelocity);
+            ICurve pos = vel.Integral(new Vector(0.0, 0.0, 0.0));
+            Body._Position = pos;
+            Body._Velocity = vel;
         }
 
         /// <summary>
