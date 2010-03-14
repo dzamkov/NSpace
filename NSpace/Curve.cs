@@ -8,9 +8,7 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    /// A curved path that has interpolated values over time. Time in the curve
-    /// is represented from 0.0 to 1.0. With 0.0 at the begining of the curve
-    /// and 1.0 at the end.
+    /// A curved path that has interpolated values over time.
     /// </summary>
     public interface ICurve
     {

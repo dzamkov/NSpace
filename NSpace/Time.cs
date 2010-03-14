@@ -114,7 +114,7 @@ namespace NSpace
         /// </summary>
         public double BoundRelation(Time Time)
         {
-            return (TimeStart.Seconds + Time.Seconds) / (TimeEnd - TimeStart).Seconds;
+            return (Time.Seconds - TimeStart.Seconds) / (TimeEnd - TimeStart).Seconds;
         }
 
         public Time TimeStart;

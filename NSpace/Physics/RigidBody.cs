@@ -37,7 +37,7 @@ namespace NSpace.Physics
             rb._Properties = this._Properties;
             rb._Section = this.GetSectionAtTime(this._TimeBound.TimeEnd);
             rb._TimeBound = new TimeBound(this._TimeBound.TimeEnd, this._TimeBound.TimeEnd + Time);
-            Init(this._Velocity.GetPoint(this._TimeBound.Size.Seconds), rb, World);
+            Init(this._Velocity.GetPoint(1.0), rb, World);
             this.Mark(rb);
         }
 

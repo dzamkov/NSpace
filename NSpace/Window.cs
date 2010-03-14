@@ -60,25 +60,20 @@ namespace NSpace
                 {
                     for (int z = -5; z < 5; z++)
                     {
-                        if (r.Next(0, 10) == 0)
+                        if (r.Next(0, 50) == 0)
                         {
-                            CompanionCube cc = new CompanionCube();
-                            Section objsect = 
-                                this._WorldSect.AddChild(
-                                    Matrix.Transform(
+                            this._AddCompanionCube(
+                                Matrix.Transform(
                                         Matrix.Translate(new Vector((double)x, (double)y, (double)z)),
-                                        Matrix.Scale(0.2)));
-                            this._RootVisual.Add(cc.Model = Model.Create(m, new TextureNormalMaterial(tex), objsect));
-                            cc.Body = new Marker(RigidBody.Create(this._World, objsect, 
-                                new RigidBody.Property(
-                                    new MeshSurface(m),
-                                    new Vector(0.0, 0.0, 0.0),
-                                    1.0)));
-                            this._Cubes.Add(cc);
+                                        Matrix.Scale(0.2)),
+                                tex, m);
                         }
                     }
                 }
             }
+            this._AddCompanionCube(
+                Matrix.Translate(new Vector(0.0, 0.0, -2.0)),
+                tex, m);
 
             // Initialize update times
             this._LastUpdate = DateTime.Now;
@@ -186,6 +181,19 @@ namespace NSpace
         {
             public Model Model;
             public Marker Body;
+        }
+
+        private void _AddCompanionCube(Matrix Offset, Texture Texture, Mesh Mesh)
+        {
+            CompanionCube cc = new CompanionCube();
+            Section objsect = this._WorldSect.AddChild(Offset);
+            this._RootVisual.Add(cc.Model = Model.Create(Mesh, new TextureNormalMaterial(Texture), objsect));
+            cc.Body = new Marker(RigidBody.Create(this._World, objsect,
+                new RigidBody.Property(
+                    new MeshSurface(Mesh),
+                    new Vector(0.0, 0.0, 0.0),
+                    1.0)));
+            this._Cubes.Add(cc);
         }
 
         private List<CompanionCube> _Cubes;

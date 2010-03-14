@@ -99,7 +99,7 @@ namespace NSpace
         {
             Section res = new Section();
             res.Parent = this._Parent;
-            res.ParentTransform = Matrix.Transform(this.ParentTransform, Transform);
+            res.ParentTransform = Matrix.Transform(Transform, this.ParentTransform);
             return res;
         }
 
