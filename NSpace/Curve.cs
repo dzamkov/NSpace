@@ -30,6 +30,11 @@ namespace NSpace
         ICurve Integral(Vector C);
 
         /// <summary>
+        /// Multiplies all points on the curve with a scalar value.
+        /// </summary>
+        void Multiply(double Scalar);
+
+        /// <summary>
         /// Negates the curve and causes the old this.GetPoint(x) to return -this.GetPoint(x).
         /// </summary>
         void Negate();
@@ -103,6 +108,14 @@ namespace NSpace
             return new BezierCurve(npoints);
         }
 
+        public void Multiply(double Scalar)
+        {
+            for (int t = 0; t < this._ControlPoints.Length; t++)
+            {
+                this._ControlPoints[t].Multiply(Scalar);
+            }
+        }
+
         public void Negate()
         {
             for (int t = 0; t < this._ControlPoints.Length; t++)
@@ -137,6 +150,11 @@ namespace NSpace
         public ICurve Integral(Vector C)
         {
             return new BezierCurve(new Vector[] { C, C + this._Value });
+        }
+
+        public void Multiply(double Scalar)
+        {
+            this._Value.Multiply(Scalar);
         }
 
         public void Negate()

@@ -50,7 +50,9 @@ namespace NSpace.Physics
             {
                 ICurve fr = force.Apply(this._Section, this._Properties.Mass, this._TimeBound, this._Position, this._Velocity);
                 this._Velocity = fr.Integral(new Vector());
+                this._Velocity.Multiply(this._TimeBound.Size.Seconds);
                 this._Position = this._Velocity.Integral(new Vector());
+                this._Position.Multiply(this._TimeBound.Size.Seconds);
             }
         }
 
@@ -62,7 +64,7 @@ namespace NSpace.Physics
             RigidBody rb = new RigidBody();
             rb._Position = null;
             rb._Velocity = null;
-            rb._TimeBound = new TimeBound(0.0, 1.0);
+            rb._TimeBound = new TimeBound(0.0, 5.0);
             rb._Section = Section;
             rb._Properties = Properties;
             rb.Interact(World);
