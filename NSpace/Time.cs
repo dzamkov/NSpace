@@ -69,6 +69,12 @@ namespace NSpace
             this.TimeEnd = TimeEnd;
         }
 
+        public TimeBound(double SecondsTimeStart, double SecondsTimeEnd)
+        {
+            this.TimeStart = new Time(SecondsTimeStart);
+            this.TimeEnd = new Time(SecondsTimeEnd);
+        }
+
         /// <summary>
         /// Gets the size of the time bound.
         /// </summary>

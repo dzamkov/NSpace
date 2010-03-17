@@ -51,8 +51,8 @@
     <Compile Include="Color.cs" />
     <Compile Include="DebugVisual.cs" />
     <Compile Include="Curve.cs" />
-    <Compile Include="Physics\Force.cs" />
-    <Compile Include="Physics\PhysicsObject.cs" />
+    <Compile Include="Physics\Body.cs" />
+    <Compile Include="Physics\Gravity.cs" />
     <Compile Include="Physics\RigidBody.cs" />
     <Compile Include="Shape.cs" />
     <Compile Include="Matrix.cs" />
@@ -88,7 +88,9 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
 </Project>

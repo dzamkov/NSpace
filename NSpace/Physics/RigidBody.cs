@@ -11,14 +11,22 @@ namespace NSpace.Physics
     /// A physics object whose collision is defined by a single shape that does
     /// not change over the lifetime of the body.
     /// </summary>
-    public class RigidBody : PhysicsObject, IExtendableObject
+    public class RigidBody : IBody
     {
         private RigidBody()
         {
 
         }
 
-        public override TimeBound TimeBound
+        public Section Section
+        {
+            get 
+            {
+                return this._Section;
+            }
+        }
+
+        public TimeBound TimeBound
         {
             get 
             {
@@ -26,19 +34,40 @@ namespace NSpace.Physics
             }
         }
 
-        public override void Interact(PhysicsObject Other)
+        public void Interact(IBody Other)
         {
-            
+            ICompoundBody cb = Other as ICompoundBody;
+            if (cb != null)
+            {
+                foreach (IBody body in cb.Bodies)
+                {
+                    this.Interact(body);
+                }
+            }
+
+            IForce force = Other as IForce;
+            if (force != null)
+            {
+                ICurve fr = force.Apply(this._Section, this._Properties.Mass, this._TimeBound, this._Position, this._Velocity);
+                this._Velocity = fr.Integral(new Vector());
+                this._Position = this._Velocity.Integral(new Vector());
+            }
         }
 
-        public void Extend(TimeSpan Time, World World)
+        /// <summary>
+        /// Creates a body with the specified parameters and adds it to the world.
+        /// </summary>
+        public static RigidBody Create(World World, Section Section, Property Properties)
         {
             RigidBody rb = new RigidBody();
-            rb._Properties = this._Properties;
-            rb._Section = this.GetSectionAtTime(this._TimeBound.TimeEnd);
-            rb._TimeBound = new TimeBound(this._TimeBound.TimeEnd, this._TimeBound.TimeEnd + Time);
-            Init(this._Velocity.GetPoint(1.0), rb, World);
-            this.Mark(rb);
+            rb._Position = null;
+            rb._Velocity = null;
+            rb._TimeBound = new TimeBound(0.0, 1.0);
+            rb._Section = Section;
+            rb._Properties = Properties;
+            rb.Interact(World);
+            World.AddBody(rb);
+            return rb;
         }
 
         /// <summary>
@@ -49,64 +78,6 @@ namespace NSpace.Physics
             get
             {
                 return this._Properties;
-            }
-        }
-
-        /// <summary>
-        /// Creates and initializes a rigid body in the specified world.
-        /// </summary>
-        public static RigidBody Create(World World, Section Section, Property Properties)
-        {
-            RigidBody rb = new RigidBody();
-            rb._Properties = Properties;
-            rb._Section = Section;
-            rb._TimeBound = new TimeBound(World.CurrentTime, World.CurrentTime + new TimeSpan(5.0));
-            Init(new Vector(0.0, 0.0, 0.0), rb, World);
-            World.AddPhysicsObject(rb);
-            return rb;
-        }
-
-        /// <summary>
-        /// Initializes a rigid body within a world by simulating its interaction with other objects.
-        /// </summary>
-        private static void Init(Vector InitVelocity, RigidBody Body, World World)
-        {
-            IForce totalforce = null;
-            foreach (PhysicsObject physobj in World.Parts)
-            {
-                IForceObject forceobj = physobj as IForceObject;
-                if (forceobj != null)
-                {
-                    foreach (IForce force in forceobj.Forces)
-                    {
-                        if (totalforce == null)
-                        {
-                            totalforce = force.Combine(totalforce);
-                        }
-                        else
-                        {
-                            totalforce = force;
-                        }
-                    }
-                }
-            }
-            ICurve olvel = new ConstantCurve(InitVelocity);
-            ICurve olpos = olvel.Integral(new Vector());
-            ICurve accel = totalforce.Apply(Body._TimeBound, Body._Properties.Mass, Body._Section, olpos, olvel);
-            ICurve vel = accel.Integral(InitVelocity);
-            ICurve pos = vel.Integral(new Vector(0.0, 0.0, 0.0));
-            Body._Position = pos;
-            Body._Velocity = vel;
-        }
-
-        /// <summary>
-        /// Gets the section this rigid body is in.
-        /// </summary>
-        public Section Section
-        {
-            get
-            {
-                return this._Section;
             }
         }
 

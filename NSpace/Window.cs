@@ -37,8 +37,7 @@ namespace NSpace
             // Create world
             this._WorldSect = new Section();
             this._World = new World();
-            this._World.AddPhysicsObject(new GlobalForceObject(new Gravity(this._WorldSect, new Vector(0.0, 0.0, -9.8))));
-            this._World.AddPhysicsObject(new GlobalForceObject(new Staticness()));
+            this._World.AddBody(new Gravity(new Vector(0.0, 0.0, -9.8), this._WorldSect));
 
             // Create view
             this._RootVisual = new MultiVisual(this._WorldSect);
@@ -91,7 +90,7 @@ namespace NSpace
             TraceHit? closehit = null;
             foreach (CompanionCube cc in this._Cubes)
             {
-                RigidBody body = (cc.Body.GetObject(this._World.CurrentTime) as RigidBody);
+                RigidBody body = cc.Body;
                 Section sect = body.GetSectionAtTime(this._World.CurrentTime);
                 cc.Model.Section = sect;
                 Matrix trans = this._View.Section.GetRelation(sect);
@@ -181,7 +180,7 @@ namespace NSpace
         public struct CompanionCube
         {
             public Model Model;
-            public Marker Body;
+            public RigidBody Body;
         }
 
         private void _AddCompanionCube(Matrix Offset, Texture Texture, Mesh Mesh)
@@ -189,11 +188,11 @@ namespace NSpace
             CompanionCube cc = new CompanionCube();
             Section objsect = this._WorldSect.AddChild(Offset);
             this._RootVisual.Add(cc.Model = Model.Create(Mesh, new TextureNormalMaterial(Texture), objsect));
-            cc.Body = new Marker(RigidBody.Create(this._World, objsect,
+            cc.Body = RigidBody.Create(this._World, objsect,
                 new RigidBody.Property(
                     new MeshSurface(Mesh),
                     new Vector(0.0, 0.0, 0.0),
-                    1.0)));
+                    1.0));
             this._Cubes.Add(cc);
         }
 

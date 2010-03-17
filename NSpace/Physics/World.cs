@@ -10,34 +10,23 @@ namespace NSpace.Physics
     /// <summary>
     /// A set of objects and the rules governing their interactions.
     /// </summary>
-    public class World : PhysicsObject, ICompositeObject
+    public class World : ICompoundBody
     {
         public World()
         {
-            this._Objects = new Marker();
+            this._Bodies = new List<IBody>();
         }
 
-        public override TimeBound TimeBound
+        public void Interact(IBody Body)
         {
-            get 
-            {
-                return TimeBound.Huge;
-            }
+
         }
 
-        public override void Interact(PhysicsObject Other)
+        public IEnumerable<IBody> Bodies
         {
-            foreach (PhysicsObject physobj in this._Objects.Objects)
+            get
             {
-                physobj.Interact(Other);
-            }
-        }
-
-        public IEnumerable<PhysicsObject> Parts
-        {
-            get 
-            {
-                return this._Objects.Objects;
+                return this._Bodies;
             }
         }
 
@@ -47,15 +36,16 @@ namespace NSpace.Physics
         public void Update(TimeSpan Time)
         {
             Time nexttime = this._CurTime + Time;
-            foreach (PhysicsObject o in this._Objects.GetObjects(this._CurTime))
-            {
-                if (nexttime > o.TimeBound.TimeEnd)
-                {
-                    IExtendableObject ext = o as IExtendableObject;
-                    ext.Extend(new TimeSpan(5.0), this);
-                }
-            }
             this._CurTime = nexttime;
+        }
+
+        /// <summary>
+        /// Adds a body to the world so it can begin interactions on objects
+        /// in it.
+        /// </summary>
+        public void AddBody(IBody Body)
+        {
+            this._Bodies.Add(Body);
         }
 
         /// <summary>
@@ -69,16 +59,7 @@ namespace NSpace.Physics
             }
         }
 
-        /// <summary>
-        /// Adds a physics object to be processed directly by the world. This only
-        /// needs to be called on an initial physics object just added to the world.
-        /// </summary>
-        public void AddPhysicsObject(PhysicsObject Object)
-        {
-            this._Objects.Mark(Object);
-        }
-
+        List<IBody> _Bodies;
         private Time _CurTime;
-        private Marker _Objects;
     }
 }
