@@ -17,7 +17,10 @@ namespace NSpace.Physics
         /// Causes this body to interact with another body. This body will take the changes
         /// created by the other body and may cause the other body to interact with a part
         /// of this body aswell. Bodies may not be directly affected and this is the only
-        /// means by which changes to a body can be performed.
+        /// means by which changes to a body can be performed. Note that every body in a world
+        /// must interact with every other body if any possible changes can be made. In the case
+        /// that this has already interacted with the other body, this will update the interaction
+        /// if the specified body has changed since the last interaction.
         /// </summary>
         void Interact(IBody Other);
     }
