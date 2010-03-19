@@ -22,6 +22,14 @@ namespace NSpace.Physics
 
         }
 
+        public TimeBound TimeBound
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public IEnumerable<IBody> Bodies
         {
             get
@@ -59,7 +67,17 @@ namespace NSpace.Physics
             }
         }
 
-        List<IBody> _Bodies;
+        public void Attach(IBodyEventHandler EventHandler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Detach(IBodyEventHandler EventHandler)
+        {
+            throw new NotImplementedException();
+        }
+
+        private List<IBody> _Bodies;
         private Time _CurTime;
     }
 }

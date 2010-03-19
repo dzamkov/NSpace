@@ -37,6 +37,34 @@ namespace NSpace
             return A.Seconds < B.Seconds;
         }
 
+        public static bool operator ==(Time A, Time B)
+        {
+            return A.Seconds == B.Seconds;
+        }
+
+        public static bool operator !=(Time A, Time B)
+        {
+            return A.Seconds != B.Seconds;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Seconds.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            Time? t = obj as Time?;
+            if (t != null && t.Value.Seconds == this.Seconds)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public bool Intersects(TimeBound Bound)
         {
             return this.Seconds > Bound.TimeStart.Seconds && this.Seconds < Bound.TimeEnd.Seconds;

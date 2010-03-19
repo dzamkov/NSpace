@@ -121,6 +121,16 @@ namespace NSpace.Physics
             public double Mass;
         }
 
+        public void Attach(IBodyEventHandler EventHandler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Detach(IBodyEventHandler EventHandler)
+        {
+            throw new NotImplementedException();
+        }
+
         private TimeBound _TimeBound;
         private ICurve _Position;
         private ICurve _Velocity;

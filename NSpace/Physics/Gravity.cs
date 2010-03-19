@@ -32,6 +32,14 @@ namespace NSpace.Physics
             this._Section = Section;
         }
 
+        public TimeBound TimeBound
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         /// <summary>
         /// Gets the force gravity applies relative to its section.
         /// </summary>
@@ -63,6 +71,16 @@ namespace NSpace.Physics
         public void Interact(IBody Other)
         {
 
+        }
+
+        public void Attach(IBodyEventHandler EventHandler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Detach(IBodyEventHandler EventHandler)
+        {
+            throw new NotImplementedException();
         }
 
         private Vector _Force;
