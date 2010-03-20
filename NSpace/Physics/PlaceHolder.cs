@@ -10,10 +10,11 @@ namespace NSpace.Physics
     /// <summary>
     /// A place holder for another body that is yet to be fully evaluated.
     /// </summary>
-    public abstract class PlaceHolder : ICompoundBody
+    public abstract class PlaceHolder : IBody
     {
         public PlaceHolder(TimeBound TimeBound)
         {
+            this._EventHandlers = new List<IBodyEventHandler>();
             this._TimeBound = TimeBound;
         }
 
@@ -25,35 +26,50 @@ namespace NSpace.Physics
             }
         }
 
-        public IEnumerable<IBody> Bodies
-        {
-            get 
-            { 
-                throw new NotImplementedException();
-            }
-        }
-
         public void Interact(IBody Other)
         {
-            throw new NotImplementedException();
+
         }
 
         public void Attach(IBodyEventHandler EventHandler)
         {
-            throw new NotImplementedException();
+            this._EventHandlers.Add(EventHandler);
         }
 
         public void Detach(IBodyEventHandler EventHandler)
         {
-            throw new NotImplementedException();
+            this._EventHandlers.Remove(EventHandler);
         }
 
         /// <summary>
-        /// Evaluates and returns the body that is in this placeholder.
+        /// Evaluates, stores and returns the body for the place holder.
         /// </summary>
-        protected abstract IBody Evaluate();
+        public IBody Evaluate()
+        {
+            if (this._Body == null)
+            {
+                IBody val = this.EvaluatedBody;
+                foreach (IBodyEventHandler beh in this._EventHandlers)
+                {
+                    beh.OnReassign(this, val);
+                    val.Attach(beh);
+                }
+                this._EventHandlers.Clear();
+                return val;
+            }
+            else
+            {
+                return this._Body;
+            }
+        }
+
+        /// <summary>
+        /// Gets the body to use for the evaluated placeholder.
+        /// </summary>
+        protected abstract IBody EvaluatedBody { get; }
 
         private IBody _Body;
-        private TimeBound _TimeBound; 
+        private TimeBound _TimeBound;
+        private List<IBodyEventHandler> _EventHandlers;
     }
 }

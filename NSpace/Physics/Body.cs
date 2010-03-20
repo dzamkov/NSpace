@@ -47,15 +47,22 @@ namespace NSpace.Physics
     public interface IBodyEventHandler
     {
         /// <summary>
+        /// Called when another body takes the place of the body the event handler is for. The
+        /// event handler will be transfered to the body automatically. This does not indicate
+        /// a modification unless OnModified is called.
+        /// </summary>
+        void OnReassign(IBody Old, IBody New);
+
+        /// <summary>
         /// Called after any properties on the body are modified. This includes a change
         /// in timebound.
         /// </summary>
-        void OnModified();
+        void OnModified(IBody Body);
 
         /// <summary>
         /// Called when the body is removed.
         /// </summary>
-        void OnRemoved();
+        void OnRemoved(IBody Body);
     }
 
     /// <summary>
