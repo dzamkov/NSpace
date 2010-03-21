@@ -36,8 +36,9 @@ namespace NSpace
 
             // Create world
             this._WorldSect = new Section();
-            this._World = new World();
-            this._World.AddBody(new Gravity(new Vector(0.0, 0.0, -9.8), this._WorldSect));
+            BodyGroup worldgroup = new BodyGroup();
+            this._World = new World(worldgroup);
+            worldgroup.Add(new Gravity(new Vector(0.0, 0.0, -9.8), this._WorldSect));
 
             // Create view
             this._RootVisual = new MultiVisual(this._WorldSect);

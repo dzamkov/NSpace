@@ -36,7 +36,7 @@ namespace NSpace.Physics
         {
             get
             {
-                throw new NotImplementedException();
+                return TimeBound.Huge;
             }
         }
 
@@ -75,12 +75,12 @@ namespace NSpace.Physics
 
         public void Attach(IBodyEventHandler EventHandler)
         {
-            throw new NotImplementedException();
+            
         }
 
         public void Detach(IBodyEventHandler EventHandler)
         {
-            throw new NotImplementedException();
+            
         }
 
         private Vector _Force;

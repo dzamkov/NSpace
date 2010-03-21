@@ -8,33 +8,27 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// A set of objects and the rules governing their interactions.
+    /// A manager for a set a of bodies that can interact. While the bodies are all
+    /// placed in space-time, the world is able to manage a single slice of time to insure
+    /// all bodies are evaluated when needed.
     /// </summary>
-    public class World : ICompoundBody
+    public class World : IBodyEventHandler
     {
-        public World()
+        public World(IBody Body)
         {
-            this._Bodies = new List<IBody>();
+            this._Body = Body;
+            this._Body.Attach(this);
         }
 
-        public void Interact(IBody Body)
-        {
-
-        }
-
-        public TimeBound TimeBound
+        /// <summary>
+        /// Gets a body that represents all the interactions and effects made by
+        /// the world. Hint: this is probably a compound body.
+        /// </summary>
+        public IBody Body
         {
             get
             {
-                throw new NotImplementedException();
-            }
-        }
-
-        public IEnumerable<IBody> Bodies
-        {
-            get
-            {
-                return this._Bodies;
+                return this._Body;
             }
         }
 
@@ -48,15 +42,6 @@ namespace NSpace.Physics
         }
 
         /// <summary>
-        /// Adds a body to the world so it can begin interactions on objects
-        /// in it.
-        /// </summary>
-        public void AddBody(IBody Body)
-        {
-            this._Bodies.Add(Body);
-        }
-
-        /// <summary>
         /// Gets the current time in the world.
         /// </summary>
         public Time CurrentTime
@@ -67,17 +52,25 @@ namespace NSpace.Physics
             }
         }
 
-        public void Attach(IBodyEventHandler EventHandler)
+        public void OnReassign(IBody Old, IBody New)
         {
-            throw new NotImplementedException();
+            if (Old == this._Body)
+            {
+                this._Body = New;
+            }
         }
 
-        public void Detach(IBodyEventHandler EventHandler)
+        public void OnModified(IBody Body)
         {
-            throw new NotImplementedException();
+            
         }
 
-        private List<IBody> _Bodies;
+        public void OnRemoved(IBody Body)
+        {
+            this._Body = null;
+        }
+
+        private IBody _Body;
         private Time _CurTime;
     }
 }

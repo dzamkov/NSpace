@@ -57,7 +57,7 @@ namespace NSpace.Physics
         }
 
         /// <summary>
-        /// Creates a body with the specified parameters and adds it to the world.
+        /// Creates a body with the specified parameters and adds it to a world.
         /// </summary>
         public static RigidBody Create(World World, Section Section, Property Properties)
         {
@@ -67,8 +67,8 @@ namespace NSpace.Physics
             rb._TimeBound = new TimeBound(0.0, 5.0);
             rb._Section = Section;
             rb._Properties = Properties;
-            rb.Interact(World);
-            World.AddBody(rb);
+            rb.Interact(World.Body);
+            (World.Body as BodyGroup).Add(rb);
             return rb;
         }
 
@@ -123,12 +123,12 @@ namespace NSpace.Physics
 
         public void Attach(IBodyEventHandler EventHandler)
         {
-            throw new NotImplementedException();
+            
         }
 
         public void Detach(IBodyEventHandler EventHandler)
         {
-            throw new NotImplementedException();
+            
         }
 
         private TimeBound _TimeBound;
