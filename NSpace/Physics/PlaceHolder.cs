@@ -12,17 +12,29 @@ namespace NSpace.Physics
     /// </summary>
     public abstract class PlaceHolder : IBody
     {
-        public PlaceHolder(TimeBound TimeBound)
+        public PlaceHolder(Time Time)
         {
             this._EventHandlers = new List<IBodyEventHandler>();
-            this._TimeBound = TimeBound;
+            this._Time = Time;
         }
 
         public TimeBound TimeBound
         {
             get
             {
-                return this._TimeBound;
+                return new TimeBound(this._Time, this._Time);
+            }
+        }
+
+        /// <summary>
+        /// Gets the real-world time at which the placeholder needs to be
+        /// evaluated.
+        /// </summary>
+        public Time Time
+        {
+            get
+            {
+                return this._Time;
             }
         }
 
@@ -33,7 +45,15 @@ namespace NSpace.Physics
 
         public void Attach(IBodyEventHandler EventHandler)
         {
-            this._EventHandlers.Add(EventHandler);
+            if (this._Body == null)
+            {
+                this._EventHandlers.Add(EventHandler);
+            }
+            else
+            {
+                EventHandler.OnReassign(this, this._Body);
+                this._Body.Attach(EventHandler);
+            }
         }
 
         public void Detach(IBodyEventHandler EventHandler)
@@ -53,8 +73,10 @@ namespace NSpace.Physics
                 {
                     beh.OnReassign(this, val);
                     val.Attach(beh);
+                    beh.OnModified(val);
                 }
-                this._EventHandlers.Clear();
+                this._EventHandlers = null; // Insure no more event handlers are added.
+                this._Body = val;
                 return val;
             }
             else
@@ -69,7 +91,7 @@ namespace NSpace.Physics
         protected abstract IBody EvaluatedBody { get; }
 
         private IBody _Body;
-        private TimeBound _TimeBound;
+        private Time _Time;
         private List<IBodyEventHandler> _EventHandlers;
     }
 }

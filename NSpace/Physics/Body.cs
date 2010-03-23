@@ -42,20 +42,27 @@ namespace NSpace.Physics
     }
 
     /// <summary>
-    /// A body that only represents a portion of the time of another object and
-    /// can be extended by adding another body after itself representing its
-    /// progression.
+    /// A body that is composed of a set of unique bodies that define the main
+    /// bodies behavior and interactions. A graph of compound bodies must never
+    /// create a circular link. This means there is no way to navigate back to
+    /// an original body by just calling Bodies recursively on it and its parts.
     /// </summary>
-    public interface IExtendableBody : IBody
+    public interface ICompoundBody : IBody
     {
         /// <summary>
-        /// Extends the body and returns a new body representing its progression
-        /// over the specified amount of time. The new body may interact with the
-        /// specified world. This function returning null will be taken as an act
-        /// of defiance and indicate that there is no more bodies that represent the
-        /// object after the current one.
+        /// Gets the set of bodies that make up the compound body.
         /// </summary>
-        IBody Extend(TimeSpan Time, World World);
+        IEnumerable<IBody> Bodies { get; }
+
+        /// <summary>
+        /// Attaches a compound body event handler.
+        /// </summary>
+        void Attach(ICompoundBodyEventHandler EventHandler);
+
+        /// <summary>
+        /// Detachs a compound body event handler.
+        /// </summary>
+        void Detach(ICompoundBodyEventHandler EventHandler);
     }
 
     /// <summary>
@@ -83,121 +90,18 @@ namespace NSpace.Physics
     }
 
     /// <summary>
-    /// A body that is composed of a set of unique bodies that define the main
-    /// bodies behavior and interactions. A graph of compound bodies must never
-    /// create a circular link. This means there is no way to navigate back to
-    /// an original body by just calling Bodies recursively on it and its parts.
+    /// Handles specific events for compound bodies.
     /// </summary>
-    public interface ICompoundBody : IBody
+    public interface ICompoundBodyEventHandler
     {
         /// <summary>
-        /// Gets the set of bodies that make up the compound body.
+        /// Called when a body is added.
         /// </summary>
-        IEnumerable<IBody> Bodies { get; }
-    }
-
-    /// <summary>
-    /// A group of bodies that act as a compound body.
-    /// </summary>
-    public class BodyGroup : ICompoundBody, IBodyEventHandler
-    {
-        public BodyGroup()
-        {
-            this._Bodies = new List<IBody>();
-            this._EventHandlers = new List<IBodyEventHandler>();
-            this._TimeBound = TimeBound.None;
-        }
-
-        public IEnumerable<IBody> Bodies
-        {
-            get 
-            {
-                return this._Bodies;
-            }
-        }
-        public TimeBound TimeBound
-        {
-            get 
-            {
-                return this._TimeBound;
-            }
-        }
-
-        public void Interact(IBody Other)
-        {
-            foreach (IBody Body in this._Bodies)
-            {
-                Body.Interact(Other);
-            }
-        }
-
-        public void Attach(IBodyEventHandler EventHandler)
-        {
-            this._EventHandlers.Add(EventHandler);
-        }
-
-        public void Detach(IBodyEventHandler EventHandler)
-        {
-            this._EventHandlers.Remove(EventHandler);
-        }
+        void OnAdd(ICompoundBody CompoundBody, IBody Added);
 
         /// <summary>
-        /// Adds a body to this group.
+        /// Called when a body is removed.
         /// </summary>
-        public void Add(IBody Body)
-        {
-            this._Bodies.Add(Body);
-            Body.Attach(this);
-            this._TimeBound = this._TimeBound.Union(Body.TimeBound);
-            foreach (IBodyEventHandler beh in this._EventHandlers)
-            {
-                beh.OnModified(this);
-            }
-        }
-
-        /// <summary>
-        /// Removes a body from this group.
-        /// </summary>
-        public void Remove(IBody Body)
-        {
-            this._Bodies.Remove(Body);
-            Body.Detach(this);
-            if (this._TimeBound.TimeStart == Body.TimeBound.TimeStart ||
-                this._TimeBound.TimeEnd == Body.TimeBound.TimeEnd)
-            {
-                //Recalculate time bound
-                this._TimeBound = TimeBound.None;
-                foreach (IBody body in this._Bodies)
-                {
-                    this._TimeBound = this._TimeBound.Union(body.TimeBound);
-                }
-            }
-            foreach (IBodyEventHandler beh in this._EventHandlers)
-            {
-                beh.OnModified(this);
-            }
-        }
-
-        public void OnReassign(IBody Old, IBody New)
-        {
-
-        }
-
-        public void OnModified(IBody Body)
-        {
-            foreach (IBodyEventHandler beh in this._EventHandlers)
-            {
-                beh.OnModified(this);
-            }
-        }
-
-        public void OnRemoved(IBody Body)
-        {
-            this.Remove(Body);
-        }
-
-        private List<IBody> _Bodies;
-        private List<IBodyEventHandler> _EventHandlers;
-        private TimeBound _TimeBound;
+        void OnRemove(ICompoundBody CompoundBody, IBody Removed);
     }
 }

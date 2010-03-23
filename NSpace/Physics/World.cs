@@ -67,7 +67,10 @@ namespace NSpace.Physics
 
         public void OnRemoved(IBody Body)
         {
-            this._Body = null;
+            if(this._Body == Body)
+            {
+                this._Body = null;
+            }
         }
 
         private IBody _Body;
