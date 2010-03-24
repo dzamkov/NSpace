@@ -18,6 +18,7 @@ namespace NSpace.Physics
         {
             this._Body = Body;
             this._Body.Attach(this);
+            this._PlaceHolders = new LinkedList<IPlaceHolder>();
         }
 
         /// <summary>
@@ -37,8 +38,25 @@ namespace NSpace.Physics
         /// </summary>
         public void Update(TimeSpan Time)
         {
-            Time nexttime = this._CurTime + Time;
-            this._CurTime = nexttime;
+            this._CurTime += Time;
+
+            // Handle placeholders
+            LinkedListNode<IPlaceHolder> cur = this._PlaceHolders.First;
+            while (cur != null)
+            {
+                IPlaceHolder placeholder = cur.Value;
+                if (this._CurTime > placeholder.Time)
+                {
+                    placeholder.Evaluate(this);
+                    LinkedListNode<IPlaceHolder> next = cur.Next;
+                    this._PlaceHolders.Remove(cur);
+                    cur = next;
+                }
+                else
+                {
+                    cur = cur.Next;
+                }
+            }
         }
 
         /// <summary>
@@ -50,6 +68,15 @@ namespace NSpace.Physics
             {
                 return this._CurTime;
             }
+        }
+
+        /// <summary>
+        /// Adds a placeholder to the world, enabling it to be evaluated by the world
+        /// when needed.
+        /// </summary>
+        public void AddPlaceHolder(IPlaceHolder PlaceHolder)
+        {
+            this._PlaceHolders.AddLast(PlaceHolder);
         }
 
         public void OnReassign(IBody Old, IBody New)
@@ -75,5 +102,6 @@ namespace NSpace.Physics
 
         private IBody _Body;
         private Time _CurTime;
+        private LinkedList<IPlaceHolder> _PlaceHolders;
     }
 }
