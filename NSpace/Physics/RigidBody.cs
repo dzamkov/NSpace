@@ -7,6 +7,7 @@ using System.Collections.Generic;
 
 namespace NSpace.Physics
 {
+
     /// <summary>
     /// A physics object whose collision is defined by a single shape that does
     /// not change over the lifetime of the body.

@@ -66,7 +66,8 @@ namespace NSpace.Physics
     }
 
     /// <summary>
-    /// A compound body where new bodies may be freely added and removed.
+    /// A compound body where new bodies may be freely added. Bodies can be removed when their event handlers
+    /// call OnRemove
     /// </summary>
     public interface IContentBody : ICompoundBody
     {
@@ -74,11 +75,6 @@ namespace NSpace.Physics
         /// Adds a body to the content body.
         /// </summary>
         void Add(IBody Body);
-
-        /// <summary>
-        /// Removes a previously added body from the content body.
-        /// </summary>
-        void Remove(IBody Body);
     }
 
     /// <summary>
@@ -98,6 +94,11 @@ namespace NSpace.Physics
         /// in timebound.
         /// </summary>
         void OnModified(IBody Body);
+
+        /// <summary>
+        /// Called when the body is removed from all content bodies and interactions.
+        /// </summary>
+        void OnRemove(IBody Body);
     }
 
     /// <summary>
@@ -111,7 +112,7 @@ namespace NSpace.Physics
         void OnAdd(ICompoundBody CompoundBody, IBody Added);
 
         /// <summary>
-        /// Called when a body is removed.
+        /// Called when a body is removed from the compound body.
         /// </summary>
         void OnRemove(ICompoundBody CompoundBody, IBody Removed);
     }

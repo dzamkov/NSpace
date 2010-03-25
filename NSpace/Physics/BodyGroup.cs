@@ -114,6 +114,11 @@ namespace NSpace.Physics
             }
         }
 
+        public void OnRemove(IBody Body)
+        {
+            this.Remove(Body);
+        }
+
         private List<IBody> _Bodies;
         private List<IBodyEventHandler> _EventHandlers;
         private List<ICompoundBodyEventHandler> _CompoundBodyEventHandlers;
