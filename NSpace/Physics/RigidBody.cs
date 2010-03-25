@@ -67,8 +67,8 @@ namespace NSpace.Physics
             rb._TimeBound = new TimeBound(0.0, 5.0);
             rb._Section = Section;
             rb._Properties = Properties;
-            rb.Interact(World.Body);
-            (World.Body as BodyGroup).Add(rb);
+            rb.Interact(World.Contents);
+            World.Contents.Add(rb);
             return rb;
         }
 

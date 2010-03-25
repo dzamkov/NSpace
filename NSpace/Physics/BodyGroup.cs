@@ -9,7 +9,7 @@ namespace NSpace.Physics
     /// <summary>
     /// A group of bodies that act as a compound body.
     /// </summary>
-    public class BodyGroup : ICompoundBody, IBodyEventHandler
+    public class BodyGroup : IContentBody, IBodyEventHandler
     {
         public BodyGroup()
         {
@@ -62,9 +62,6 @@ namespace NSpace.Physics
             this._CompoundBodyEventHandlers.Remove(EventHandler);
         }
 
-        /// <summary>
-        /// Adds a body to this group.
-        /// </summary>
         public void Add(IBody Body)
         {
             this._Bodies.Add(Body);
@@ -80,9 +77,6 @@ namespace NSpace.Physics
             }
         }
 
-        /// <summary>
-        /// Removes a body from this group.
-        /// </summary>
         public void Remove(IBody Body)
         {
             this._Bodies.Remove(Body);
@@ -118,11 +112,6 @@ namespace NSpace.Physics
             {
                 beh.OnModified(this);
             }
-        }
-
-        public void OnRemoved(IBody Body)
-        {
-            this.Remove(Body);
         }
 
         private List<IBody> _Bodies;

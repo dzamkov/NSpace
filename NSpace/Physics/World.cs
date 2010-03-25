@@ -12,24 +12,23 @@ namespace NSpace.Physics
     /// placed in space-time, the world is able to manage a single slice of time to insure
     /// all bodies are evaluated when needed.
     /// </summary>
-    public class World : IBodyEventHandler
+    public class World
     {
-        public World(IBody Body)
+        public World(IContentBody Contents)
         {
-            this._Body = Body;
-            this._Body.Attach(this);
             this._PlaceHolders = new LinkedList<IPlaceHolder>();
+            this._Contents = Contents;
         }
 
         /// <summary>
-        /// Gets a body that represents all the interactions and effects made by
-        /// the world. Hint: this is probably a compound body.
+        /// Gets the content body that contains all the bodies that can
+        /// interact within this world.
         /// </summary>
-        public IBody Body
+        public IContentBody Contents
         {
             get
             {
-                return this._Body;
+                return this._Contents;
             }
         }
 
@@ -79,28 +78,7 @@ namespace NSpace.Physics
             this._PlaceHolders.AddLast(PlaceHolder);
         }
 
-        public void OnReassign(IBody Old, IBody New)
-        {
-            if (Old == this._Body)
-            {
-                this._Body = New;
-            }
-        }
-
-        public void OnModified(IBody Body)
-        {
-            
-        }
-
-        public void OnRemoved(IBody Body)
-        {
-            if(this._Body == Body)
-            {
-                this._Body = null;
-            }
-        }
-
-        private IBody _Body;
+        private IContentBody _Contents;
         private Time _CurTime;
         private LinkedList<IPlaceHolder> _PlaceHolders;
     }
