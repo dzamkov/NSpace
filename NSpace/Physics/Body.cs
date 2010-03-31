@@ -8,26 +8,10 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// An object at a point or span of time that can interact with other bodies
-    /// at such time.
+    /// An object in the physics system.
     /// </summary>
     public interface IBody
     {
-        /// <summary>
-        /// The time at which the body has effect.
-        /// </summary>
-        TimeBound TimeBound { get; }
-
-        /// <summary>
-        /// Causes this body to interact with another body. This body will take the changes
-        /// created by the other body and may cause the other body to interact with a part
-        /// of this body aswell. Bodies may not be directly affected and this is the only
-        /// means by which changes to a body can be performed. Note that every body in a world
-        /// must interact with every other body if any possible changes can be made. The receiving
-        /// body should use event handlers to ensure the interaction stays consistent with the body.
-        /// </summary>
-        void Interact(IBody Other);
-
         /// <summary>
         /// Attaches an event handler to the body. The event handler will then be informed
         /// if there are any changes to the body.
@@ -39,42 +23,6 @@ namespace NSpace.Physics
         /// this body.
         /// </summary>
         void Detach(IBodyEventHandler EventHandler);
-    }
-
-    /// <summary>
-    /// A body that is composed of a set of unique bodies that define the main
-    /// bodies behavior and interactions. A graph of compound bodies must never
-    /// create a circular link. This means there is no way to navigate back to
-    /// an original body by just calling Bodies recursively on it and its parts.
-    /// </summary>
-    public interface ICompoundBody : IBody
-    {
-        /// <summary>
-        /// Gets the set of bodies that make up the compound body.
-        /// </summary>
-        IEnumerable<IBody> Bodies { get; }
-
-        /// <summary>
-        /// Attaches a compound body event handler.
-        /// </summary>
-        void Attach(ICompoundBodyEventHandler EventHandler);
-
-        /// <summary>
-        /// Detachs a compound body event handler.
-        /// </summary>
-        void Detach(ICompoundBodyEventHandler EventHandler);
-    }
-
-    /// <summary>
-    /// A compound body where new bodies may be freely added. Bodies can be removed when their event handlers
-    /// call OnRemove
-    /// </summary>
-    public interface IContentBody : ICompoundBody
-    {
-        /// <summary>
-        /// Adds a body to the content body.
-        /// </summary>
-        void Add(IBody Body);
     }
 
     /// <summary>
@@ -94,26 +42,5 @@ namespace NSpace.Physics
         /// in timebound.
         /// </summary>
         void OnModified(IBody Body);
-
-        /// <summary>
-        /// Called when the body is removed from all content bodies and interactions.
-        /// </summary>
-        void OnRemove(IBody Body);
-    }
-
-    /// <summary>
-    /// Handles specific events for compound bodies.
-    /// </summary>
-    public interface ICompoundBodyEventHandler
-    {
-        /// <summary>
-        /// Called when a body is added.
-        /// </summary>
-        void OnAdd(ICompoundBody CompoundBody, IBody Added);
-
-        /// <summary>
-        /// Called when a body is removed from the compound body.
-        /// </summary>
-        void OnRemove(ICompoundBody CompoundBody, IBody Removed);
     }
 }

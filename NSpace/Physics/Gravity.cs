@@ -8,19 +8,6 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// A body that produces a force that acts on bodies over time.
-    /// </summary>
-    public interface IForce : IBody
-    {
-        /// <summary>
-        /// Creates a curve that represents the force applied to a mass(a single point
-        /// in space with no surface area or volume). The position and velocity of
-        /// the point are specified relative to the section.
-        /// </summary>
-        ICurve Apply(Section Section, double Mass, TimeBound Time, ICurve Position, ICurve Velocity);
-    }
-
-    /// <summary>
     /// A body which applies a uniform force to all other bodies in a world that forces
     /// the bodies in a direction.
     /// </summary>
