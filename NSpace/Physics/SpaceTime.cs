@@ -11,30 +11,18 @@ namespace NSpace.Physics
     /// Contains spatially and temporally organized bodies. Spacetimes can be modified by
     /// modifing contained spatial bodies, or adding and removing them.
     /// </summary>
-    public interface ISpaceTime : IBody
+    public interface ISpaceTime
     {
         /// <summary>
         /// Gets the bodies in the spacetime.
         /// </summary>
-        IEnumerable<ISpatialBody> Bodies { get; }
+        IEnumerable<IBody> Bodies { get; }
 
         /// <summary>
-        /// Adds a spatial body to the spacetime, organizing it in the process.
+        /// Adds a spatial body to the spacetime, organizing it in the process. The spacetime
+        /// may check that Body.SpaceTime is an expected value before adding the body.
         /// </summary>
-        void Add(ISpatialBody Body);
-
-        /// <summary>
-        /// Removes a previously added body from the spacetime.
-        /// </summary>
-        void Remove(ISpatialBody Body);
-    }
-
-    /// <summary>
-    /// A body that can be organized in spacetime.
-    /// </summary>
-    public interface ISpatialBody : IBody
-    {
- 
+        void Add(IBody Body);
     }
 
     /// <summary>
@@ -44,11 +32,10 @@ namespace NSpace.Physics
     {
         public SpaceTime()
         {
-            this._Contents = new List<ISpatialBody>();
-            this._BodyEventHandlers = new List<IBodyEventHandler>();
+            this._Contents = new List<IBody>();
         }
 
-        public IEnumerable<ISpatialBody> Bodies
+        public IEnumerable<IBody> Bodies
         {
             get 
             {
@@ -56,38 +43,15 @@ namespace NSpace.Physics
             }
         }
 
-        public void Add(ISpatialBody Body)
+        public void Add(IBody Body)
         {
             this._Contents.Add(Body);
-            foreach (IBodyEventHandler beh in this._BodyEventHandlers)
-            {
-                beh.OnModified(this);
-            }
-        }
-
-        public void Remove(ISpatialBody Body)
-        {
-            this._Contents.Remove(Body);
-            foreach (IBodyEventHandler beh in this._BodyEventHandlers)
-            {
-                beh.OnModified(this);
-            }
-        }
-
-        public void Attach(IBodyEventHandler EventHandler)
-        {
-            this._BodyEventHandlers.Add(EventHandler);
-        }
-
-        public void Detach(IBodyEventHandler EventHandler)
-        {
-            this._BodyEventHandlers.Remove(EventHandler);
         }
 
         public void OnReassign(IBody Old, IBody New)
         {
-            this._Contents.Remove((ISpatialBody)Old);
-            this._Contents.Add((ISpatialBody)New);
+            this._Contents.Remove(Old);
+            this._Contents.Add(New);
         }
 
         public void OnModified(IBody Body)
@@ -95,7 +59,11 @@ namespace NSpace.Physics
             throw new NotImplementedException();
         }
 
-        private List<ISpatialBody> _Contents;
-        private List<IBodyEventHandler> _BodyEventHandlers;
+        public void OnRemoved(IBody Body)
+        {
+            this._Contents.Remove(Body);
+        }
+
+        private List<IBody> _Contents;
     }
 }

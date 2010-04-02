@@ -8,7 +8,8 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// An object in the physics system.
+    /// An object in a spacetime that is affect by physical interactions. Bodies must
+    /// have a one-to-one relationship with a spacetime for their lifetime.
     /// </summary>
     public interface IBody
     {
@@ -42,5 +43,11 @@ namespace NSpace.Physics
         /// in timebound.
         /// </summary>
         void OnModified(IBody Body);
+
+        /// <summary>
+        /// Called when the affect of the body is removed permanently. If the body is not
+        /// doing anything, and will never do anything again, this gets called.
+        /// </summary>
+        void OnRemoved(IBody Body);
     }
 }

@@ -23,8 +23,7 @@ namespace NSpace.Physics
 
     /// <summary>
     /// An interact procedure made up of multiple other interact procedures
-    /// applied in order. The compound procedure will continue looping through
-    /// all its procedures until no more changes are made by the sub-procedures.
+    /// applied in order.
     /// </summary>
     public class CompoundInteractProcedure : IInteractProcedure
     {
@@ -55,9 +54,80 @@ namespace NSpace.Physics
 
         public void ApplyInteractions(ISpaceTime SpaceTime)
         {
-            throw new NotImplementedException();
+            foreach (IInteractProcedure proc in this._Components)
+            {
+                proc.ApplyInteractions(SpaceTime);
+            }
         }
 
         private IEnumerable<IInteractProcedure> _Components;
+    }
+
+    /// <summary>
+    /// A spacetime where all bodies listed have interacted with each other
+    /// with a procedure.
+    /// </summary>
+    public interface IDynamicSpaceTime : ISpaceTime
+    {
+        /// <summary>
+        /// The procedure used for interaction within the spacetime.
+        /// </summary>
+        IInteractProcedure InteractProcedure { get; }
+    }
+
+    /// <summary>
+    /// A simple unoptimized implementation of a dynamic space time that
+    /// </summary>
+    public class DynamicSpaceTime : IDynamicSpaceTime
+    {
+        public DynamicSpaceTime(IInteractProcedure Procedure, SpaceTime SpaceTime)
+        {
+            this._Procedure = Procedure;
+            this._SpaceTime = SpaceTime;
+        }
+
+        public IInteractProcedure InteractProcedure
+        {
+            get 
+            {
+                return this._Procedure;
+            }
+            set
+            {
+                this._Procedure = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the spacetime in which objects for this dynamic spacetime are stored.
+        /// </summary>
+        public SpaceTime SpaceTime
+        {
+            get
+            {
+                return this._SpaceTime;
+            }
+            set
+            {
+                this._SpaceTime = new SpaceTime();
+            }
+        }
+
+        public IEnumerable<IBody> Bodies
+        {
+            get 
+            {
+                return this._SpaceTime.Bodies;
+            }
+        }
+
+        public void Add(IBody Body)
+        {
+            this._SpaceTime.Add(Body);
+            this._Procedure.ApplyInteractions(this._SpaceTime);
+        }
+
+        private IInteractProcedure _Procedure;
+        private SpaceTime _SpaceTime;
     }
 }
