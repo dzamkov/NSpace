@@ -127,6 +127,11 @@ namespace NSpace.Physics
             this._Procedure.ApplyInteractions(this._SpaceTime);
         }
 
+        public void FindByType<T>(out IEnumerable<T> Results) where T : IBody
+        {
+            this._SpaceTime.FindByType<T>(out Results);
+        }
+
         private IInteractProcedure _Procedure;
         private SpaceTime _SpaceTime;
     }

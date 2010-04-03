@@ -11,20 +11,12 @@ namespace NSpace.Physics
     /// A body which applies a uniform force to all other bodies in a world that forces
     /// the bodies in a direction.
     /// </summary>
-    public class Gravity : IForce
+    public class Gravity : IBody
     {
         public Gravity(Vector Force, Section Section)
         {
             this._Force = Force;
             this._Section = Section;
-        }
-
-        public TimeBound TimeBound
-        {
-            get
-            {
-                return TimeBound.Huge;
-            }
         }
 
         /// <summary>
@@ -49,15 +41,12 @@ namespace NSpace.Physics
             }
         }
 
-        public ICurve Apply(Section Section, double Mass, TimeBound Time, ICurve Position, ICurve Velocity)
+        /// <summary>
+        /// Gets the force vector of the force applied to a specific section.
+        /// </summary>
+        public Vector ForceAtSection(Section Section)
         {
-            Vector forcevec = this._Section.GetRelation(Section).LinearTransform(this._Force) * Mass;
-            return new ConstantCurve(forcevec);
-        }
-
-        public void Interact(IBody Other)
-        {
-
+            return this._Section.GetRelation(Section).LinearTransform(this._Force);
         }
 
         public void Attach(IBodyEventHandler EventHandler)

@@ -23,6 +23,11 @@ namespace NSpace.Physics
         /// may check that Body.SpaceTime is an expected value before adding the body.
         /// </summary>
         void Add(IBody Body);
+
+        /// <summary>
+        /// Gets all bodes of the specified type in the spacetime.
+        /// </summary>
+        void FindByType<T>(out IEnumerable<T> Results) where T : IBody;
     }
 
     /// <summary>
@@ -46,6 +51,19 @@ namespace NSpace.Physics
         public void Add(IBody Body)
         {
             this._Contents.Add(Body);
+        }
+
+        public void FindByType<T>(out IEnumerable<T> Results) where T : IBody
+        {
+            List<T> res = new List<T>();
+            Results = res;
+            foreach(IBody b in this._Contents)
+            {
+                if(b is T)
+                {
+                    res.Add((T)b);
+                }
+            }
         }
 
         public void OnReassign(IBody Old, IBody New)

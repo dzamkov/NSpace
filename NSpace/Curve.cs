@@ -30,14 +30,14 @@ namespace NSpace
         ICurve Integral(Vector C);
 
         /// <summary>
-        /// Multiplies all points on the curve with a scalar value.
+        /// Multiplies all points on the curve with a scalar value and returns the resulting curve.
         /// </summary>
-        void Multiply(double Scalar);
+        ICurve Multiply(double Scalar);
 
         /// <summary>
-        /// Negates the curve and causes the old this.GetPoint(x) to return -this.GetPoint(x).
+        /// Returns the negative of this curve.
         /// </summary>
-        void Negate();
+        ICurve Negate();
     }
 
     /// <summary>
@@ -108,20 +108,20 @@ namespace NSpace
             return new BezierCurve(npoints);
         }
 
-        public void Multiply(double Scalar)
+        public ICurve Multiply(double Scalar)
         {
+            BezierCurve bc = new BezierCurve();
+            bc._ControlPoints = new Vector[this._ControlPoints.Length];
             for (int t = 0; t < this._ControlPoints.Length; t++)
             {
-                this._ControlPoints[t].Multiply(Scalar);
+                bc._ControlPoints[t] = this._ControlPoints[t] * Scalar;
             }
+            return bc;
         }
 
-        public void Negate()
+        public ICurve Negate()
         {
-            for (int t = 0; t < this._ControlPoints.Length; t++)
-            {
-                this._ControlPoints[t].Negate();
-            }
+            return this.Multiply(-1);
         }
 
         private Vector[] _ControlPoints;
@@ -152,16 +152,56 @@ namespace NSpace
             return new BezierCurve(new Vector[] { C, C + this._Value });
         }
 
-        public void Multiply(double Scalar)
+        public ICurve Multiply(double Scalar)
         {
-            this._Value.Multiply(Scalar);
+            return new ConstantCurve(this._Value * Scalar);
         }
 
-        public void Negate()
+        public ICurve Negate()
         {
-            this._Value.Negate();
+            return new ConstantCurve(this._Value * -1);
         }
 
         private Vector _Value;
+    }
+    
+    /// <summary>
+    /// A curve that acts as the sum of two other curves.
+    /// </summary>
+    public struct SumCurve : ICurve
+    {
+        public SumCurve(ICurve A, ICurve B)
+        {
+            this._A = A;
+            this._B = B;
+        }
+
+        public Vector GetPoint(double Time)
+        {
+            return this._A.GetPoint(Time) + this._B.GetPoint(Time);
+        }
+
+        public ICurve Derivative()
+        {
+            return new SumCurve(this._A.Derivative(), this._B.Derivative());
+        }
+
+        public ICurve Integral(Vector C)
+        {
+            return new SumCurve(this._A.Integral(C), this._B.Integral(new Vector()));
+        }
+
+        public ICurve Multiply(double Scalar)
+        {
+            return new SumCurve(this._A.Multiply(Scalar), this._B.Multiply(Scalar));
+        }
+
+        public ICurve Negate()
+        {
+            return new SumCurve(this._A.Negate(), this._B.Negate());
+        }
+
+        private ICurve _A;
+        private ICurve _B;
     }
 }

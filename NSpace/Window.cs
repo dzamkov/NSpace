@@ -36,9 +36,9 @@ namespace NSpace
 
             // Create world
             this._WorldSect = new Section();
-            BodyGroup worldgroup = new BodyGroup();
-            this._World = new World(worldgroup);
-            worldgroup.Add(new Gravity(new Vector(0.0, 0.0, -9.8), this._WorldSect));
+            this._SpaceTime = new DynamicSpaceTime(new RigidBodyGravityInteraction(), new SpaceTime());
+            this._World = new World();
+            this._SpaceTime.Add(new Gravity(new Vector(0.0, 0.0, -9.8), this._WorldSect));
 
             // Create view
             this._RootVisual = new MultiVisual(this._WorldSect);
@@ -170,9 +170,6 @@ namespace NSpace
             if (this.Keyboard[Key.Down]) trans *= Quaternion.AxisRotate(new Vector(0.0, 1.0, 0.0), updatetime * turnspeed).ToMatrix();
             if (this.Keyboard[Key.Right]) trans *= Quaternion.AxisRotate(new Vector(0.0, 0.0, 1.0), -updatetime * turnspeed).ToMatrix();
             this._View.Section.ParentTransform = Matrix.Transform(trans, this._View.Section.ParentTransform);
-            
-
-            this._Rot += Math.PI / 2.0 * updatetime;
 		}
 
         /// <summary>
@@ -189,7 +186,7 @@ namespace NSpace
             CompanionCube cc = new CompanionCube();
             Section objsect = this._WorldSect.AddChild(Offset);
             this._RootVisual.Add(cc.Model = Model.Create(Mesh, new TextureNormalMaterial(Texture), objsect));
-            cc.Body = RigidBody.Create(this._World, objsect,
+            cc.Body = RigidBody.Create(this._SpaceTime, objsect,
                 new RigidBody.Property(
                     new MeshSurface(Mesh),
                     new Vector(0.0, 0.0, 0.0),
@@ -199,10 +196,10 @@ namespace NSpace
 
         private List<CompanionCube> _Cubes;
         private World _World;
+        private ISpaceTime _SpaceTime;
+        private Section _WorldSect;
 
         private DateTime _LastUpdate;
-        private double _Rot = 0.0;
-        private Section _WorldSect;
         private MultiVisual _RootVisual;
         private View _View;
         private DebugVisual _Line;

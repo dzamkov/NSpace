@@ -16,7 +16,7 @@ namespace NSpace.Physics
     {
         private RigidBody()
         {
-
+            this._Gravity = new Dictionary<Gravity, object>();
         }
 
         public Section Section
@@ -35,41 +35,18 @@ namespace NSpace.Physics
             }
         }
 
-        public void Interact(IBody Other)
-        {
-            ICompoundBody cb = Other as ICompoundBody;
-            if (cb != null)
-            {
-                foreach (IBody body in cb.Bodies)
-                {
-                    this.Interact(body);
-                }
-            }
-
-            IForce force = Other as IForce;
-            if (force != null)
-            {
-                ICurve fr = force.Apply(this._Section, this._Properties.Mass, this._TimeBound, this._Position, this._Velocity);
-                this._Velocity = fr.Integral(new Vector());
-                this._Velocity.Multiply(this._TimeBound.Size.Seconds);
-                this._Position = this._Velocity.Integral(new Vector());
-                this._Position.Multiply(this._TimeBound.Size.Seconds);
-            }
-        }
-
         /// <summary>
         /// Creates a body with the specified parameters and adds it to a world.
         /// </summary>
-        public static RigidBody Create(World World, Section Section, Property Properties)
+        public static RigidBody Create(ISpaceTime SpaceTime, Section Section, Property Properties)
         {
             RigidBody rb = new RigidBody();
-            rb._Position = null;
-            rb._Velocity = null;
+            rb._InitVelocity = new Vector();
             rb._TimeBound = new TimeBound(0.0, 5.0);
             rb._Section = Section;
             rb._Properties = Properties;
-            rb.Interact(World.Contents);
-            World.Contents.Add(rb);
+            rb._RecalculatePath();
+            SpaceTime.Add(rb);
             return rb;
         }
 
@@ -90,7 +67,9 @@ namespace NSpace.Physics
         /// </summary>
         public Section GetSectionAtTime(Time Time)
         {
-            return this._Section.CreateRelation(Matrix.Translate(this._Position.GetPoint(this._TimeBound.BoundRelation(Time))));
+            return this._Section.CreateRelation(
+                Matrix.Translate(
+                    this._Position.GetPoint(this._TimeBound.BoundRelation(Time))));
         }
 
         /// <summary>
@@ -132,10 +111,55 @@ namespace NSpace.Physics
             
         }
 
+        /// <summary>
+        /// Recalculates the path of the body over time based on interactions.
+        /// </summary>
+        private void _RecalculatePath()
+        {
+            ICurve force = new ConstantCurve(new Vector()); // Assuming 0 mass
+            foreach (Gravity g in this._Gravity.Keys)
+            {
+                force = new SumCurve(force, new ConstantCurve(g.ForceAtSection(this.Section)));
+            }
+
+            ICurve velocity = force.Integral(this._InitVelocity);
+
+            this._Position = velocity.Integral(new Vector(0.0, 0.0, 0.0));
+        }
+
+        /// <summary>
+        /// Applies gravity so that it affects the rigid body.
+        /// </summary>
+        internal void _ApplyGravity(Gravity Gravity)
+        {
+            this._Gravity[Gravity] = null;
+            this._RecalculatePath();
+        }
+
         private TimeBound _TimeBound;
         private ICurve _Position;
-        private ICurve _Velocity;
+        private Vector _InitVelocity;
+        private Dictionary<Gravity, object> _Gravity;
         private Section _Section;
         private Property _Properties;
+    }
+
+    /// <summary>
+    /// Interaction between rigid bodies and gravity.
+    /// </summary>
+    public class RigidBodyGravityInteraction : IInteractProcedure
+    {
+        public void ApplyInteractions(ISpaceTime SpaceTime)
+        {
+            IEnumerable<RigidBody> rbs; SpaceTime.FindByType<RigidBody>(out rbs);
+            IEnumerable<Gravity> gravs; SpaceTime.FindByType<Gravity>(out gravs);
+            foreach (RigidBody rb in rbs)
+            {
+                foreach (Gravity grav in gravs)
+                {
+                    rb._ApplyGravity(grav);
+                }
+            }
+        }
     }
 }

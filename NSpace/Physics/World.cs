@@ -14,22 +14,9 @@ namespace NSpace.Physics
     /// </summary>
     public class World
     {
-        public World(IContentBody Contents)
+        public World()
         {
-            this._PlaceHolders = new LinkedList<IPlaceHolder>();
-            this._Contents = Contents;
-        }
 
-        /// <summary>
-        /// Gets the content body that contains all the bodies that can
-        /// interact within this world.
-        /// </summary>
-        public IContentBody Contents
-        {
-            get
-            {
-                return this._Contents;
-            }
         }
 
         /// <summary>
@@ -38,24 +25,6 @@ namespace NSpace.Physics
         public void Update(TimeSpan Time)
         {
             this._CurTime += Time;
-
-            // Handle placeholders
-            LinkedListNode<IPlaceHolder> cur = this._PlaceHolders.First;
-            while (cur != null)
-            {
-                IPlaceHolder placeholder = cur.Value;
-                if (this._CurTime > placeholder.Time)
-                {
-                    placeholder.Evaluate(this);
-                    LinkedListNode<IPlaceHolder> next = cur.Next;
-                    this._PlaceHolders.Remove(cur);
-                    cur = next;
-                }
-                else
-                {
-                    cur = cur.Next;
-                }
-            }
         }
 
         /// <summary>
@@ -69,17 +38,6 @@ namespace NSpace.Physics
             }
         }
 
-        /// <summary>
-        /// Adds a placeholder to the world, enabling it to be evaluated by the world
-        /// when needed.
-        /// </summary>
-        public void AddPlaceHolder(IPlaceHolder PlaceHolder)
-        {
-            this._PlaceHolders.AddLast(PlaceHolder);
-        }
-
-        private IContentBody _Contents;
         private Time _CurTime;
-        private LinkedList<IPlaceHolder> _PlaceHolders;
     }
 }
