@@ -56,6 +56,7 @@
     <Compile Include="Physics\Interact.cs" />
     <Compile Include="Physics\RigidBody.cs" />
     <Compile Include="Physics\SpaceTime.cs" />
+    <Compile Include="Scoping\Scope.cs" />
     <Compile Include="Shape.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Physics\World.cs" />
