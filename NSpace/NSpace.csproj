@@ -52,6 +52,7 @@
     <Compile Include="DebugVisual.cs" />
     <Compile Include="Curve.cs" />
     <Compile Include="Physics\Body.cs" />
+    <Compile Include="Physics\Entity.cs" />
     <Compile Include="Physics\Gravity.cs" />
     <Compile Include="Physics\Interact.cs" />
     <Compile Include="Physics\RigidBody.cs" />
