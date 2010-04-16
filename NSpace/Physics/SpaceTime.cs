@@ -8,80 +8,32 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// Contains spatially and temporally organized bodies. Spacetimes can be modified by
-    /// modifing contained spatial bodies, or adding and removing them.
+    /// An entity which stores spatial and temporal entities that can
+    /// interact with each other based on their presence.
     /// </summary>
-    public interface ISpaceTime
+    public class SpaceTime : Entity
     {
-        /// <summary>
-        /// Gets the bodies in the spacetime.
-        /// </summary>
-        IEnumerable<IBody> Bodies { get; }
 
-        /// <summary>
-        /// Adds a spatial body to the spacetime, organizing it in the process. The spacetime
-        /// may check that Body.SpaceTime is an expected value before adding the body.
-        /// </summary>
-        void Add(IBody Body);
-
-        /// <summary>
-        /// Gets all bodes of the specified type in the spacetime.
-        /// </summary>
-        void FindByType<T>(out IEnumerable<T> Results) where T : IBody;
     }
 
     /// <summary>
-    /// A simple unoptimized implementation of a spacetime.
+    /// Simple unoptimized implementation of a spacetime.
     /// </summary>
-    public class SpaceTime : ISpaceTime, IBodyEventHandler
+    public class SimpleSpaceTime : SpaceTime
     {
-        public SpaceTime()
+        public SimpleSpaceTime()
         {
-            this._Contents = new List<IBody>();
+
         }
 
-        public IEnumerable<IBody> Bodies
+        public override IEnumerable<Entity> Causes
         {
             get 
             {
-                return this._Contents;
+                return this._Contents; 
             }
         }
 
-        public void Add(IBody Body)
-        {
-            this._Contents.Add(Body);
-        }
-
-        public void FindByType<T>(out IEnumerable<T> Results) where T : IBody
-        {
-            List<T> res = new List<T>();
-            Results = res;
-            foreach(IBody b in this._Contents)
-            {
-                if(b is T)
-                {
-                    res.Add((T)b);
-                }
-            }
-        }
-
-        public void OnReassign(IBody Old, IBody New)
-        {
-            this._Contents.Remove(Old);
-            this._Contents.Add(New);
-        }
-
-        public void OnModified(IBody Body)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnRemoved(IBody Body)
-        {
-            this._Contents.Remove(Body);
-        }
-
-        private List<IBody> _Contents;
+        private List<Entity> _Contents;
     }
 }

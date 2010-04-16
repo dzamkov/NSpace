@@ -8,13 +8,14 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// A body which applies a uniform force to all other bodies in a world that forces
-    /// the bodies in a direction.
+    /// A system which controls the application of a uniform force to all
+    /// entities within the system.
     /// </summary>
-    public class Gravity : IBody
+    public class GravitySystem : ISystem<IGravitationalEntity>
     {
-        public Gravity(Vector Force, Section Section)
+        public GravitySystem(SpaceTime SpaceTime, Vector Force, Section Section)
         {
+            this._SpaceTime = SpaceTime;
             this._Force = Force;
             this._Section = Section;
         }
@@ -49,17 +50,29 @@ namespace NSpace.Physics
             return this._Section.GetRelation(Section).LinearTransform(this._Force);
         }
 
-        public void Attach(IBodyEventHandler EventHandler)
-        {
-            
-        }
-
-        public void Detach(IBodyEventHandler EventHandler)
-        {
-            
-        }
-
+        private SpaceTime _SpaceTime;
         private Vector _Force;
         private Section _Section;
+    }
+
+    /// <summary>
+    /// An entity that may participate in gravitational interactions.
+    /// </summary>
+    public interface IGravitationalEntity : IEntity
+    {
+        /// <summary>
+        /// Gets the section the entity is in.
+        /// </summary>
+        Section Section { get; }
+
+        /// <summary>
+        /// Gets the total mass of the entity in kilograms.
+        /// </summary>
+        double Mass { get; }
+
+        /// <summary>
+        /// Sets the force vector due to gravity on the entity.
+        /// </summary>
+        Vector GravityForce { set; }
     }
 }
