@@ -28,10 +28,10 @@ namespace NSpace.Physics
     /// recalculates the state of the entity after interaction, it is pushed back to
     /// the entity.
     /// </summary>
-    /// <typeparam name="U">The type of entity the system may get its data from and push
-    /// results to.
+    /// <typeparam name="E">The type of entity the system may get its data from and push
+    /// results to.</typeparam>
     public interface ISystem<E> : IEntity
-        where E : IEntity
+        where E : class, IEntity
     {
 
     }

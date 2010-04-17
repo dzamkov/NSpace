@@ -11,9 +11,9 @@ namespace NSpace.Physics
     /// A system which controls the application of a uniform force to all
     /// entities within the system.
     /// </summary>
-    public class GravitySystem : ISystem<IGravitationalEntity>
+    public class GravitySystem : ITemporalSystem<IGravitationalEntity>
     {
-        public GravitySystem(SpaceTime SpaceTime, Vector Force, Section Section)
+        public GravitySystem(ISpaceTime SpaceTime, Vector Force, Section Section)
         {
             this._SpaceTime = SpaceTime;
             this._Force = Force;
@@ -50,7 +50,7 @@ namespace NSpace.Physics
             return this._Section.GetRelation(Section).LinearTransform(this._Force);
         }
 
-        private SpaceTime _SpaceTime;
+        private ISpaceTime _SpaceTime;
         private Vector _Force;
         private Section _Section;
     }
@@ -58,7 +58,7 @@ namespace NSpace.Physics
     /// <summary>
     /// An entity that may participate in gravitational interactions.
     /// </summary>
-    public interface IGravitationalEntity : IEntity
+    public interface IGravitationalEntity : ITemporalEntity
     {
         /// <summary>
         /// Gets the section the entity is in.
