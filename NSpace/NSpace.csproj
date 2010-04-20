@@ -51,7 +51,6 @@
     <Compile Include="Color.cs" />
     <Compile Include="DebugVisual.cs" />
     <Compile Include="Curve.cs" />
-    <Compile Include="Physics\Body.cs" />
     <Compile Include="Physics\Entity.cs" />
     <Compile Include="Physics\Gravity.cs" />
     <Compile Include="Physics\RigidBody.cs" />
@@ -59,7 +58,6 @@
     <Compile Include="Scoping\Scope.cs" />
     <Compile Include="Shape.cs" />
     <Compile Include="Matrix.cs" />
-    <Compile Include="Physics\World.cs" />
     <Compile Include="Primitive.cs" />
     <Compile Include="Data.cs" />
     <Compile Include="Geometry.cs" />

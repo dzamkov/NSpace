@@ -36,9 +36,8 @@ namespace NSpace
 
             // Create world
             this._WorldSect = new Section();
-            this._SpaceTime = new DynamicSpaceTime(new RigidBodyGravityInteraction(), new SpaceTime());
-            this._World = new World();
-            this._SpaceTime.Add(new Gravity(new Vector(0.0, 0.0, -9.8), this._WorldSect));
+            this._SpaceTime = new SimpleSpaceTime();
+            this._SpaceTime.AddSystem<IGravitationalEntity>(new GravitySystem(new Vector(0.0, 0.0, -9.8), this._WorldSect));
 
             // Create view
             this._RootVisual = new MultiVisual(this._WorldSect);
@@ -92,7 +91,7 @@ namespace NSpace
             foreach (CompanionCube cc in this._Cubes)
             {
                 RigidBody body = cc.Body;
-                Section sect = body.GetSectionAtTime(this._World.CurrentTime);
+                Section sect = body.GetSectionAtTime(new Time(this._CurTime));
                 cc.Model.Section = sect;
                 Matrix trans = this._View.Section.GetRelation(sect);
                 Vector tsr = trans * sr;
@@ -135,7 +134,7 @@ namespace NSpace
             this._LastUpdate = curtime;
 
             // World update
-            this._World.Update(new TimeSpan(updatetime));
+            this._CurTime += updatetime;
 
             // Navigation
             Matrix trans = Matrix.Identity;
@@ -194,8 +193,9 @@ namespace NSpace
             this._Cubes.Add(cc);
         }
 
+        private double _CurTime;
+
         private List<CompanionCube> _Cubes;
-        private World _World;
         private ISpaceTime _SpaceTime;
         private Section _WorldSect;
 

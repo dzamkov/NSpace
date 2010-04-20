@@ -13,9 +13,8 @@ namespace NSpace.Physics
     /// </summary>
     public class GravitySystem : ITemporalSystem<IGravitationalEntity>
     {
-        public GravitySystem(ISpaceTime SpaceTime, Vector Force, Section Section)
+        public GravitySystem(Vector Force, Section Section)
         {
-            this._SpaceTime = SpaceTime;
             this._Force = Force;
             this._Section = Section;
         }
@@ -50,9 +49,30 @@ namespace NSpace.Physics
             return this._Section.GetRelation(Section).LinearTransform(this._Force);
         }
 
-        private ISpaceTime _SpaceTime;
+        public ITemporalEntityTag AddEntity(IGravitationalEntity Entity)
+        {
+            Entity.GravityForce = this.ForceAtSection(Entity.Section);
+            return new Tag();
+        }
+
+        /// <summary>
+        /// Tag given to entities affected by gravity.
+        /// </summary>
+        private class Tag : ITemporalEntityTag
+        {
+            public void Update()
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Remove()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         private Vector _Force;
-        private Section _Section;
+        private Section _Section;    
     }
 
     /// <summary>

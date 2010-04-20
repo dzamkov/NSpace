@@ -12,11 +12,11 @@ namespace NSpace.Physics
     /// A physics object whose collision is defined by a single shape that does
     /// not change over the lifetime of the body.
     /// </summary>
-    public class RigidBody : IBody
+    public class RigidBody : IEntity, IGravitationalEntity
     {
         private RigidBody()
         {
-            this._Gravity = new Dictionary<Gravity, object>();
+            
         }
 
         public Section Section
@@ -36,7 +36,7 @@ namespace NSpace.Physics
         }
 
         /// <summary>
-        /// Creates a body with the specified parameters and adds it to a world.
+        /// Creates a body with the specified parameters and adds it to a spacetime.
         /// </summary>
         public static RigidBody Create(ISpaceTime SpaceTime, Section Section, Property Properties)
         {
@@ -46,7 +46,7 @@ namespace NSpace.Physics
             rb._Section = Section;
             rb._Properties = Properties;
             rb._RecalculatePath();
-            SpaceTime.Add(rb);
+            SpaceTime.AddEntity(rb);
             return rb;
         }
 
@@ -101,65 +101,40 @@ namespace NSpace.Physics
             public double Mass;
         }
 
-        public void Attach(IBodyEventHandler EventHandler)
-        {
-            
-        }
-
-        public void Detach(IBodyEventHandler EventHandler)
-        {
-            
-        }
-
         /// <summary>
         /// Recalculates the path of the body over time based on interactions.
         /// </summary>
         private void _RecalculatePath()
         {
-            ICurve force = new ConstantCurve(new Vector()); // Assuming 0 mass
-            foreach (Gravity g in this._Gravity.Keys)
-            {
-                force = new SumCurve(force, new ConstantCurve(g.ForceAtSection(this.Section)));
-            }
+            ICurve force = new ConstantCurve(this._GravityForce);
 
             ICurve velocity = force.Integral(this._InitVelocity);
 
             this._Position = velocity.Integral(new Vector(0.0, 0.0, 0.0));
         }
 
-        /// <summary>
-        /// Applies gravity so that it affects the rigid body.
-        /// </summary>
-        internal void _ApplyGravity(Gravity Gravity)
+        public double Mass
         {
-            this._Gravity[Gravity] = null;
-            this._RecalculatePath();
+            get 
+            {
+                return this._Properties.Mass;
+            }
         }
 
+        public Vector GravityForce
+        {
+            set 
+            {
+                this._GravityForce = value;
+                this._RecalculatePath();
+            }
+        }
+
+        private Vector _GravityForce;
         private TimeBound _TimeBound;
         private ICurve _Position;
         private Vector _InitVelocity;
-        private Dictionary<Gravity, object> _Gravity;
         private Section _Section;
-        private Property _Properties;
-    }
-
-    /// <summary>
-    /// Interaction between rigid bodies and gravity.
-    /// </summary>
-    public class RigidBodyGravityInteraction : IInteractProcedure
-    {
-        public void ApplyInteractions(ISpaceTime SpaceTime)
-        {
-            IEnumerable<RigidBody> rbs; SpaceTime.FindByType<RigidBody>(out rbs);
-            IEnumerable<Gravity> gravs; SpaceTime.FindByType<Gravity>(out gravs);
-            foreach (RigidBody rb in rbs)
-            {
-                foreach (Gravity grav in gravs)
-                {
-                    rb._ApplyGravity(grav);
-                }
-            }
-        }
+        private Property _Properties;  
     }
 }

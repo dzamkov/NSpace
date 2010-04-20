@@ -17,7 +17,8 @@ namespace NSpace.Physics
         /// Adds a system to affect the entities of the spacetime and allow
         /// them to interact.
         /// </summary>
-        void AddSystem<E>(ITemporalSystem<E> System);
+        void AddSystem<E>(ITemporalSystem<E> System)
+            where E : class, ITemporalEntity;
     }
 
     /// <summary>
@@ -54,7 +55,7 @@ namespace NSpace.Physics
     /// <summary>
     /// An entity that can be stored in a spacetime.
     /// </summary>
-    public interface ITemporalEntity
+    public interface ITemporalEntity : IEntity
     {
 
     }
