@@ -8,59 +8,122 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// A dynamic object capable of interaction with other
+    /// A object capable of interaction with other
     /// entities and possibly external systems. This may be a combination
     /// of other entities, or the resulting state of entities after an
     /// interaction.
     /// </summary>
     public interface IEntity : IImmutable
     {
-
+        /// <summary>
+        /// Causes the entity to interact with the specified system and returns
+        /// an system entity that, when supplied with the results of the system,
+        /// will create an entity that represents this entity after interactions
+        /// and effects of the system are applied.
+        /// </summary>
+        ISystemEntity Interact(ISystem System);
     }
 
     /// <summary>
-    /// An effect or interaction an entity has on a system.
+    /// An entity that represents the combination of the interactions
+    /// and effects of a set of other entities.
     /// </summary>
-    /// <typeparam name="I">The type of data given by the effects to the system.</typeparam>
-    /// <typeparam name="O">The type of data the system gives to the effect after interaction.</typeparam>
-    public interface IEffect<I, O> : IImmutable
+    public class CompoundEntity : IEntity
     {
-        /// <summary>
-        /// Gets the input data of the effect.
-        /// </summary>
-        D Input { get; }
+        public CompoundEntity(IEnumerable<IEntity> SubEntities)
+        {
+            this._Entities = new List<IEntity>(SubEntities);
+        }
+
+        public ISystemEntity Interact(ISystem System)
+        {
+            
+        }
 
         /// <summary>
-        /// Sets the output data of the effect. This should not change the input, because this
-        /// is an immutable object.
+        /// A system entity returned by a compound entity.
         /// </summary>
-        O Output { set; }
+        private class SystemEntity : ISystemEntity
+        {
+            public SystemEntity(IEnumerable<IEntity> Entities, ISystem System)
+            {
+                // Give each entity a subsystem to interact with.
+                this.SystemEntities = new Dictionary<ISystem, ISystemEntity>();
+                foreach (IEntity e in Entities)
+                {
+                    ISystem sub = System.CreateSubSystem();
+                    this.SystemEntities[sub] = e.Interact(sub);
+                }
+            }
+
+            public IEntity Create(ISystemResult Result)
+            {
+                // Create new entities from the results of their interactions with the subsystems.
+                List<IEntity> subents = new List<IEntity>();
+                foreach (KeyValuePair<ISystem, ISystemResult> res in Result.SubSystemResults)
+                {
+                    subents.Add(this.SystemEntities[res.Key].Create(res.Value));
+                }
+                return new CompoundEntity(subents);
+            }
+
+            public Dictionary<ISystem, ISystemEntity> SystemEntities;
+        }
+
+        private IEnumerable<IEntity> _Entities;
     }
 
     /// <summary>
-    /// An entity that produces a set of effects of a specified type.
+    /// An object that allows interactions or effects to be applied to
+    /// entities. When a system is given to the entity, the entity inputs
+    /// its effects and interactions to the system along with information of how to
+    /// create a new entity representing it after changes are applied.
     /// </summary>
-    public interface IEffectEntity<D, R> : IEntity
+    public interface ISystem
     {
         /// <summary>
-        /// Gets the set of effects of the correct type this entity produces.
+        /// Creates a subsystem for this system. A subsystem contains its own
+        /// set of interactions and effects which can be combined with the main
+        /// system. The results of subsystems may only be calculated indirectly.
         /// </summary>
-        IEnumerable<IEffect<D, R>> Effects { get; }
+        ISystem CreateSubSystem();
+
+        /// <summary>
+        /// Converts and outputs a system of a specific type representing this system.
+        /// Null is returned if the conversion is not possible or is unknown to the
+        /// system. If an object supports a more complex, specific type of system, it
+        /// is best to check if this system can be converted to that type before defaulting
+        /// to a simple, generalized system.
+        /// </summary>
+        void As<S>(out S System) where S : ISystem;
     }
 
     /// <summary>
-    /// An object that has control of the interactions between several entities.
-    /// The states of the entities are interdependant with each other. Systems have
-    /// a certain type of object that they can use for collecting information about
-    /// the effects the entities have that is pushed to the system. When the system
-    /// recalculates the state of the entity after interaction, it is pushed back to
-    /// the entity.
+    /// The results of the effects of a system.
     /// </summary>
-    /// <typeparam name="E">The type of entity the system may get its data from and push
-    /// results to.</typeparam>
-    public interface ISystem<E> : IEntity
-        where E : class, IEntity
+    public interface ISystemResult : IImmutable
     {
+        /// <summary>
+        /// Gets a reference to the system this result is for.
+        /// </summary>
+        ISystem System { get; }
 
+        /// <summary>
+        /// Returns a mapping of subsystems of the system this result is for
+        /// and the results of the subsystems for that system.
+        /// </summary>
+        IDictionary<ISystem, ISystemResult> SubSystemResults { get; }
+    }
+
+    /// <summary>
+    /// An object that can create an entity after a system calculates the interactions
+    /// and effects it has.
+    /// </summary>
+    public interface ISystemEntity : IImmutable
+    {
+        /// <summary>
+        /// Creates a new entity with the results of a system.
+        /// </summary>
+        IEntity Create(ISystemResult Result);
     }
 }

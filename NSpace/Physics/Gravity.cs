@@ -8,10 +8,9 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// A system which controls the application of a uniform force to all
-    /// entities within the system.
+    /// An effect that uniformly applies a force to what it is applied to.
     /// </summary>
-    public class GravitySystem : ITemporalSystem<IGravitationalEntity>
+    public class GravitySystem : IEntity
     {
         public GravitySystem(Vector Force, Section Section)
         {
@@ -49,50 +48,7 @@ namespace NSpace.Physics
             return this._Section.GetRelation(Section).LinearTransform(this._Force);
         }
 
-        public ITemporalEntityTag AddEntity(IGravitationalEntity Entity)
-        {
-            Entity.GravityForce = this.ForceAtSection(Entity.Section);
-            return new Tag();
-        }
-
-        /// <summary>
-        /// Tag given to entities affected by gravity.
-        /// </summary>
-        private class Tag : ITemporalEntityTag
-        {
-            public void Update()
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Remove()
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         private Vector _Force;
         private Section _Section;    
-    }
-
-    /// <summary>
-    /// An entity that may participate in gravitational interactions.
-    /// </summary>
-    public interface IGravitationalEntity : ITemporalEntity
-    {
-        /// <summary>
-        /// Gets the section the entity is in.
-        /// </summary>
-        Section Section { get; }
-
-        /// <summary>
-        /// Gets the total mass of the entity in kilograms.
-        /// </summary>
-        double Mass { get; }
-
-        /// <summary>
-        /// Sets the force vector due to gravity on the entity.
-        /// </summary>
-        Vector GravityForce { set; }
     }
 }
