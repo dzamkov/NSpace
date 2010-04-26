@@ -8,9 +8,31 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// An effect that uniformly applies a force to what it is applied to.
+    /// Input into a gravitational system.
     /// </summary>
-    public class GravitySystem : IEntity
+    public interface IGravityInput : IImmutable
+    {
+        /// <summary>
+        /// Gets the section the input and results are in terms of.
+        /// </summary>
+        Section Section { get; }
+    }
+
+    /// <summary>
+    /// Result from the interactions of a gravitational system.
+    /// </summary>
+    public interface IGravityResult : ISystemResult<IGravityInput, IGravityResult>
+    {
+        /// <summary>
+        /// Gets the force vector gravity applies on the system.
+        /// </summary>
+        Vector Force { get; }
+    }
+
+    /// <summary>
+    /// A system that uniformly applies a force to the entities given to it.
+    /// </summary>
+    public class GravitySystem : ISystem<IGravityInput, IGravityResult>
     {
         public GravitySystem(Vector Force, Section Section)
         {
@@ -48,7 +70,55 @@ namespace NSpace.Physics
             return this._Section.GetRelation(Section).LinearTransform(this._Force);
         }
 
+        IGravityResult ISystem<IGravityInput, IGravityResult>.Apply(IGravityInput Input)
+        {
+            return new Result(this, Input);
+        }
+
+        IGravityInput ISystem<IGravityInput, IGravityResult>.Combine(IEnumerable<IGravityInput> Inputs)
+        {
+            // Subresults can be calculated directly from input information. No need to make a different
+            // input.
+            return Inputs.GetEnumerator().Current;
+        }
+
+        /// <summary>
+        /// Concrete result for a gravitational system.
+        /// </summary>
+        private class Result : IGravityResult
+        {
+            public Result(GravitySystem System, IGravityInput Input)
+            {
+                this._System = System;
+                this._Input = Input;
+            }
+
+            Vector IGravityResult.Force
+            {
+                get 
+                {
+                    return this._System.ForceAtSection(this._Input.Section);
+                }
+            }
+
+            IGravityInput ISystemResult<IGravityInput, IGravityResult>.Input
+            {
+                get 
+                {
+                    return this._Input;
+                }
+            }
+
+            void ISystemResult<IGravityInput, IGravityResult>.GetSubResult(IGravityInput Input, out IGravityResult Result)
+            {
+                Result = new Result(this._System, Input);
+            }
+
+            private GravitySystem _System;
+            private IGravityInput _Input;
+        }
+
         private Vector _Force;
-        private Section _Section;    
+        private Section _Section;
     }
 }

@@ -12,7 +12,7 @@ namespace NSpace.Physics
     /// A physics object whose collision is defined by a single shape that does
     /// not change over the lifetime of the body.
     /// </summary>
-    public class RigidBody : IEntity, IGravitationalEntity
+    public class RigidBody : IEntity
     {
         private RigidBody()
         {
