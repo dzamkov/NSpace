@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisualState xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ShowCheckBoxes="false">
+  <TopNode>[0-1000]G:\Projects\NSpace\NSpace\NSpace.csproj</TopNode>
+  <SelectedNode>[0-1003]NSpace.Section+Test.TransformRelations(0.313368593488526d,0.261345143085972d,0.648217974066836d,0.82801386007481d)</SelectedNode>
+  <ExcludeCategories>false</ExcludeCategories>
+  <Nodes>
+    <Node UniqueName="[0-1000]G:\Projects\NSpace\NSpace\NSpace.csproj" Expanded="true" />
+    <Node UniqueName="[0-1004]G:\Projects\NSpace\NSpace\bin\Debug\NSpace.exe" Expanded="true" />
+    <Node UniqueName="[0-1005]NSpace" Expanded="true" />
+    <Node UniqueName="[0-1001]NSpace.Section+Test" Expanded="true" />
+    <Node UniqueName="[0-1002]NSpace.Section+Test.TransformRelations" Expanded="true" />
+  </Nodes>
+</VisualState>

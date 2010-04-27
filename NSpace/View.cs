@@ -147,7 +147,7 @@ namespace NSpace
             foreach(KeyValuePair<IVisual, IRenderable> v in rens)
             {
                 GL.PushMatrix();
-                Matrix4d mat = this._Section.GetRelation(v.Key.Section).Inverse();
+                Matrix4d mat = this._Section.GetRelation(v.Key.Section).Inverse.SpaceTransform;
                 GL.MultMatrix(ref mat);
                 v.Value.Render();
                 GL.PopMatrix();

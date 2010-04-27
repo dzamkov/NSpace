@@ -67,7 +67,7 @@ namespace NSpace.Physics
         /// </summary>
         public Vector ForceAtSection(Section Section)
         {
-            return this._Section.GetRelation(Section).LinearTransform(this._Force);
+            return this._Section.GetRelation(Section).SpaceTransform.LinearTransform(this._Force);
         }
 
         IGravityResult ISystem<IGravityInput, IGravityResult>.Apply(IGravityInput Input)

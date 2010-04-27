@@ -8,11 +8,13 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    /// An orientation in space that is related to other Sections. Sections
-    /// can be parented to other sections to establish a relation between the parents
-    /// and sibblings in coordinate space.
+    /// A time and coordinate space that can be related to othe sections. Measures of time
+    /// and location are in terms of sections, that is, all measures within a section are directly
+    /// related to each other. If two coordinates have the same value, and are in the same section,
+    /// they are in the same place. Sections may have a parent-child relation with another section, from
+    /// which the relations to the siblings and ancestor relations can be caluclated.
     /// </summary>
-    public class Section
+    public class Section : IImmutable
     {
         public Section()
         {
@@ -20,87 +22,22 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Gets or sets a transform that, when applied to local space, will transform to the coordinate
-        /// space of the parent.
+        /// Gets the relation this section has with its parent.
         /// </summary>
-        public Matrix ParentTransform
+        public Relation ParentRelation
         {
             get
             {
-                return this._ParentTransform;
-            }
-            set
-            {
-                this._ParentTransform = value;
-                this._IParentTransform = value.Inverse();
-                if (this._Parent != null)
-                {
-                    this._Parent._UpdateRelation(this);
-                }
+                return this._ParentRelation;
             }
         }
 
         /// <summary>
-        /// Gets or sets a transform that, when applied to the coordinate space of the parent, will transform to local space.
+        /// Gets the relation this section has with another section.
         /// </summary>
-        public Matrix InverseParentTransform
+        public Relation GetRelation(Section Other)
         {
-            get
-            {
-                return this._IParentTransform;
-            }
-            set
-            {
-                this._ParentTransform = value.Inverse();
-                this._IParentTransform = value;
-                if (this._Parent != null)
-                {
-                    this._Parent._UpdateRelation(this);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the matrix that, when multiplied by local space, will get the space of
-        /// the specified section.
-        /// </summary>
-        public Matrix GetRelation(Section To)
-        {
-            if (this == To)
-            {
-                return Matrix.Identity;
-            }
-            if (this.Level == To.Level)
-            {
-                if (this._Parent == To._Parent)
-                {
-                    return Matrix.Transform(this.ParentTransform, To.InverseParentTransform);
-                }
-                else
-                {
-                    return Matrix.Transform(Matrix.Transform(this.ParentTransform, this.Parent.GetRelation(To.Parent)), To.InverseParentTransform);
-                }
-            }
-            if (this.Level > To.Level)
-            {
-                return Matrix.Transform(this.ParentTransform, this.Parent.GetRelation(To));
-            }
-            else
-            {
-                return Matrix.Transform(this.GetRelation(To.Parent), To.InverseParentTransform);
-            }
-        }
-
-        /// <summary>
-        /// Creates a section related by the specified matrix such that the result of GetRelation
-        /// with the section returned by this function will be the specified matrix.
-        /// </summary>
-        public Section CreateRelation(Matrix Transform)
-        {
-            Section res = new Section();
-            res.Parent = this._Parent;
-            res.ParentTransform = Matrix.Transform(Transform, this.ParentTransform);
-            return res;
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -143,10 +80,7 @@ namespace NSpace
         }
 
         /// <summary>
-        /// Gets or sets the parent section for this section. The parent
-        /// should be overall larger then the child and have siblings of
-        /// about the same size. This system is used to organize objects
-        /// in space.
+        /// Gets the parent section for this section.
         /// </summary>
         public Section Parent
         {
@@ -154,58 +88,89 @@ namespace NSpace
             {
                 return this._Parent;
             }
-            set
+        }
+
+        /// <summary>
+        /// Represents a relation from one section to another. These can
+        /// be used to convert measurements between sections.
+        /// </summary>
+        public struct Relation
+        {
+            /// <summary>
+            /// Gets a transform that, when applied to local space, will transform to the coordinate
+            /// space of the other section.
+            /// </summary>
+            public Matrix SpaceTransform;
+
+            /// <summary>
+            /// The local time offset from this section to the other.
+            /// </summary>
+            public Time TimeOffset;
+
+            /// <summary>
+            /// The local time length scale from this section to the other.
+            /// </summary>
+            public TimeSpan TimeScale;
+
+            /// <summary>
+            /// Transforms a vector from local space to the coordinate space of the other section.
+            /// </summary>
+            public Vector TransformVector(Vector V)
             {
-                this._Parent = value;
+                return this.SpaceTransform * V;
             }
-        }
 
-        /// <summary>
-        /// Gets the visual of this section, which renders the contents of the
-        /// section. If null is returned, this section cannot be rendered.
-        /// </summary>
-        public virtual IVisual Visual
-        {
-            get
+            /// <summary>
+            /// Transforms a time in this section to a time in the other.
+            /// </summary>
+            public Time TransformTime(Time T)
             {
-                return null;
+                return new Time((T - this.TimeOffset).Amount / this.TimeScale.Amount);
             }
-        }
 
-        /// <summary>
-        /// Adds a section as a child to this section. The child must
-        /// not yet have a parent section. The child is set to have the
-        /// specified parent transform offset to this section.
-        /// </summary>
-        public void AddChild(Section Child, Matrix Transform)
-        {
-            if (Child.Parent == null)
+            /// <summary>
+            /// Transforms a timespan in this section to a timespan in the other.
+            /// </summary>
+            public TimeSpan TransformTimeSpan(TimeSpan T)
             {
-                Child._Parent = this;
-                Child._ParentTransform = Transform;
-                Child._IParentTransform = Transform.Inverse();
+                return new TimeSpan(T.Amount * this.TimeScale.Amount);
             }
-        }
 
-        /// <summary>
-        /// Creates and adds a child section with the specified transform.
-        /// </summary>
-        public Section AddChild(Matrix Transform)
-        {
-            Section sec = new Section();
-            this.AddChild(sec, Transform);
-            return sec;
-        }
+            /// <summary>
+            /// Gets the inverse of this relation, which effectively switchs the section
+            /// this relation is from and the section this relation is to.
+            /// </summary>
+            public Relation Inverse
+            {
+                get
+                {
+                    return new Relation
+                    {
+                        SpaceTransform = this.SpaceTransform.Inverse(),
+                        TimeScale = new TimeSpan(1.0 / this.TimeScale.Amount),
+                        TimeOffset = new Time(-this.TimeOffset.Amount / this.TimeScale.Amount)
+                    };
+                }
+            }
 
-        /// <summary>
-        /// Updates the relation of a child section.
-        /// </summary>
-        private void _UpdateRelation(Section Child)
-        {
+            /// <summary>
+            /// Combines this relation with another.
+            /// </summary>
+            /// <remarks>If the section this relation is from is X, the section it is to is Y, the
+            /// section Other is from is Y, and the section Other is to is Z, then the result of this
+            /// method is a relation from X to Z.</remarks>
+            public Relation Combine(Relation Other)
+            {
+                return new Relation
+                {
+                    SpaceTransform = Matrix.Transform(this.SpaceTransform, Other.SpaceTransform),
+                    TimeScale = new TimeSpan(this.TimeScale.Amount * Other.TimeScale.Amount),
+                    TimeOffset = new Time(this.TimeOffset.Amount + (Other.TimeOffset.Amount * this.TimeScale.Amount))
+                };
+            }
         }
 
         private Section _Parent;
-        private Matrix _ParentTransform;
-        private Matrix _IParentTransform;
+        private Relation _ParentRelation;
     }
 }

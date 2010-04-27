@@ -30,6 +30,8 @@
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>
+    </DefineConstants>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
@@ -54,7 +56,7 @@
     <Compile Include="Immutable.cs" />
     <Compile Include="Physics\Entity.cs" />
     <Compile Include="Physics\Gravity.cs" />
-    <Compile Include="Physics\RigidBody.cs" />
+    <Compile Include="Physics\Shape.cs" />
     <Compile Include="Physics\SpaceTime.cs" />
     <Compile Include="Scoping\Scope.cs" />
     <Compile Include="Shape.cs" />

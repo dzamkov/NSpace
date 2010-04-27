@@ -12,50 +12,50 @@ namespace NSpace
     /// </summary>
     public struct Time : IIntersectTest<TimeBound>
     {
-        public Time(double Seconds)
+        public Time(double Amount)
         {
-            this.Seconds = Seconds;
+            this.Amount = Amount;
         }
 
         public static TimeSpan operator -(Time A, Time B)
         {
-            return new TimeSpan(A.Seconds - B.Seconds);
+            return new TimeSpan(A.Amount - B.Amount);
         }
 
         public static Time operator +(Time A, TimeSpan B)
         {
-            return new Time(A.Seconds + B.Seconds);
+            return new Time(A.Amount + B.Amount);
         }
 
         public static bool operator >(Time A, Time B)
         {
-            return A.Seconds > B.Seconds;
+            return A.Amount > B.Amount;
         }
 
         public static bool operator <(Time A, Time B)
         {
-            return A.Seconds < B.Seconds;
+            return A.Amount < B.Amount;
         }
 
         public static bool operator ==(Time A, Time B)
         {
-            return A.Seconds == B.Seconds;
+            return A.Amount == B.Amount;
         }
 
         public static bool operator !=(Time A, Time B)
         {
-            return A.Seconds != B.Seconds;
+            return A.Amount != B.Amount;
         }
 
         public override int GetHashCode()
         {
-            return this.Seconds.GetHashCode();
+            return this.Amount.GetHashCode();
         }
 
         public override bool Equals(object obj)
         {
             Time? t = obj as Time?;
-            if (t != null && t.Value.Seconds == this.Seconds)
+            if (t != null && t.Value.Amount == this.Amount)
             {
                 return true;
             }
@@ -67,23 +67,59 @@ namespace NSpace
 
         public bool Intersects(TimeBound Bound)
         {
-            return this.Seconds > Bound.TimeStart.Seconds && this.Seconds < Bound.TimeEnd.Seconds;
+            return this.Amount > Bound.TimeStart.Amount && this.Amount < Bound.TimeEnd.Amount;
         }
 
-        public double Seconds;
+        /// <summary>
+        /// An amount or value that represents this time in a section. This value only makes sense
+        /// in terms of a section.
+        /// </summary>
+        public double Amount;
     }
 
     /// <summary>
-    /// Represents a difference between times.
+    /// Represents a difference between times or a length of time.
     /// </summary>
     public struct TimeSpan
     {
-        public TimeSpan(double Seconds)
+        public TimeSpan(double Amount)
         {
-            this.Seconds = Seconds;
+            this.Amount = Amount;
         }
 
-        public double Seconds;
+        public static bool operator ==(TimeSpan A, TimeSpan B)
+        {
+            return A.Amount == B.Amount;
+        }
+
+        public static bool operator !=(TimeSpan A, TimeSpan B)
+        {
+            return A.Amount != B.Amount;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Amount.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            TimeSpan? t = obj as TimeSpan?;
+            if (t != null && t.Value.Amount == this.Amount)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// An amount or value that represents this time in a section. This value only makes sense
+        /// in terms of a section.
+        /// </summary>
+        public double Amount;
     }
 
     /// <summary>
@@ -148,7 +184,7 @@ namespace NSpace
         /// </summary>
         public double BoundRelation(Time Time)
         {
-            return (Time.Seconds - TimeStart.Seconds) / (TimeEnd - TimeStart).Seconds;
+            return (Time.Amount - TimeStart.Amount) / (TimeEnd - TimeStart).Amount;
         }
 
         public Time TimeStart;
@@ -164,7 +200,7 @@ namespace NSpace
         public double GetScore(TimeBound Bound)
         {
             // Minimize timebound size
-            return Bound.Size.Seconds;
+            return Bound.Size.Amount;
         }
     }
 }

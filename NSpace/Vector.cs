@@ -164,6 +164,16 @@ namespace NSpace
             return c;
         }
 
+        public static bool operator ==(Vector A, Vector B)
+        {
+            return (A.X == B.X) && (A.Y == B.Y) && (A.Z == B.Z);
+        }
+
+        public static bool operator !=(Vector A, Vector B)
+        {
+            return !(A == B);
+        }
+
         public static Vector operator /(Vector A, double Scalar)
         {
             Vector c = new Vector(A);

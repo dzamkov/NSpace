@@ -40,18 +40,4 @@ namespace NSpace.Physics
     {
 
     }
-
-    /// <summary>
-    /// A spacetime created from the composition of the effects of several other
-    /// entities.
-    /// </summary>
-    public class CompoundSpaceTime : ISpaceTime
-    {
-        public CompoundSpaceTime(IEnumerable<ISpaceTimeEntity> Parts)
-        {
-            this._Parts = Parts;
-        }
-
-        private IEnumerable<ISpaceTimeEntity> _Parts;
-    }
 }
