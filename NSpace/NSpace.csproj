@@ -52,6 +52,7 @@
     <Compile Include="Color.cs" />
     <Compile Include="Curve.cs" />
     <Compile Include="Immutable.cs" />
+    <Compile Include="Physics\Cube.cs" />
     <Compile Include="Physics\Entity.cs" />
     <Compile Include="Physics\Gravity.cs" />
     <Compile Include="Physics\Shape.cs" />

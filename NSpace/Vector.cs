@@ -174,6 +174,24 @@ namespace NSpace
             return !(A == B);
         }
 
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool Equals(object obj)
+        {
+            Vector? v = obj as Vector?;
+            if (v != null && v.Value.X == this.X && v.Value.Y == this.Y && v.Value.Z == this.Z)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public static Vector operator /(Vector A, double Scalar)
         {
             Vector c = new Vector(A);
