@@ -49,9 +49,7 @@
   <ItemGroup>
     <Compile Include="Bound.cs" />
     <Compile Include="BoundMap.cs" />
-    <Compile Include="Collision.cs" />
     <Compile Include="Color.cs" />
-    <Compile Include="DebugVisual.cs" />
     <Compile Include="Curve.cs" />
     <Compile Include="Immutable.cs" />
     <Compile Include="Physics\Entity.cs" />
@@ -59,27 +57,13 @@
     <Compile Include="Physics\Shape.cs" />
     <Compile Include="Physics\SpaceTime.cs" />
     <Compile Include="Scoping\Scope.cs" />
-    <Compile Include="Shape.cs" />
     <Compile Include="Matrix.cs" />
-    <Compile Include="Primitive.cs" />
-    <Compile Include="Data.cs" />
-    <Compile Include="Geometry.cs" />
-    <Compile Include="Material.cs" />
-    <Compile Include="Mesh.cs" />
-    <Compile Include="Model.cs" />
-    <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Quaternion.cs" />
-    <Compile Include="Renderable.cs" />
     <Compile Include="Section.cs" />
-    <Compile Include="SimpleMesh.cs" />
-    <Compile Include="Span.cs" />
-    <Compile Include="Texture.cs" />
     <Compile Include="Time.cs" />
-    <Compile Include="Triangle.cs" />
     <Compile Include="Vector.cs" />
-    <Compile Include="View.cs" />
-    <Compile Include="Visual.cs" />
+    <Compile Include="Visual\Scene.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>
   <ItemGroup>
