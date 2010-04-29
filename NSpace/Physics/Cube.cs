@@ -8,9 +8,9 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// A very clear and well defined cube.
+    /// A very clear and well defined solid cube.
     /// </summary>
-    public class Cube : IVolume
+    public class Cube : IDefiniteVolume
     {
         public Cube(Section Section)
         {
@@ -32,12 +32,50 @@ namespace NSpace.Physics
 
         void IConvertible<IVolume>.Convert<O>(out O Object)
         {
-            if (typeof(O) == typeof(Cube))
+            Object = this as O;
+        }
+
+        IVolumeMaterial IDefiniteVolume.Material
+        {
+            get 
             {
-                Object = (O)(object)this;
-                return;
+                return null;
             }
-            Object = null;
+        }
+
+        ISurface IDefiniteVolume.Surface
+        {
+            get 
+            { 
+                // Create a surface mesh for the cube.
+                Vector[] vertices = new Vector[8];
+                int[] indices = new int[36];
+                for (int t = 0; t < 8; t++)
+                {
+                    vertices[t] = new Vector(
+                        (t % 2) < 1 ? -0.5 : 0.5,
+                        (t % 4) < 2 ? -0.5 : 0.5,
+                        (t % 8) < 4 ? -0.5 : 0.5);
+                }
+                for (int c = 0; c < 6; c++)
+                {
+                    int[] mindices = new int[4];
+                    int m = (2 << (c / 2)) / 2;
+                    int l = c % 2;
+                    for (int t = 0; t < 4; t++)
+                    {
+                        mindices[t] = (t / m) * m * 2 + (t % m) + m * l;
+                    }
+                    indices[(c * 6) + 0] = mindices[0];
+                    indices[(c * 6) + 1] = mindices[1];
+                    indices[(c * 6) + 2] = mindices[2];
+                    indices[(c * 6) + 3] = mindices[2];
+                    indices[(c * 6) + 4] = mindices[1];
+                    indices[(c * 6) + 5] = mindices[3];
+                }
+
+                return new SimpleMesh(this._Section, vertices, indices);
+            }
         }
 
         private Section _Section;

@@ -1,0 +1,215 @@
+﻿//----------------------------------------
+// Copyright (c) 2010, Dmitry Zamkov 
+// Open source under the new BSD License
+//----------------------------------------
+using System;
+using System.Collections.Generic;
+
+namespace NSpace.Physics
+{
+    /// <summary>
+    /// A static surface that can be described using triangles.
+    /// </summary>
+    public interface IMeshSurface : IStaticSurface
+    {
+        /// <summary>
+        /// Gets all the triangles that make up this surface.
+        /// </summary>
+        IEnumerable<IMeshTriangle> Triangles { get; }
+    }
+
+    /// <summary>
+    /// A mesh with measurementes in only terms of only one different section.
+    /// </summary>
+    public interface ISingleSectionMeshSurface : IMeshSurface
+    {
+        /// <summary>
+        /// Gets the section that all vertices are in terms of in this mesh.
+        /// </summary>
+        Section Section { get; }
+    }
+
+    /// <summary>
+    /// An object within a mesh.
+    /// </summary>
+    public interface IMeshObject : IImmutable
+    {
+        /// <summary>
+        /// Gets the mesh the object is in.
+        /// </summary>
+        IMeshSurface Mesh { get; }
+    }
+
+    /// <summary>
+    /// A triangle within a mesh.
+    /// </summary>
+    public interface IMeshTriangle : IMeshObject
+    {
+        /// <summary>
+        /// Gets the (hopefully) three vertices that define the endpoints
+        /// of the triangle.
+        /// </summary>
+        IMeshVertex[] Vertices { get; }
+    }
+
+    /// <summary>
+    /// A vertex within a mesh that acts as an endpoint for triangles.
+    /// </summary>
+    public interface IMeshVertex : IMeshObject
+    {
+        /// <summary>
+        /// Gets the section this vertex is in terms of.
+        /// </summary>
+        Section Section { get; }
+
+        /// <summary>
+        /// Gets the position of the vertex.
+        /// </summary>
+        Vector Position { get; }
+    }
+
+    /// <summary>
+    /// A mesh surface that is specified at its creation. All triangles and vertices in the mesh are in the
+    /// same section.
+    /// </summary>
+    public class SimpleMesh : ISingleSectionMeshSurface
+    {
+        /// <summary>
+        /// Creates a simple mesh in the specified section.
+        /// </summary>
+        /// <param name="Vertices">An array of points to use for the mesh.</param>
+        /// <param name="Indices">An array of indices to the vertices. Every sequential group
+        /// of three indices makes up a triangle.</param>
+        public SimpleMesh(Section Section, Vector[] Vertices, int[] Indices)
+        {
+            this._Section = Section;
+            this._Vertices = Vertices;
+            this._Indices = Indices;
+        }
+
+        /// <summary>
+        /// Gets the section this mesh is in.
+        /// </summary>
+        public Section Section
+        {
+            get
+            {
+                return this._Section;
+            }
+        }
+
+        /// <summary>
+        /// A triangle within a simple mesh.
+        /// </summary>
+        internal class Triangle : IMeshTriangle
+        {
+            /// <summary>
+            /// The mesh the triangle belongs to.
+            /// </summary>
+            public SimpleMesh Mesh;
+
+            /// <summary>
+            /// The position in the indice array this triangle
+            /// starts at.
+            /// </summary>
+            public int IndiceStart;
+
+            IMeshVertex[] IMeshTriangle.Vertices
+            {
+                get 
+                {
+                    IMeshVertex[] mv = new IMeshVertex[3];
+                    for (int t = 0; t < 3; t++)
+                    {
+                        mv[t] = new Vertex
+                        {
+                            Mesh = this.Mesh,
+                            Index = this.Mesh._Indices[this.IndiceStart + t]
+                        };
+                    }
+                    return mv;
+                }
+            }
+
+            IMeshSurface IMeshObject.Mesh
+            {
+                get 
+                {
+                    return this.Mesh;
+                }
+            }
+        }
+
+        /// <summary>
+        /// A vertex within a simple mesh.
+        /// </summary>
+        internal class Vertex : IMeshVertex
+        {
+            /// <summary>
+            /// The mesh the vertex belongs to.
+            /// </summary>
+            public SimpleMesh Mesh;
+
+            /// <summary>
+            /// The position in the vertex array this vertex is at.
+            /// </summary>
+            public int Index;
+
+            Section IMeshVertex.Section
+            {
+                get 
+                {
+                    return this.Mesh.Section;
+                }
+            }
+
+            Vector IMeshVertex.Position
+            {
+                get 
+                {
+                    return this.Mesh._Vertices[this.Index];
+                }
+            }
+
+            IMeshSurface IMeshObject.Mesh
+            {
+                get 
+                {
+                    return this.Mesh;
+                }
+            }
+        }
+
+        IEnumerable<IMeshTriangle> IMeshSurface.Triangles
+        {
+            get 
+            {
+                for (int t = 0; t < this._Indices.Length; t += 3)
+                {
+                    yield return new Triangle
+                    {
+                        Mesh = this,
+                        IndiceStart = t
+                    };
+                }
+            }
+        }
+
+        void IConvertible<ISurface>.Convert<O>(out O Object)
+        {
+            Object = this as O;
+        }
+
+        Section ISingleSectionMeshSurface.Section
+        {
+            get 
+            {
+                return this._Section;
+            }
+        }
+
+        private Section _Section;
+        internal Vector[] _Vertices;
+        internal int[] _Indices;   
+    }
+}

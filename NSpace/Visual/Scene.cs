@@ -61,27 +61,28 @@ namespace NSpace.Visual
             GL.LoadMatrix(ref view);
 
             // Do some rendering
-            Cube b; this._Volume.Convert<Cube>(out b);
-            if (b != null) // A box is the only thing we know how to render right now.
+            IDefiniteVolume defvol; this._Volume.Convert<IDefiniteVolume>(out defvol);
+            if (defvol != null)
             {
-                GL.PushMatrix();
-                Matrix4d matrix = this._Camera.GetRelation(b.Section).SpaceTransform;
-                GL.MultMatrix(ref matrix);
-
-                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-                GL.Begin(BeginMode.Quads);
-                GL.Vertex3(-0.5f, 0.5f, -0.5f);
-                GL.Vertex3(-0.5f, 0.5f, 0.5f);
-                GL.Vertex3(0.5f, 0.5f, 0.5f);
-                GL.Vertex3(0.5f, 0.5f, -0.5f);
-
-                GL.Vertex3(-0.5f, -0.5f, -0.5f);
-                GL.Vertex3(-0.5f, -0.5f, 0.5f);
-                GL.Vertex3(0.5f, -0.5f, 0.5f);
-                GL.Vertex3(0.5f, -0.5f, -0.5f);
-                GL.End();
-
-                GL.PopMatrix();
+                ISingleSectionMeshSurface surface; defvol.Surface.Convert<ISingleSectionMeshSurface>(out surface);
+                if (surface != null)
+                {
+                    // Assume every vertex uses the same section.
+                    Matrix4d mat = this._Camera.GetRelation(surface.Section).SpaceTransform;
+                    GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                    GL.PushMatrix();
+                    GL.MultMatrix(ref mat);
+                    GL.Begin(BeginMode.Triangles);
+                    foreach (IMeshTriangle tri in surface.Triangles)
+                    {
+                        foreach (IMeshVertex vert in tri.Vertices)
+                        {
+                            GL.Vertex3(vert.Position);
+                        }
+                    }
+                    GL.End();
+                    GL.PopMatrix();
+                }
             }
         }
 

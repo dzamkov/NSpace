@@ -24,7 +24,7 @@ namespace NSpace
             // Create a simple scene
             Section r = new Section();
             Section a = r.CreateChild(new Section.Relation(Matrix.Translate(new Vector(-3.0, 0.0, 0.0))));
-            Section b = r.CreateChild(new Section.Relation(Matrix.Translate(new Vector(1.0, 0.0, 0.0))));
+            Section b = r.CreateChild(new Section.Relation(Matrix.Translate(new Vector(0.3, 0.4, 0.3))));
             this._Scene = new Scene(new Cube(b), a);
 		}
 
