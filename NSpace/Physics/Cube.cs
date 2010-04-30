@@ -79,7 +79,7 @@ namespace NSpace.Physics
             }
         }
 
-        bool IVolume.InVolume(Vector Point, Section Section, ref IMaterial Material)
+        bool IVolume.InVolume(Vector Point, Time Time, Section Section, ref IMaterial Material)
         {
             Vector thispoint = Section.GetRelation(this._Section).SpaceTransform * Point;
             if (thispoint.X >= -0.5 &&

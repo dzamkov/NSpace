@@ -46,10 +46,10 @@ namespace NSpace.Physics
         ISurface Surface { get; }
 
         /// <summary>
-        /// Checks if a point in terms of the specified section is in the
+        /// Checks if a point and time pair in terms of the specified section are in the
         /// volume, if so, material is set to the material at the point.
         /// </summary>
-        bool InVolume(Vector Point, Section Section, ref IMaterial Material);
+        bool InVolume(Vector Point, Time Time, Section Section, ref IMaterial Material);
     }
 
     /// <summary>
