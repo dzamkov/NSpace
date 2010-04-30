@@ -65,6 +65,7 @@
     <Compile Include="Section.cs" />
     <Compile Include="Time.cs" />
     <Compile Include="Vector.cs" />
+    <Compile Include="Visual\Material.cs" />
     <Compile Include="Visual\Scene.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>

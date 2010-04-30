@@ -10,11 +10,12 @@ namespace NSpace.Physics
     /// <summary>
     /// A very clear and well defined solid cube.
     /// </summary>
-    public class Cube : IDefiniteVolume
+    public class Cube : IUniformShape, IVolume
     {
-        public Cube(Section Section)
+        public Cube(Section Section, IMaterial Material)
         {
             this._Section = Section;
+            this._Material = Material;
         }
 
         /// <summary>
@@ -30,12 +31,12 @@ namespace NSpace.Physics
             }
         }
 
-        void IConvertible<IVolume>.Convert<O>(out O Object)
+        void IConvertible<IShape>.Convert<O>(out O Object)
         {
             Object = this as O;
         }
 
-        IVolumeMaterial IDefiniteVolume.Material
+        IMaterial IUniformShape.Material
         {
             get 
             {
@@ -43,7 +44,7 @@ namespace NSpace.Physics
             }
         }
 
-        ISurface IDefiniteVolume.Surface
+        ISurface IVolume.Surface
         {
             get 
             { 
@@ -74,10 +75,30 @@ namespace NSpace.Physics
                     indices[(c * 6) + 5] = mindices[3];
                 }
 
-                return new SimpleMesh(this._Section, vertices, indices);
+                return new SimpleMesh(this._Section, this._Material, vertices, indices);
             }
         }
 
+        bool IVolume.InVolume(Vector Point, Section Section, ref IMaterial Material)
+        {
+            Vector thispoint = Section.GetRelation(this._Section).SpaceTransform * Point;
+            if (thispoint.X >= -0.5 &&
+                thispoint.Y >= -0.5 &&
+                thispoint.Z >= -0.5 &&
+                thispoint.X <= 0.5 &&
+                thispoint.Y <= 0.5 &&
+                thispoint.Z <= 0.5)
+            {
+                Material = null;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private IMaterial _Material;
         private Section _Section;
     }
 }

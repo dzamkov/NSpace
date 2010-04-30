@@ -61,27 +61,31 @@ namespace NSpace.Visual
             GL.LoadMatrix(ref view);
 
             // Do some rendering
-            IDefiniteVolume defvol; this._Volume.Convert<IDefiniteVolume>(out defvol);
-            if (defvol != null)
+            ISingleSectionMeshSurface surface; this._Volume.Surface.Convert<ISingleSectionMeshSurface>(out surface);
+            if (surface != null)
             {
-                ISingleSectionMeshSurface surface; defvol.Surface.Convert<ISingleSectionMeshSurface>(out surface);
-                if (surface != null)
+                IUniformShape unishape; surface.Convert<IUniformShape>(out unishape);
+                if (unishape != null)
                 {
-                    // Assume every vertex uses the same section.
-                    Matrix4d mat = this._Camera.GetRelation(surface.Section).SpaceTransform;
-                    GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-                    GL.PushMatrix();
-                    GL.MultMatrix(ref mat);
-                    GL.Begin(BeginMode.Triangles);
-                    foreach (IMeshTriangle tri in surface.Triangles)
+                    SolidColorMaterial vismat; unishape.Material.Convert<SolidColorMaterial>(out vismat);
+                    if (vismat != null)
                     {
-                        foreach (IMeshVertex vert in tri.Vertices)
+                        // Assume every vertex uses the same section.
+                        Matrix4d mat = this._Camera.GetRelation(surface.Section).SpaceTransform;
+                        GL.PushMatrix();
+                        GL.MultMatrix(ref mat);
+                        GL.Begin(BeginMode.Triangles);
+                        GL.Color4(vismat.Color);
+                        foreach (IMeshTriangle tri in surface.Triangles)
                         {
-                            GL.Vertex3(vert.Position);
+                            foreach (IMeshVertex vert in tri.Vertices)
+                            {
+                                GL.Vertex3(vert.Position);
+                            }
                         }
+                        GL.End();
+                        GL.PopMatrix();
                     }
-                    GL.End();
-                    GL.PopMatrix();
                 }
             }
         }

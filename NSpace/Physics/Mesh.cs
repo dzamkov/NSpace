@@ -10,7 +10,7 @@ namespace NSpace.Physics
     /// <summary>
     /// A static surface that can be described using triangles.
     /// </summary>
-    public interface IMeshSurface : IStaticSurface
+    public interface IMeshSurface : ISurface, IStaticShape
     {
         /// <summary>
         /// Gets all the triangles that make up this surface.
@@ -72,7 +72,7 @@ namespace NSpace.Physics
     /// A mesh surface that is specified at its creation. All triangles and vertices in the mesh are in the
     /// same section.
     /// </summary>
-    public class SimpleMesh : ISingleSectionMeshSurface
+    public class SimpleMesh : ISingleSectionMeshSurface, IUniformShape
     {
         /// <summary>
         /// Creates a simple mesh in the specified section.
@@ -80,9 +80,10 @@ namespace NSpace.Physics
         /// <param name="Vertices">An array of points to use for the mesh.</param>
         /// <param name="Indices">An array of indices to the vertices. Every sequential group
         /// of three indices makes up a triangle.</param>
-        public SimpleMesh(Section Section, Vector[] Vertices, int[] Indices)
+        public SimpleMesh(Section Section, IMaterial Material, Vector[] Vertices, int[] Indices)
         {
             this._Section = Section;
+            this._Material = Material;
             this._Vertices = Vertices;
             this._Indices = Indices;
         }
@@ -95,6 +96,17 @@ namespace NSpace.Physics
             get
             {
                 return this._Section;
+            }
+        }
+
+        /// <summary>
+        /// Gets the material that makes up all the triangles in the mesh.
+        /// </summary>
+        public IMaterial Material
+        {
+            get
+            {
+                return this._Material;
             }
         }
 
@@ -195,7 +207,7 @@ namespace NSpace.Physics
             }
         }
 
-        void IConvertible<ISurface>.Convert<O>(out O Object)
+        void IConvertible<IShape>.Convert<O>(out O Object)
         {
             Object = this as O;
         }
@@ -208,8 +220,17 @@ namespace NSpace.Physics
             }
         }
 
+        IMaterial IUniformShape.Material
+        {
+            get 
+            {
+                return this._Material;
+            }
+        }
+
+        private IMaterial _Material;
         private Section _Section;
         internal Vector[] _Vertices;
-        internal int[] _Indices;   
+        internal int[] _Indices;
     }
 }

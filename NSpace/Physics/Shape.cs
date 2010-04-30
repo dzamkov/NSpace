@@ -8,42 +8,56 @@ using System.Collections.Generic;
 namespace NSpace.Physics
 {
     /// <summary>
-    /// A region, or area in space that is occupied by a certain material and may change over time.
+    /// A shape that occupies an area, or region in space and may change over time.
     /// </summary>
-    public interface IVolume : IImmutable, IConvertible<IVolume>
-    {
-        
-    }
-
-    /// <summary>
-    /// A volume that remains the same over time.
-    /// </summary>
-    public interface IStaticVolume : IVolume
+    /// <typeparam name="T">The specific type of shape this is.</typeparam>
+    public interface IShape : IImmutable, IConvertible<IShape>
     {
 
     }
 
     /// <summary>
-    /// A volume with a definite shape made of a solid material.
+    /// A shape made up of only one kind of material.
     /// </summary>
-    public interface IDefiniteVolume : IVolume
+    public interface IUniformShape : IShape
     {
         /// <summary>
-        /// Gets the material the volume is made of.
+        /// Gets the material that makes up this shape.
         /// </summary>
-        IVolumeMaterial Material { get; }
+        IMaterial Material { get; }
+    }
 
+    /// <summary>
+    /// A shape that does not change over time.
+    /// </summary>
+    public interface IStaticShape : IShape
+    {
+
+    }
+
+    /// <summary>
+    /// A shape that occupies a three dimensional volume in space.
+    /// </summary>
+    public interface IVolume : IShape
+    {
         /// <summary>
         /// Gets the surface that defines the shape of the volume.
         /// </summary>
         ISurface Surface { get; }
+
+        /// <summary>
+        /// Checks if a point in terms of the specified section is in the
+        /// volume, if so, material is set to the material at the point.
+        /// </summary>
+        bool InVolume(Vector Point, Section Section, ref IMaterial Material);
     }
 
     /// <summary>
-    /// Describes what substance, or material is in a volume at a particular
-    /// point, it may change over time.
+    /// A substance that has its own set of properties. It may describe what
+    /// type of matter makes up a shape. Note that when null is given as a material,
+    /// it signifies that the matter the makes a shape is undefined, it can be anything.
     /// </summary>
-    public interface IVolumeMaterial : IImmutable, IConvertible<IVolumeMaterial>
+    public interface IMaterial : IConvertible<IMaterial>
     {
 
     }
@@ -51,23 +65,7 @@ namespace NSpace.Physics
     /// <summary>
     /// A shaped, or curved, two dimensional region in space that may change over time.
     /// </summary>
-    public interface ISurface : IImmutable, IConvertible<ISurface>
-    {
-
-    }
-
-    /// <summary>
-    /// A surface that remains the same over time.
-    /// </summary>
-    public interface IStaticSurface : ISurface
-    {
-
-    }
-
-    /// Describes what substance, or material is on a surface at a particular
-    /// point, it may change over time.
-    /// </summary>
-    public interface ISurfaceMaterial : IImmutable, IConvertible<ISurfaceMaterial>
+    public interface ISurface : IShape
     {
 
     }
