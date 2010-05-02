@@ -85,7 +85,6 @@ namespace NSpace
         /// </summary>
         public IFrameRelation GetRelation(ReferenceFrame Other)
         {
-            // TODO: Something is very, very wrong here, I dont know what
             if (this.Level == Other.Level)
             {
                 if (this == Other)
@@ -109,11 +108,11 @@ namespace NSpace
             }
             if (this.Level > Other.Level)
             {
-                return new CompoundFrameRelation(this._Parent.GetRelation(Other), this._ParentRelation.Inverse);
+                return new CompoundFrameRelation(this._Parent.GetRelation(Other), this._ParentRelation);
             }
             else
             {
-                return new CompoundFrameRelation(this.GetRelation(Other.Parent), Other._ParentRelation.Inverse);
+                return new CompoundFrameRelation(Other._ParentRelation.Inverse, this.GetRelation(Other.Parent));
             }
         }
 
@@ -159,7 +158,7 @@ namespace NSpace
     }
 
     /// <summary>
-    /// A frame relation this is the combonation of two others applied together.
+    /// A frame relation this is the combonation of two others applied together(A applied to B).
     /// </summary>
     public class CompoundFrameRelation : IFrameRelation
     {
@@ -171,7 +170,7 @@ namespace NSpace
 
         Event IFrameRelation.Transform(Event Event)
         {
-            return this._A.Transform(this._B.Transform(Event));
+            return this._B.Transform(this._A.Transform(Event));
         }
 
         IFrameRelation IFrameRelation.Inverse

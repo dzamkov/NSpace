@@ -25,9 +25,10 @@ namespace NSpace
             ReferenceFrame r = new ReferenceFrame();
             ReferenceFrame a = r.CreateChild(new AfflineTransformFrameRelation(Matrix.Translate(new Vector(-3.0, 0.0, 0.0))));
             ReferenceFrame b = r.CreateChild(new AfflineTransformFrameRelation(Matrix.Translate(new Vector(0.3, 0.4, 0.3))));
-            ReferenceFrame c = b.CreateChild(new RotationalFrameRelation(new Time(3.0)));
+            ReferenceFrame c = b.CreateChild(new RotationalFrameRelation(new Time(1.0)));
+            ReferenceFrame d = a.CreateChild(new RotationalFrameRelation(new Time(4.0)));
 
-            this._Scene = new Scene(new Cube(c, new SolidColorMaterial(Color.RGB(0.0, 0.0, 1.0), 0.1)), a);
+            this._Scene = new Scene(new Cube(c, new SolidColorMaterial(Color.RGB(0.0, 0.0, 1.0), 0.1)), d);
 
 
             this._Time = new Time(0.0);

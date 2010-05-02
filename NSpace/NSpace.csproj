@@ -50,7 +50,6 @@
     <Compile Include="Bound.cs" />
     <Compile Include="BoundMap.cs" />
     <Compile Include="Color.cs" />
-    <Compile Include="Convert.cs" />
     <Compile Include="Curve.cs" />
     <Compile Include="Immutable.cs" />
     <Compile Include="Physics\Cube.cs" />
