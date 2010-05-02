@@ -78,7 +78,7 @@ namespace NSpace.Visual
                         {
                             foreach (IMeshVertex vert in tri.Vertices)
                             {
-                                GL.Vertex3(relate.Convert(new Event(vert.Position, Time)).Point);
+                                GL.Vertex3(relate.Transform(new Event(vert.Position, Time)).Point);
                             }
                         }
                         GL.End();

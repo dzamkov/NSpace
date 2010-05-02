@@ -148,7 +148,7 @@ namespace NSpace
         /// Converts an event in the source frame of this relation to an event
         /// in the destination frame.
         /// </summary>
-        Event Convert(Event Event);
+        Event Transform(Event Event);
 
         /// <summary>
         /// Gets the inverse of the relation, which is the relation with the
@@ -169,9 +169,9 @@ namespace NSpace
             this._B = B;
         }
 
-        Event IFrameRelation.Convert(Event Event)
+        Event IFrameRelation.Transform(Event Event)
         {
-            return this._A.Convert(this._B.Convert(Event));
+            return this._A.Transform(this._B.Transform(Event));
         }
 
         IFrameRelation IFrameRelation.Inverse
@@ -196,7 +196,7 @@ namespace NSpace
 
         }
 
-        Event IFrameRelation.Convert(Event Event)
+        Event IFrameRelation.Transform(Event Event)
         {
             return Event;
         }
@@ -220,7 +220,7 @@ namespace NSpace
             this._Transform = Transform;
         }
 
-        Event IFrameRelation.Convert(Event Event)
+        Event IFrameRelation.Transform(Event Event)
         {
             return new Event(this._Transform * Event.Point, Event.Time);
         }
@@ -246,7 +246,7 @@ namespace NSpace
             this._Period = Period;
         }
 
-        Event IFrameRelation.Convert(Event Event)
+        Event IFrameRelation.Transform(Event Event)
         {
             return new Event(Quaternion.AxisRotate(
                 new Vector(0.0, 0.0, 1.0),

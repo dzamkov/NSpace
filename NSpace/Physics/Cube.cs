@@ -81,7 +81,7 @@ namespace NSpace.Physics
 
         bool IVolume.InVolume(Event Event, ReferenceFrame Frame, ref IMaterial Material)
         {
-            Vector thispoint = this._Frame.GetRelation(Frame).Convert(Event).Point;
+            Vector thispoint = this._Frame.GetRelation(Frame).Transform(Event).Point;
             if (thispoint.X >= -0.5 &&
                 thispoint.Y >= -0.5 &&
                 thispoint.Z >= -0.5 &&
