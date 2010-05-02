@@ -13,11 +13,7 @@ namespace NSpace.Physics
     /// <typeparam name="T">The specific type of shape this is.</typeparam>
     public interface IShape : IImmutable, IConvertible<IShape>
     {
-        /// <summary>
-        /// Gets a static shape representing a static form of this shape at the
-        /// specified time.
-        /// </summary>
-        IStaticShape Slice(Time Time);
+
     }
 
     /// <summary>
@@ -50,10 +46,10 @@ namespace NSpace.Physics
         ISurface Surface { get; }
 
         /// <summary>
-        /// Checks if a point and time pair in terms of the specified section are in the
+        /// Checks if an event in terms of the specified frame of reference are in the
         /// volume, if so, material is set to the material at the point.
         /// </summary>
-        bool InVolume(Vector Point, Time Time, Section<Vector, Math> Section, ref IMaterial Material);
+        bool InVolume(Event Event, ReferenceFrame Frame, ref IMaterial Material);
     }
 
     /// <summary>

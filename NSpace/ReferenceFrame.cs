@@ -28,10 +28,18 @@ namespace NSpace
     /// </summary>
     public class ReferenceFrame
     {
+        public ReferenceFrame()
+        {
+            this._Parent = null;
+            this._ParentRelation = null;
+            this._Level = 0;
+        }
+        
         public ReferenceFrame(ReferenceFrame Parent, IFrameRelation ParentRelation)
         {
             this._Parent = Parent;
             this._ParentRelation = ParentRelation;
+            this._Level = Parent == null ? 0 : Parent._Level + 1;
         }
 
         /// <summary>
@@ -65,24 +73,19 @@ namespace NSpace
         {
             get
             {
-                if (this._Parent == null)
-                {
-                    return 0;
-                }
-                else
-                {
-                    return 1 + this._Parent.Level;
-                }
+                return this._Level;
             }
         }
 
         /// <summary>
         /// Gets a relation one frame of reference has to another. Null is returned if
         /// there is no way to convert the frames of reference, they belong to different
-        /// absolute frames.
+        /// absolute frames. The resulting frame relation should be able to convert events in
+        /// Other to events in this.
         /// </summary>
         public IFrameRelation GetRelation(ReferenceFrame Other)
         {
+            // TODO: Something is very, very wrong here, I dont know what
             if (this.Level == Other.Level)
             {
                 if (this == Other)
@@ -93,10 +96,10 @@ namespace NSpace
                 {
                     if (this._Parent != null)
                     {
-                        return new CompoundFrameRelation(this._ParentRelation, 
+                        return new CompoundFrameRelation(Other._ParentRelation.Inverse, 
                             new CompoundFrameRelation(
                                 this._Parent.GetRelation(Other._Parent),
-                                Other._ParentRelation.Inverse)); 
+                                this._ParentRelation)); 
                     }
                     else
                     {
@@ -106,14 +109,32 @@ namespace NSpace
             }
             if (this.Level > Other.Level)
             {
-                return new CompoundFrameRelation(this._ParentRelation, this._Parent.GetRelation(Other));
+                return new CompoundFrameRelation(this._Parent.GetRelation(Other), this._ParentRelation.Inverse);
             }
             else
             {
-                return new CompoundFrameRelation(this.GetRelation(Other._Parent), Other._ParentRelation.Inverse);
+                return new CompoundFrameRelation(this.GetRelation(Other.Parent), Other._ParentRelation.Inverse);
             }
         }
 
+        /// <summary>
+        /// Gets a frame relation that can convert from the source frame to the destination frame.
+        /// </summary>
+        public static IFrameRelation Relation(ReferenceFrame Source, ReferenceFrame Destination)
+        {
+            return Destination.GetRelation(Source);
+        }
+
+        /// <summary>
+        /// Creates a child frame of reference with the specified parent to child
+        /// relation.
+        /// </summary>
+        public ReferenceFrame CreateChild(IFrameRelation Relation)
+        {
+            return new ReferenceFrame(this, Relation.Inverse);
+        }
+
+        private int _Level;
         private ReferenceFrame _Parent;
         private IFrameRelation _ParentRelation;
     }
@@ -187,5 +208,60 @@ namespace NSpace
                 return this;
             }
         }
+    }
+
+    /// <summary>
+    /// A static frame relation that uses a matrix to change vector spaces while disregarding time.
+    /// </summary>
+    public class AfflineTransformFrameRelation : IFrameRelation
+    {
+        public AfflineTransformFrameRelation(Matrix Transform)
+        {
+            this._Transform = Transform;
+        }
+
+        Event IFrameRelation.Convert(Event Event)
+        {
+            return new Event(this._Transform * Event.Point, Event.Time);
+        }
+
+        IFrameRelation IFrameRelation.Inverse
+        {
+            get 
+            {
+                return new AfflineTransformFrameRelation(this._Transform.Inverse()); 
+            }
+        }
+
+        private Matrix _Transform;
+    }
+
+    /// <summary>
+    /// A frame relation that rotates on the z axis over time.
+    /// </summary>
+    public class RotationalFrameRelation : IFrameRelation
+    {
+        public RotationalFrameRelation(Time Period)
+        {
+            this._Period = Period;
+        }
+
+        Event IFrameRelation.Convert(Event Event)
+        {
+            return new Event(Quaternion.AxisRotate(
+                new Vector(0.0, 0.0, 1.0),
+                Event.Time.Amount * 2.0 * Math.PI / this._Period.Amount).ToMatrix() *
+                Event.Point, Event.Time);
+        }
+
+        IFrameRelation IFrameRelation.Inverse
+        {
+            get 
+            {
+                return new RotationalFrameRelation(new Time(-this._Period.Amount));
+            }
+        }
+
+        private Time _Period;
     }
 }

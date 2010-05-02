@@ -19,14 +19,14 @@ namespace NSpace.Physics
     }
 
     /// <summary>
-    /// A mesh with measurementes in only terms of only one different section.
+    /// A mesh with measurementes in only terms of only one different frame of reference.
     /// </summary>
     public interface ISingleSectionMeshSurface : IMeshSurface
     {
         /// <summary>
-        /// Gets the section that all vertices are in terms of in this mesh.
+        /// Gets the frame of reference that all vertices are in terms of in this mesh.
         /// </summary>
-        Section<Vector, Matrix> Section { get; }
+        ReferenceFrame Frame { get; }
     }
 
     /// <summary>
@@ -58,9 +58,9 @@ namespace NSpace.Physics
     public interface IMeshVertex : IMeshObject
     {
         /// <summary>
-        /// Gets the section this vertex is in terms of.
+        /// Gets the frame of reference this vertex is in terms of.
         /// </summary>
-        Section<Vector, Matrix> Section { get; }
+        ReferenceFrame Frame { get; }
 
         /// <summary>
         /// Gets the position of the vertex.
@@ -70,28 +70,28 @@ namespace NSpace.Physics
 
     /// <summary>
     /// A mesh surface that is specified at its creation. All triangles and vertices in the mesh are in the
-    /// same section.
+    /// same frame of reference.
     /// </summary>
     public class SimpleMesh : ISingleSectionMeshSurface, IUniformShape
     {
         /// <summary>
-        /// Creates a simple mesh in the specified section.
+        /// Creates a simple mesh in the specified frame of reference.
         /// </summary>
         /// <param name="Vertices">An array of points to use for the mesh.</param>
         /// <param name="Indices">An array of indices to the vertices. Every sequential group
         /// of three indices makes up a triangle.</param>
-        public SimpleMesh(Section<Vector, Matrix> Section, IMaterial Material, Vector[] Vertices, int[] Indices)
+        public SimpleMesh(ReferenceFrame Frame, IMaterial Material, Vector[] Vertices, int[] Indices)
         {
-            this._Section = Section;
+            this._Section = Frame;
             this._Material = Material;
             this._Vertices = Vertices;
             this._Indices = Indices;
         }
 
         /// <summary>
-        /// Gets the section this mesh is in.
+        /// Gets the frame of reference this mesh is in.
         /// </summary>
-        public Section<Vector, Matrix> Section
+        public ReferenceFrame Frame
         {
             get
             {
@@ -167,11 +167,11 @@ namespace NSpace.Physics
             /// </summary>
             public int Index;
 
-            Section<Vector, Matrix> IMeshVertex.Section
+            ReferenceFrame IMeshVertex.Frame
             {
                 get 
                 {
-                    return this.Mesh.Section;
+                    return this.Mesh.Frame;
                 }
             }
 
@@ -212,7 +212,7 @@ namespace NSpace.Physics
             Object = this as O;
         }
 
-        Section<Vector, Matrix> ISingleSectionMeshSurface.Section
+        ReferenceFrame ISingleSectionMeshSurface.Frame
         {
             get 
             {
@@ -229,7 +229,7 @@ namespace NSpace.Physics
         }
 
         private IMaterial _Material;
-        private Section<Vector, Matrix> _Section;
+        private ReferenceFrame _Section;
         internal Vector[] _Vertices;
         internal int[] _Indices;
     }

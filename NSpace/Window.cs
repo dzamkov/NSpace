@@ -22,26 +22,39 @@ namespace NSpace
 			this.WindowBorder = WindowBorder.Fixed;
 
             // Create a simple scene
-            Section<Vector, Matrix> r = new Section<Vector, Matrix>();
-            Section<Vector, Matrix> a = r.CreateChild(Matrix.Translate(new Vector(-3.0, 0.0, 0.0)));
-            Section<Vector, Matrix> b = r.CreateChild(Matrix.Translate(new Vector(0.3, 0.4, 0.3)));
-            this._Scene = new Scene(new Cube(b, new SolidColorMaterial(Color.RGB(0.0, 0.0, 1.0), 0.1)), a);
+            ReferenceFrame r = new ReferenceFrame();
+            ReferenceFrame a = r.CreateChild(new AfflineTransformFrameRelation(Matrix.Translate(new Vector(-3.0, 0.0, 0.0))));
+            ReferenceFrame b = r.CreateChild(new AfflineTransformFrameRelation(Matrix.Translate(new Vector(0.3, 0.4, 0.3))));
+            ReferenceFrame c = b.CreateChild(new RotationalFrameRelation(new Time(3.0)));
+
+            this._Scene = new Scene(new Cube(c, new SolidColorMaterial(Color.RGB(0.0, 0.0, 1.0), 0.1)), a);
+
+
+            this._Time = new Time(0.0);
+            this._LastUpdate = DateTime.Now;
 		}
 
         protected override void OnRenderFrame(FrameEventArgs e)
 		{
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
-            this._Scene.Render(new Time(0.0));
+            this._Scene.Render(this._Time);
 
             this.SwapBuffers();
 		}
 		
 		protected override void OnUpdateFrame (FrameEventArgs e)
 		{
-            
+            DateTime curtime = DateTime.Now;
+            double updatetime = (curtime - this._LastUpdate).TotalSeconds;
+            this._LastUpdate = curtime;
+
+            this._Time += new Time(updatetime);
 		}
 
+        private DateTime _LastUpdate;
         private Scene _Scene;
+        private Time _Time;
 	}
 }

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    /// Represents a time within a section.
+    /// Represents a time within a frame of reference.
     /// </summary>
     public struct Time
     {
@@ -66,8 +66,8 @@ namespace NSpace
         }
 
         /// <summary>
-        /// An amount or value that represents this time in a section. This value only makes sense
-        /// in terms of a section.
+        /// An amount or value that represents this time in a frame of reference. This value only makes sense
+        /// in terms of a frame of reference.
         /// </summary>
         public double Amount;
     }

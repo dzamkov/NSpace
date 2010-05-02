@@ -17,7 +17,7 @@ namespace NSpace.Visual
     /// </summary>
     public class Scene : IImmutable
     {
-        public Scene(IVolume Volume, Section<Vector, Matrix> Camera)
+        public Scene(IVolume Volume, ReferenceFrame Camera)
         {
             this._Volume = Volume;
             this._Camera = Camera;
@@ -35,10 +35,10 @@ namespace NSpace.Visual
         }
 
         /// <summary>
-        /// Gets the section the camera is in. The camera will be at (0,0,0) in this section
+        /// Gets the frame of reference the camera is in. The camera will be at (0,0,0) in this frame of reference
         /// looking towards (1,0,0).
         /// </summary>
-        public Section<Vector, Matrix> Camera
+        public ReferenceFrame Camera
         {
             get
             {
@@ -48,7 +48,7 @@ namespace NSpace.Visual
 
         /// <summary>
         /// Renders the volume(its state at the specified time in terms
-        /// of the camera section) to the current GL graphics context.
+        /// of the camera frame of reference) to the current GL graphics context.
         /// </summary>
         public void Render(Time Time)
         {
@@ -70,27 +70,24 @@ namespace NSpace.Visual
                     SolidColorMaterial vismat; unishape.Material.Convert<SolidColorMaterial>(out vismat);
                     if (vismat != null)
                     {
-                        // Assume every vertex uses the same section.
-                        Matrix4d mat = this._Camera.GetRelation(surface.Section).SpaceTransform;
-                        GL.PushMatrix();
-                        GL.MultMatrix(ref mat);
+                        // Assume every vertex uses the same frame of reference.
+                        IFrameRelation relate = this._Camera.GetRelation(surface.Frame);
                         GL.Begin(BeginMode.Triangles);
                         GL.Color4(vismat.Color);
                         foreach (IMeshTriangle tri in surface.Triangles)
                         {
                             foreach (IMeshVertex vert in tri.Vertices)
                             {
-                                GL.Vertex3(vert.Position);
+                                GL.Vertex3(relate.Convert(new Event(vert.Position, Time)).Point);
                             }
                         }
                         GL.End();
-                        GL.PopMatrix();
                     }
                 }
             }
         }
 
         private IVolume _Volume;
-        private Section<Vector, Matrix> _Camera;
+        private ReferenceFrame _Camera;
     }
 }

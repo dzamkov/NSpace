@@ -54,17 +54,14 @@
     <Compile Include="Immutable.cs" />
     <Compile Include="Physics\Cube.cs" />
     <Compile Include="Physics\Entity.cs" />
-    <Compile Include="Physics\Gravity.cs" />
     <Compile Include="Physics\Mesh.cs" />
     <Compile Include="Physics\Shape.cs" />
     <Compile Include="Physics\SpaceTime.cs" />
-    <Compile Include="Physics\TimeTransform.cs" />
     <Compile Include="ReferenceFrame.cs" />
     <Compile Include="Scoping\Scope.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Quaternion.cs" />
-    <Compile Include="Section.cs" />
     <Compile Include="Time.cs" />
     <Compile Include="Transformable.cs" />
     <Compile Include="Vector.cs" />

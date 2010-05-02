@@ -12,22 +12,22 @@ namespace NSpace.Physics
     /// </summary>
     public class Cube : IUniformShape, IVolume
     {
-        public Cube(Section<Vector, Matrix> Section, IMaterial Material)
+        public Cube(ReferenceFrame Frame, IMaterial Material)
         {
-            this._Section = Section;
+            this._Frame = Frame;
             this._Material = Material;
         }
 
         /// <summary>
-        /// Gets the section this cube is oriented in. The center of the box is
-        /// at the origin of the section. The edge length of the cube is 1 in section
+        /// Gets the frame of reference this cube is oriented in. The center of the box is
+        /// at the origin of the frame of reference. The edge length of the cube is 1 in frame of reference
         /// units.
         /// </summary>
-        public Section<Vector, Matrix> Section
+        public ReferenceFrame Frame
         {
             get
             {
-                return this._Section;
+                return this._Frame;
             }
         }
 
@@ -75,13 +75,13 @@ namespace NSpace.Physics
                     indices[(c * 6) + 5] = mindices[3];
                 }
 
-                return new SimpleMesh(this._Section, this._Material, vertices, indices);
+                return new SimpleMesh(this._Frame, this._Material, vertices, indices);
             }
         }
 
-        bool IVolume.InVolume(Vector Point, Time Time, Section<Vector, Matrix> Section, ref IMaterial Material)
+        bool IVolume.InVolume(Event Event, ReferenceFrame Frame, ref IMaterial Material)
         {
-            Vector thispoint = Section.GetRelation(this._Section).SpaceTransform * Point;
+            Vector thispoint = this._Frame.GetRelation(Frame).Convert(Event).Point;
             if (thispoint.X >= -0.5 &&
                 thispoint.Y >= -0.5 &&
                 thispoint.Z >= -0.5 &&
@@ -99,6 +99,6 @@ namespace NSpace.Physics
         }
 
         private IMaterial _Material;
-        private Section<Vector, Matrix> _Section;
+        private ReferenceFrame _Frame;
     }
 }
