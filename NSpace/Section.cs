@@ -8,20 +8,24 @@ using System.Collections.Generic;
 namespace NSpace
 {
     /// <summary>
-    /// A time and coordinate space that can be related to othe sections. Measures of time
-    /// and location are in terms of sections, that is, all measures within a section are directly
-    /// related to each other. If two coordinates have the same value, and are in the same section,
-    /// they are in the same place. Sections may have a parent-child relation with another section, from
+    /// A coordinate space, or system in which all objects representing points
+    /// are related. Note that points are loosely defined, and may be represent
+    /// a vector in the range of space or a single point of time over the range
+    /// of all times. Sections may have a parent-child relation with another section, from
     /// which the relations to the siblings and ancestor relations can be caluclated.
     /// </summary>
-    public class Section : IImmutable
+    /// <typeparam name="P">The type representing a point in this section.</typeparam>
+    /// <typeparam name="T">The type that represents a relation between sections, that
+    /// can transform points.</typeparam>
+    public class Section<P, T> : IImmutable
+        where T : ITransformable<T, P>, new()
     {
         public Section()
         {
             
         }
 
-        public Section(Section Parent, Relation ParentRelation)
+        public Section(Section<P, T> Parent, T ParentRelation)
         {
             this._Parent = Parent;
             this._ParentRelation = ParentRelation;
@@ -30,7 +34,7 @@ namespace NSpace
         /// <summary>
         /// Gets the relation this section has to its parent.
         /// </summary>
-        public Relation ParentRelation
+        public T ParentRelation
         {
             get
             {
@@ -41,13 +45,13 @@ namespace NSpace
         /// <summary>
         /// Gets the relation this section has with another section.
         /// </summary>
-        public Relation GetRelation(Section Other)
+        public T GetRelation(Section<P, T> Other)
         {
             if (this.Level == Other.Level)
             {
                 if (this == Other)
                 {
-                    return Relation.Identity;
+                    return new T().Identity;
                 }
                 else
                 {
@@ -95,7 +99,7 @@ namespace NSpace
         /// Gets the root parent of this section. The is the lowest-level indirect or direct parent
         /// of this section.
         /// </summary>
-        public Section RootParent
+        public Section<P, T> RootParent
         {
             get
             {
@@ -113,7 +117,7 @@ namespace NSpace
         /// <summary>
         /// Gets the parent section for this section.
         /// </summary>
-        public Section Parent
+        public Section<P, T> Parent
         {
             get
             {
@@ -124,116 +128,13 @@ namespace NSpace
         /// <summary>
         /// Creates a child section with the relation this should have to the child.
         /// </summary>
-        public Section CreateChild(Relation Relation)
+        public Section<P, T> CreateChild(T Relation)
         {
-            return new Section(this, Relation.Inverse);
+            return new Section<P, T>(this, Relation.Inverse);
         }
 
-        /// <summary>
-        /// Represents a relation from one section to another. These can
-        /// be used to convert measurements between sections.
-        /// </summary>
-        public struct Relation
-        {
-            public Relation(Matrix SpaceTransform)
-            {
-                this.SpaceTransform = SpaceTransform;
-                this.TimeOffset = new Time(0.0);
-                this.TimeScale = new TimeSpan(1.0);
-            }
-
-            public Relation(Matrix SpaceTransform, Time TimeOffset, TimeSpan TimeScale)
-            {
-                this.SpaceTransform = SpaceTransform;
-                this.TimeOffset = TimeOffset;
-                this.TimeScale = TimeScale;
-            }
-
-            /// <summary>
-            /// Gets a transform that, when applied to local space, will transform to the coordinate
-            /// space of the other section.
-            /// </summary>
-            public Matrix SpaceTransform;
-
-            /// <summary>
-            /// The local time offset from this section to the other.
-            /// </summary>
-            public Time TimeOffset;
-
-            /// <summary>
-            /// The local time length scale from this section to the other.
-            /// </summary>
-            public TimeSpan TimeScale;
-
-            /// <summary>
-            /// Transforms a vector from local space to the coordinate space of the other section.
-            /// </summary>
-            public Vector TransformVector(Vector V)
-            {
-                return this.SpaceTransform * V;
-            }
-
-            /// <summary>
-            /// Transforms a time in this section to a time in the other.
-            /// </summary>
-            public Time TransformTime(Time T)
-            {
-                return new Time((T - this.TimeOffset).Amount / this.TimeScale.Amount);
-            }
-
-            /// <summary>
-            /// Transforms a timespan in this section to a timespan in the other.
-            /// </summary>
-            public TimeSpan TransformTimeSpan(TimeSpan T)
-            {
-                return new TimeSpan(T.Amount * this.TimeScale.Amount);
-            }
-
-            /// <summary>
-            /// Gets the inverse of this relation, which effectively switchs the section
-            /// this relation is from and the section this relation is to.
-            /// </summary>
-            public Relation Inverse
-            {
-                get
-                {
-                    return new Relation(
-                        this.SpaceTransform.Inverse(),
-                        new Time(-this.TimeOffset.Amount / this.TimeScale.Amount),
-                        new TimeSpan(1.0 / this.TimeScale.Amount)
-                    );
-                }
-            }
-
-            /// <summary>
-            /// Combines this relation with another.
-            /// </summary>
-            /// <remarks>If the section this relation is from is X, the section it is to is Y, the
-            /// section Other is from is Y, and the section Other is to is Z, then the result of this
-            /// method is a relation from X to Z.</remarks>
-            public Relation Combine(Relation Other)
-            {
-                return new Relation(
-                    Matrix.Transform(this.SpaceTransform, Other.SpaceTransform),
-                    new Time(this.TimeOffset.Amount + (Other.TimeOffset.Amount * this.TimeScale.Amount)),
-                    new TimeSpan(this.TimeScale.Amount * Other.TimeScale.Amount)
-                );
-            }
-
-            /// <summary>
-            /// Gets the identity relation, which doesnt chang anything it is applied to.
-            /// </summary>
-            public static Relation Identity
-            {
-                get
-                {
-                    return new Relation(Matrix.Identity, new Time(0.0), new TimeSpan(1.0));
-                }
-            }
-        }
-
-        private Section _Parent;
-        private Relation _ParentRelation;
+        private Section<P, T> _Parent;
+        private T _ParentRelation;
     }
 
     /// <summary>

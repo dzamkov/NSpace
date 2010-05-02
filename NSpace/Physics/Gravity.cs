@@ -15,7 +15,7 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the section the input and results are in terms of.
         /// </summary>
-        Section Section { get; }
+        Section<Vector, Matrix> Section { get; }
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ namespace NSpace.Physics
     /// </summary>
     public class GravitySystem : ISystem<IGravityInput, IGravityResult>
     {
-        public GravitySystem(Vector Force, Section Section)
+        public GravitySystem(Vector Force, Section<Vector, Matrix> Section)
         {
             this._Force = Force;
             this._Section = Section;
@@ -54,7 +54,7 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the section that the force is relative to.
         /// </summary>
-        public Section Section
+        public Section<Vector, Matrix> Section
         {
             get
             {
@@ -65,9 +65,9 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the force vector of the force applied to a specific section.
         /// </summary>
-        public Vector ForceAtSection(Section Section)
+        public Vector ForceAtSection(Section<Vector, Matrix> Section)
         {
-            return this._Section.GetRelation(Section).SpaceTransform.LinearTransform(this._Force);
+            return this._Section.GetRelation(Section).LinearTransform(this._Force);
         }
 
         IGravityResult ISystem<IGravityInput, IGravityResult>.Apply(IGravityInput Input)
@@ -119,6 +119,6 @@ namespace NSpace.Physics
         }
 
         private Vector _Force;
-        private Section _Section;
+        private Section<Vector, Matrix> _Section;
     }
 }

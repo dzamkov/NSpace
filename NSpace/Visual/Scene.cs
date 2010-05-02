@@ -17,7 +17,7 @@ namespace NSpace.Visual
     /// </summary>
     public class Scene : IImmutable
     {
-        public Scene(IVolume Volume, Section Camera)
+        public Scene(IVolume Volume, Section<Vector, Matrix> Camera)
         {
             this._Volume = Volume;
             this._Camera = Camera;
@@ -38,7 +38,7 @@ namespace NSpace.Visual
         /// Gets the section the camera is in. The camera will be at (0,0,0) in this section
         /// looking towards (1,0,0).
         /// </summary>
-        public Section Camera
+        public Section<Vector, Matrix> Camera
         {
             get
             {
@@ -91,6 +91,6 @@ namespace NSpace.Visual
         }
 
         private IVolume _Volume;
-        private Section _Camera;
+        private Section<Vector, Matrix> _Camera;
     }
 }

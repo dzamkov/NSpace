@@ -26,7 +26,7 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the section that all vertices are in terms of in this mesh.
         /// </summary>
-        Section Section { get; }
+        Section<Vector, Matrix> Section { get; }
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the section this vertex is in terms of.
         /// </summary>
-        Section Section { get; }
+        Section<Vector, Matrix> Section { get; }
 
         /// <summary>
         /// Gets the position of the vertex.
@@ -80,7 +80,7 @@ namespace NSpace.Physics
         /// <param name="Vertices">An array of points to use for the mesh.</param>
         /// <param name="Indices">An array of indices to the vertices. Every sequential group
         /// of three indices makes up a triangle.</param>
-        public SimpleMesh(Section Section, IMaterial Material, Vector[] Vertices, int[] Indices)
+        public SimpleMesh(Section<Vector, Matrix> Section, IMaterial Material, Vector[] Vertices, int[] Indices)
         {
             this._Section = Section;
             this._Material = Material;
@@ -91,7 +91,7 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the section this mesh is in.
         /// </summary>
-        public Section Section
+        public Section<Vector, Matrix> Section
         {
             get
             {
@@ -167,7 +167,7 @@ namespace NSpace.Physics
             /// </summary>
             public int Index;
 
-            Section IMeshVertex.Section
+            Section<Vector, Matrix> IMeshVertex.Section
             {
                 get 
                 {
@@ -212,7 +212,7 @@ namespace NSpace.Physics
             Object = this as O;
         }
 
-        Section ISingleSectionMeshSurface.Section
+        Section<Vector, Matrix> ISingleSectionMeshSurface.Section
         {
             get 
             {
@@ -229,7 +229,7 @@ namespace NSpace.Physics
         }
 
         private IMaterial _Material;
-        private Section _Section;
+        private Section<Vector, Matrix> _Section;
         internal Vector[] _Vertices;
         internal int[] _Indices;
     }

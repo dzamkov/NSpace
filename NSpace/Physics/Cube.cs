@@ -12,7 +12,7 @@ namespace NSpace.Physics
     /// </summary>
     public class Cube : IUniformShape, IVolume
     {
-        public Cube(Section Section, IMaterial Material)
+        public Cube(Section<Vector, Matrix> Section, IMaterial Material)
         {
             this._Section = Section;
             this._Material = Material;
@@ -23,7 +23,7 @@ namespace NSpace.Physics
         /// at the origin of the section. The edge length of the cube is 1 in section
         /// units.
         /// </summary>
-        public Section Section
+        public Section<Vector, Matrix> Section
         {
             get
             {
@@ -79,7 +79,7 @@ namespace NSpace.Physics
             }
         }
 
-        bool IVolume.InVolume(Vector Point, Time Time, Section Section, ref IMaterial Material)
+        bool IVolume.InVolume(Vector Point, Time Time, Section<Vector, Matrix> Section, ref IMaterial Material)
         {
             Vector thispoint = Section.GetRelation(this._Section).SpaceTransform * Point;
             if (thispoint.X >= -0.5 &&
@@ -99,6 +99,6 @@ namespace NSpace.Physics
         }
 
         private IMaterial _Material;
-        private Section _Section;
+        private Section<Vector, Matrix> _Section;
     }
 }

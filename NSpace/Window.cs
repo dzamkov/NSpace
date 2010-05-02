@@ -22,9 +22,9 @@ namespace NSpace
 			this.WindowBorder = WindowBorder.Fixed;
 
             // Create a simple scene
-            Section r = new Section();
-            Section a = r.CreateChild(new Section.Relation(Matrix.Translate(new Vector(-3.0, 0.0, 0.0))));
-            Section b = r.CreateChild(new Section.Relation(Matrix.Translate(new Vector(0.3, 0.4, 0.3))));
+            Section<Vector, Matrix> r = new Section<Vector, Matrix>();
+            Section<Vector, Matrix> a = r.CreateChild(Matrix.Translate(new Vector(-3.0, 0.0, 0.0)));
+            Section<Vector, Matrix> b = r.CreateChild(Matrix.Translate(new Vector(0.3, 0.4, 0.3)));
             this._Scene = new Scene(new Cube(b, new SolidColorMaterial(Color.RGB(0.0, 0.0, 1.0), 0.1)), a);
 		}
 

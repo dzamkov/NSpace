@@ -12,7 +12,7 @@ namespace NSpace
     /// Transformation matrix used to specify a linear transform from one coordinate system
     /// to another.
     /// </summary>
-    public struct Matrix
+    public struct Matrix : ITransformable<Matrix, Vector>
     {
         public Matrix(
             double M11, double M12, double M13, double M14,
@@ -363,6 +363,32 @@ namespace NSpace
                 Matrix.M12, Matrix.M22, Matrix.M32, Matrix.M42,
                 Matrix.M13, Matrix.M23, Matrix.M33, Matrix.M43,
                 Matrix.M14, Matrix.M24, Matrix.M34, Matrix.M44);
+        }
+
+        Vector ITransformable<Matrix, Vector>.Transform(Vector Value)
+        {
+            return this * Value;
+        }
+
+        Matrix ITransformable<Matrix, Vector>.Combine(Matrix Other)
+        {
+            return Matrix.Transform(this, Other);
+        }
+
+        Matrix ITransformable<Matrix, Vector>.Identity
+        {
+            get 
+            {
+                return Matrix.Identity;
+            }
+        }
+
+        Matrix ITransformable<Matrix, Vector>.Inverse
+        {
+            get
+            {
+                return this.Inverse();
+            }
         }
     }
 }
