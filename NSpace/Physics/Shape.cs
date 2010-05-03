@@ -11,7 +11,7 @@ namespace NSpace.Physics
     /// A shape that occupies an area, or region in space and may change over time.
     /// </summary>
     /// <typeparam name="T">The specific type of shape this is.</typeparam>
-    public interface IShape : IImmutable, IConvertible<IShape>
+    public interface IShape : IImmutable
     {
 
     }
@@ -57,7 +57,7 @@ namespace NSpace.Physics
     /// type of matter makes up a shape. Note that when null is given as a material,
     /// it signifies that the matter the makes a shape is undefined, it can be anything.
     /// </summary>
-    public interface IMaterial : IConvertible<IMaterial>
+    public interface IMaterial : IImmutable
     {
 
     }

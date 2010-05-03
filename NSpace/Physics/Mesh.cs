@@ -207,11 +207,6 @@ namespace NSpace.Physics
             }
         }
 
-        void IConvertible<IShape>.Convert<O>(out O Object)
-        {
-            Object = this as O;
-        }
-
         ReferenceFrame ISingleSectionMeshSurface.Frame
         {
             get 

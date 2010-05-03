@@ -31,11 +31,6 @@ namespace NSpace.Physics
             }
         }
 
-        void IConvertible<IShape>.Convert<O>(out O Object)
-        {
-            Object = this as O;
-        }
-
         IMaterial IUniformShape.Material
         {
             get 

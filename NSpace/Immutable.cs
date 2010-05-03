@@ -24,22 +24,4 @@ namespace NSpace
     {
 
     }
-
-    /// <summary>
-    /// An immutable object that can be exactly converted into another form that still represents the
-    /// object(data may be omitted, but all data in the converted form of the object must agree with
-    /// the original object).
-    /// </summary>
-    /// <typeparam name="T">The general types of objects this may be converted to.</typeparam>
-    public interface IConvertible<T> : IImmutable
-        where T : class, IImmutable
-    {
-        /// <summary>
-        /// Creates a converted form of the object as the specified type. If the conversion is unavailable, the
-        /// resulting object will be null. Note that it is valid for O to be any type of T excluding T. If O happens
-        /// to be a base of the concrete implementation of this class, Convert should return the object itself.
-        /// </summary>
-        /// <typeparam name="O">The specific type of object to convert to.</typeparam>
-        void Convert<O>(out O Object) where O : class, T;
-    }
 }

@@ -61,13 +61,13 @@ namespace NSpace.Visual
             GL.LoadMatrix(ref view);
 
             // Do some rendering
-            ISingleSectionMeshSurface surface; this._Volume.Surface.Convert<ISingleSectionMeshSurface>(out surface);
+            ISingleSectionMeshSurface surface; Program.Convert<ISurface, ISingleSectionMeshSurface>(this._Volume.Surface, out surface);
             if (surface != null)
             {
-                IUniformShape unishape; surface.Convert<IUniformShape>(out unishape);
+                IUniformShape unishape; Program.Convert<ISurface, IUniformShape>(surface, out unishape);
                 if (unishape != null)
                 {
-                    SolidColorMaterial vismat; unishape.Material.Convert<SolidColorMaterial>(out vismat);
+                    SolidColorMaterial vismat; Program.Convert<IMaterial, SolidColorMaterial>(unishape.Material, out vismat);
                     if (vismat != null)
                     {
                         // Assume every vertex uses the same frame of reference.
