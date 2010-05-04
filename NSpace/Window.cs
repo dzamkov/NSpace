@@ -43,7 +43,7 @@ namespace NSpace
                 cubes.Add(new Cube(d, new SolidColorMaterial(Color.HLSA(rand.NextDouble() * 360.0, 0.5, 1.0, 1.0), 0.1)));
             }
 
-            this._Scene = new Scene(new Union(cubes), a);
+            this._Scene = new Scene(new Union(cubes), a, (double)this.Width / (double)this.Height);
 
 
             this._Time = new Time(0.0);

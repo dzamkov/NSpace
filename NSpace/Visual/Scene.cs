@@ -17,10 +17,11 @@ namespace NSpace.Visual
     /// </summary>
     public class Scene : IImmutable
     {
-        public Scene(IVolume Volume, ReferenceFrame Camera)
+        public Scene(IVolume Volume, ReferenceFrame Camera, double AspectRatio)
         {
             this._Volume = Volume;
             this._Camera = Camera;
+            this._AspectRatio = AspectRatio;
         }
 
         /// <summary>
@@ -31,6 +32,17 @@ namespace NSpace.Visual
             get
             {
                 return this._Volume;
+            }
+        }
+
+        /// <summary>
+        /// Gets the aspect ratio to render with(Width / Height).
+        /// </summary>
+        public double AspectRatio
+        {
+            get
+            {
+                return this._AspectRatio;
             }
         }
 
@@ -53,7 +65,7 @@ namespace NSpace.Visual
         public void Render(Time Time)
         {
             // Projection and lookat matrix
-            Matrix4d proj = Matrix4d.Perspective(Math.PI / 5.0, 1.0, 0.01, 100.0);
+            Matrix4d proj = Matrix4d.Perspective(Math.PI / 5.0, this._AspectRatio, 0.01, 100.0);
             Matrix4d view = Matrix4d.LookAt(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadMatrix(ref proj);
@@ -108,6 +120,7 @@ namespace NSpace.Visual
             }
         }
 
+        private double _AspectRatio;
         private IVolume _Volume;
         private ReferenceFrame _Camera;
     }
