@@ -28,11 +28,14 @@ namespace NSpace.Physics
     }
 
     /// <summary>
-    /// A shape that does not change over time.
+    /// A shape that does not change over time in relation to a frame of reference.
     /// </summary>
     public interface IStaticShape : IShape
     {
-
+        /// <summary>
+        /// Gets the frame of reference in which the shape is static.
+        /// </summary>
+        ReferenceFrame StaticFrame { get; }
     }
 
     /// <summary>

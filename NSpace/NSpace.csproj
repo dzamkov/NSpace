@@ -58,6 +58,7 @@
     <Compile Include="Physics\Mesh.cs" />
     <Compile Include="Physics\Shape.cs" />
     <Compile Include="Physics\SpaceTime.cs" />
+    <Compile Include="Physics\Union.cs" />
     <Compile Include="ReferenceFrame.cs" />
     <Compile Include="Scoping\Scope.cs" />
     <Compile Include="Matrix.cs" />

@@ -60,28 +60,49 @@ namespace NSpace.Visual
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadMatrix(ref view);
 
-            // Do some rendering
-            ISingleSectionMeshSurface surface; Program.Convert<ISurface, ISingleSectionMeshSurface>(this._Volume.Surface, out surface);
-            if (surface != null)
+            // Render
+            this._RenderVolume(this._Volume, Time);
+        }
+
+        /// <summary>
+        /// Renders an individual volume.
+        /// </summary>
+        private void _RenderVolume(IVolume Volume, Time Time)
+        {
+            // Union
+            Union union; Program.Convert<IVolume, Union>(Volume, out union);
+            if (union != null)
             {
-                IUniformShape unishape; Program.Convert<ISurface, IUniformShape>(surface, out unishape);
-                if (unishape != null)
+                foreach (IVolume vol in union.Source)
                 {
-                    SolidColorMaterial vismat; Program.Convert<IMaterial, SolidColorMaterial>(unishape.Material, out vismat);
-                    if (vismat != null)
+                    this._RenderVolume(vol, Time);
+                }
+            }
+            else
+            {
+                // Generic solid color material thingy
+                ISingleSectionMeshSurface surface; Program.Convert<ISurface, ISingleSectionMeshSurface>(Volume.Surface, out surface);
+                if (surface != null)
+                {
+                    IUniformShape unishape; Program.Convert<ISurface, IUniformShape>(surface, out unishape);
+                    if (unishape != null)
                     {
-                        // Assume every vertex uses the same frame of reference.
-                        IFrameRelation relate = this._Camera.GetRelation(surface.Frame);
-                        GL.Begin(BeginMode.Triangles);
-                        GL.Color4(vismat.Color);
-                        foreach (IMeshTriangle tri in surface.Triangles)
+                        SolidColorMaterial vismat; Program.Convert<IMaterial, SolidColorMaterial>(unishape.Material, out vismat);
+                        if (vismat != null)
                         {
-                            foreach (IMeshVertex vert in tri.Vertices)
+                            // Assume every vertex uses the same frame of reference.
+                            IFrameRelation relate = this._Camera.GetRelation(surface.Frame);
+                            GL.Begin(BeginMode.Triangles);
+                            GL.Color4(vismat.Color);
+                            foreach (IMeshTriangle tri in surface.Triangles)
                             {
-                                GL.Vertex3(relate.Transform(new Event(vert.Position, Time)).Point);
+                                foreach (IMeshVertex vert in tri.Vertices)
+                                {
+                                    GL.Vertex3(relate.Transform(new Event(vert.Position, Time)).Point);
+                                }
                             }
+                            GL.End();
                         }
-                        GL.End();
                     }
                 }
             }

@@ -215,6 +215,14 @@ namespace NSpace.Physics
             }
         }
 
+        ReferenceFrame IStaticShape.StaticFrame
+        {
+            get
+            {
+                return this._Section;
+            }
+        }
+
         IMaterial IUniformShape.Material
         {
             get 
