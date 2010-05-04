@@ -10,32 +10,9 @@ namespace NSpace.Physics
     /// <summary>
     /// A shape that occupies an area, or region in space and may change over time.
     /// </summary>
-    /// <typeparam name="T">The specific type of shape this is.</typeparam>
     public interface IShape : IImmutable
     {
 
-    }
-
-    /// <summary>
-    /// A shape made up of only one kind of material.
-    /// </summary>
-    public interface IUniformShape : IShape
-    {
-        /// <summary>
-        /// Gets the material that makes up this shape.
-        /// </summary>
-        IMaterial Material { get; }
-    }
-
-    /// <summary>
-    /// A shape that does not change over time in relation to a frame of reference.
-    /// </summary>
-    public interface IStaticShape : IShape
-    {
-        /// <summary>
-        /// Gets the frame of reference in which the shape is static.
-        /// </summary>
-        ReferenceFrame StaticFrame { get; }
     }
 
     /// <summary>
@@ -52,17 +29,30 @@ namespace NSpace.Physics
         /// Checks if an event in terms of the specified frame of reference are in the
         /// volume, if so, material is set to the material at the point.
         /// </summary>
-        bool InVolume(Event Event, ReferenceFrame Frame, ref IMaterial Material);
+        bool InVolume(Event Event, ReferenceFrame Frame, ref IVolumeMaterial Material);
     }
 
     /// <summary>
-    /// A substance that has its own set of properties. It may describe what
-    /// type of matter makes up a shape. Note that when null is given as a material,
-    /// it signifies that the matter the makes a shape is undefined, it can be anything.
+    /// A volume made up of only one kind of material.
     /// </summary>
-    public interface IMaterial : IImmutable
+    public interface IUniformVolume : IVolume
     {
+        /// <summary>
+        /// Gets the material that the volume is made from.
+        /// </summary>
+        IVolumeMaterial Material { get; }
+    }
 
+    /// <summary>
+    /// A volume that does not change over time in relation to a frame of
+    /// reference.
+    /// </summary>
+    public interface IStaticVolume : IVolume
+    {
+        /// <summary>
+        /// Gets the frame of reference that the volume does not change in relation to.
+        /// </summary>
+        ReferenceFrame StaticFrame { get; }
     }
 
     /// <summary>
@@ -71,5 +61,28 @@ namespace NSpace.Physics
     public interface ISurface : IShape
     {
 
+    }
+
+    /// <summary>
+    /// A surface which is made up of only one kind of material.
+    /// </summary>
+    public interface IUniformSurface : ISurface
+    {
+        /// <summary>
+        /// Gets the material the surface is made from.
+        /// </summary>
+        ISurfaceMaterial Material { get; }
+    }
+
+    /// <summary>
+    /// A surface that does not change over time in relation to a frame
+    /// of reference.
+    /// </summary>
+    public interface IStaticSurface : ISurface
+    {
+        /// <summary>
+        /// Gets the frame of reference that the surface does not change in relation to.
+        /// </summary>
+        ReferenceFrame StaticFrame { get; }
     }
 }

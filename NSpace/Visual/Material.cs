@@ -12,10 +12,10 @@ using OpenTK.Graphics.OpenGL;
 namespace NSpace.Visual
 {
     /// <summary>
-    /// A material that has visual properties that determine how it affects light
+    /// A surface material that has visual properties that determine how it affects light
     /// that hits it.
     /// </summary>
-    public interface IVisualMaterial : IMaterial
+    public interface IVisualMaterial : ISurfaceMaterial
     {
         /// <summary>
         /// A very, very complicated function describing how light affects the material in a certain situation. Hopefully

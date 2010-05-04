@@ -93,22 +93,22 @@ namespace NSpace.Visual
             else
             {
                 // Generic solid color material thingy
-                ISingleSectionMeshSurface surface; Program.Convert<ISurface, ISingleSectionMeshSurface>(Volume.Surface, out surface);
+                ISingleFrameStaticMesh surface; Program.Convert<ISurface, ISingleFrameStaticMesh>(Volume.Surface, out surface);
                 if (surface != null)
                 {
-                    IUniformShape unishape; Program.Convert<ISurface, IUniformShape>(surface, out unishape);
+                    IUniformSurface unishape; Program.Convert<ISurface, IUniformSurface>(surface, out unishape);
                     if (unishape != null)
                     {
-                        SolidColorMaterial vismat; Program.Convert<IMaterial, SolidColorMaterial>(unishape.Material, out vismat);
+                        SolidColorMaterial vismat; Program.Convert<ISurfaceMaterial, SolidColorMaterial>(unishape.Material, out vismat);
                         if (vismat != null)
                         {
                             // Assume every vertex uses the same frame of reference.
                             IFrameRelation relate = this._Camera.GetRelation(surface.Frame);
                             GL.Begin(BeginMode.Triangles);
                             GL.Color4(vismat.Color);
-                            foreach (IMeshTriangle tri in surface.Triangles)
+                            foreach (IStaticMeshTriangle tri in surface.Triangles)
                             {
-                                foreach (IMeshVertex vert in tri.Vertices)
+                                foreach (IStaticMeshVertex vert in tri.Vertices)
                                 {
                                     GL.Vertex3(relate.Transform(new Event(vert.Position, Time)).Point);
                                 }

@@ -39,7 +39,7 @@ namespace NSpace.Physics
             }
         }
 
-        bool IVolume.InVolume(Event Event, ReferenceFrame Frame, ref IMaterial Material)
+        bool IVolume.InVolume(Event Event, ReferenceFrame Frame, ref IVolumeMaterial Material)
         {
             foreach (IVolume sourcevol in this._Source)
             {

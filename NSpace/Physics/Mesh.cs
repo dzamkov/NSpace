@@ -10,18 +10,18 @@ namespace NSpace.Physics
     /// <summary>
     /// A static surface that can be described using triangles.
     /// </summary>
-    public interface IMeshSurface : ISurface, IStaticShape
+    public interface IStaticMesh : IStaticSurface
     {
         /// <summary>
         /// Gets all the triangles that make up this surface.
         /// </summary>
-        IEnumerable<IMeshTriangle> Triangles { get; }
+        IEnumerable<IStaticMeshTriangle> Triangles { get; }
     }
 
     /// <summary>
-    /// A mesh with measurementes in only terms of only one different frame of reference.
+    /// A mesh with measurements in only terms of only one different frame of reference.
     /// </summary>
-    public interface ISingleSectionMeshSurface : IMeshSurface
+    public interface ISingleFrameStaticMesh : IStaticMesh
     {
         /// <summary>
         /// Gets the frame of reference that all vertices are in terms of in this mesh.
@@ -30,32 +30,21 @@ namespace NSpace.Physics
     }
 
     /// <summary>
-    /// An object within a mesh.
-    /// </summary>
-    public interface IMeshObject : IImmutable
-    {
-        /// <summary>
-        /// Gets the mesh the object is in.
-        /// </summary>
-        IMeshSurface Mesh { get; }
-    }
-
-    /// <summary>
     /// A triangle within a mesh.
     /// </summary>
-    public interface IMeshTriangle : IMeshObject
+    public interface IStaticMeshTriangle
     {
         /// <summary>
         /// Gets the (hopefully) three vertices that define the endpoints
         /// of the triangle.
         /// </summary>
-        IMeshVertex[] Vertices { get; }
+        IStaticMeshVertex[] Vertices { get; }
     }
 
     /// <summary>
     /// A vertex within a mesh that acts as an endpoint for triangles.
     /// </summary>
-    public interface IMeshVertex : IMeshObject
+    public interface IStaticMeshVertex
     {
         /// <summary>
         /// Gets the frame of reference this vertex is in terms of.
@@ -72,7 +61,7 @@ namespace NSpace.Physics
     /// A mesh surface that is specified at its creation. All triangles and vertices in the mesh are in the
     /// same frame of reference.
     /// </summary>
-    public class SimpleMesh : ISingleSectionMeshSurface, IUniformShape
+    public class SimpleMesh : ISingleFrameStaticMesh, IUniformSurface
     {
         /// <summary>
         /// Creates a simple mesh in the specified frame of reference.
@@ -80,7 +69,7 @@ namespace NSpace.Physics
         /// <param name="Vertices">An array of points to use for the mesh.</param>
         /// <param name="Indices">An array of indices to the vertices. Every sequential group
         /// of three indices makes up a triangle.</param>
-        public SimpleMesh(ReferenceFrame Frame, IMaterial Material, Vector[] Vertices, int[] Indices)
+        public SimpleMesh(ReferenceFrame Frame, ISurfaceMaterial Material, Vector[] Vertices, int[] Indices)
         {
             this._Section = Frame;
             this._Material = Material;
@@ -102,7 +91,7 @@ namespace NSpace.Physics
         /// <summary>
         /// Gets the material that makes up all the triangles in the mesh.
         /// </summary>
-        public IMaterial Material
+        public ISurfaceMaterial Material
         {
             get
             {
@@ -113,7 +102,7 @@ namespace NSpace.Physics
         /// <summary>
         /// A triangle within a simple mesh.
         /// </summary>
-        internal class Triangle : IMeshTriangle
+        internal class Triangle : IStaticMeshTriangle
         {
             /// <summary>
             /// The mesh the triangle belongs to.
@@ -126,11 +115,11 @@ namespace NSpace.Physics
             /// </summary>
             public int IndiceStart;
 
-            IMeshVertex[] IMeshTriangle.Vertices
+            IStaticMeshVertex[] IStaticMeshTriangle.Vertices
             {
                 get 
                 {
-                    IMeshVertex[] mv = new IMeshVertex[3];
+                    IStaticMeshVertex[] mv = new IStaticMeshVertex[3];
                     for (int t = 0; t < 3; t++)
                     {
                         mv[t] = new Vertex
@@ -142,20 +131,12 @@ namespace NSpace.Physics
                     return mv;
                 }
             }
-
-            IMeshSurface IMeshObject.Mesh
-            {
-                get 
-                {
-                    return this.Mesh;
-                }
-            }
         }
 
         /// <summary>
         /// A vertex within a simple mesh.
         /// </summary>
-        internal class Vertex : IMeshVertex
+        internal class Vertex : IStaticMeshVertex
         {
             /// <summary>
             /// The mesh the vertex belongs to.
@@ -167,7 +148,7 @@ namespace NSpace.Physics
             /// </summary>
             public int Index;
 
-            ReferenceFrame IMeshVertex.Frame
+            ReferenceFrame IStaticMeshVertex.Frame
             {
                 get 
                 {
@@ -175,24 +156,16 @@ namespace NSpace.Physics
                 }
             }
 
-            Vector IMeshVertex.Position
+            Vector IStaticMeshVertex.Position
             {
                 get 
                 {
                     return this.Mesh._Vertices[this.Index];
                 }
             }
-
-            IMeshSurface IMeshObject.Mesh
-            {
-                get 
-                {
-                    return this.Mesh;
-                }
-            }
         }
 
-        IEnumerable<IMeshTriangle> IMeshSurface.Triangles
+        IEnumerable<IStaticMeshTriangle> IStaticMesh.Triangles
         {
             get 
             {
@@ -207,7 +180,7 @@ namespace NSpace.Physics
             }
         }
 
-        ReferenceFrame ISingleSectionMeshSurface.Frame
+        ReferenceFrame ISingleFrameStaticMesh.Frame
         {
             get 
             {
@@ -215,7 +188,7 @@ namespace NSpace.Physics
             }
         }
 
-        ReferenceFrame IStaticShape.StaticFrame
+        ReferenceFrame IStaticSurface.StaticFrame
         {
             get
             {
@@ -223,7 +196,7 @@ namespace NSpace.Physics
             }
         }
 
-        IMaterial IUniformShape.Material
+        ISurfaceMaterial IUniformSurface.Material
         {
             get 
             {
@@ -231,7 +204,7 @@ namespace NSpace.Physics
             }
         }
 
-        private IMaterial _Material;
+        private ISurfaceMaterial _Material;
         private ReferenceFrame _Section;
         internal Vector[] _Vertices;
         internal int[] _Indices;

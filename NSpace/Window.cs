@@ -40,7 +40,11 @@ namespace NSpace
                     Matrix.Scale(rand.NextDouble() + 1.0)));
                 ReferenceFrame d = c.CreateChild(new RotationalFrameRelation(
                     new Time(rand.NextDouble() * 6.0 + 1.0)));
-                cubes.Add(new Cube(d, new SolidColorMaterial(Color.HLSA(rand.NextDouble() * 360.0, 0.5, 1.0, 1.0), 0.1)));
+                cubes.Add(new Cube(d, 
+                    new SimpleVolumeMaterial(
+                        new SolidColorMaterial(
+                            Color.HLSA(rand.NextDouble() * 360.0, 0.5, 1.0, 1.0), 
+                            0.1))));
             }
 
             this._Scene = new Scene(new Union(cubes), a, (double)this.Width / (double)this.Height);

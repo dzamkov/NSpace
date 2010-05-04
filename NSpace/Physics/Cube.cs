@@ -10,9 +10,9 @@ namespace NSpace.Physics
     /// <summary>
     /// A very clear and well defined solid cube.
     /// </summary>
-    public class Cube : IUniformShape, IVolume
+    public class Cube : IUniformVolume, IVolume
     {
-        public Cube(ReferenceFrame Frame, IMaterial Material)
+        public Cube(ReferenceFrame Frame, IVolumeMaterial Material)
         {
             this._Frame = Frame;
             this._Material = Material;
@@ -31,7 +31,7 @@ namespace NSpace.Physics
             }
         }
 
-        IMaterial IUniformShape.Material
+        IVolumeMaterial IUniformVolume.Material
         {
             get 
             {
@@ -70,11 +70,11 @@ namespace NSpace.Physics
                     indices[(c * 6) + 5] = mindices[3];
                 }
 
-                return new SimpleMesh(this._Frame, this._Material, vertices, indices);
+                return new SimpleMesh(this._Frame, this._Material.SurfaceMaterial, vertices, indices);
             }
         }
 
-        bool IVolume.InVolume(Event Event, ReferenceFrame Frame, ref IMaterial Material)
+        bool IVolume.InVolume(Event Event, ReferenceFrame Frame, ref IVolumeMaterial Material)
         {
             Vector thispoint = this._Frame.GetRelation(Frame).Transform(Event).Point;
             if (thispoint.X >= -0.5 &&
@@ -93,7 +93,7 @@ namespace NSpace.Physics
             }
         }
 
-        private IMaterial _Material;
+        private IVolumeMaterial _Material;
         private ReferenceFrame _Frame;
     }
 }
