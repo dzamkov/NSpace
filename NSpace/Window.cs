@@ -23,7 +23,8 @@ namespace NSpace
 
             // Create a simple scene
             ReferenceFrame r = new ReferenceFrame();
-            ReferenceFrame a = r.CreateChild(new AfflineTransformFrameRelation(Matrix.Translate(new Vector(-30.0, 0.0, 0.0))));
+            ReferenceFrame a = r.CreateChild(new RotationalFrameRelation(new Time(4.0)));
+            ReferenceFrame camera = a.CreateChild(new AfflineTransformFrameRelation(Matrix.Lookat(new Vector(0.0, 0.0, 1.0), new Vector(-30.0, 0.0, 30.0), new Vector())));
 
             // Add some cubes
             List<IVolume> cubes = new List<IVolume>();
@@ -47,7 +48,7 @@ namespace NSpace
                             0.1))));
             }
 
-            this._Scene = new Scene(new Union(cubes), a, (double)this.Width / (double)this.Height);
+            this._Scene = new Scene(new Union(cubes), camera, (double)this.Width / (double)this.Height);
 
 
             this._Time = new Time(0.0);
