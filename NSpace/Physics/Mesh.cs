@@ -204,6 +204,11 @@ namespace NSpace.Physics
             }
         }
 
+        void IConvertible<ISurface>.Convert<D>(out D Result)
+        {
+            Result = this as D;
+        }
+
         private ISurfaceMaterial _Material;
         private ReferenceFrame _Section;
         internal Vector[] _Vertices;

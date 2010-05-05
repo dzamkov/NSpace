@@ -51,6 +51,11 @@ namespace NSpace.Physics
             return false;
         }
 
+        void IConvertible<IVolume>.Convert<D>(out D Result)
+        {
+            Result = this as D;
+        }
+
         private IEnumerable<IVolume> _Source;      
     }
 }

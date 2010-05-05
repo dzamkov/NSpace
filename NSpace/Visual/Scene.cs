@@ -82,7 +82,7 @@ namespace NSpace.Visual
         private void _RenderVolume(IVolume Volume, Time Time)
         {
             // Union
-            Union union; Program.Convert<IVolume, Union>(Volume, out union);
+            Union union; Volume.Convert<Union>(out union);
             if (union != null)
             {
                 foreach (IVolume vol in union.Source)
@@ -93,13 +93,13 @@ namespace NSpace.Visual
             else
             {
                 // Generic solid color material thingy
-                ISingleFrameStaticMesh surface; Program.Convert<ISurface, ISingleFrameStaticMesh>(Volume.Surface, out surface);
+                ISingleFrameStaticMesh surface; Volume.Surface.Convert<ISingleFrameStaticMesh>(out surface);
                 if (surface != null)
                 {
-                    IUniformSurface unishape; Program.Convert<ISurface, IUniformSurface>(surface, out unishape);
+                    IUniformSurface unishape; surface.Convert<IUniformSurface>(out unishape);
                     if (unishape != null)
                     {
-                        SolidColorMaterial vismat; Program.Convert<ISurfaceMaterial, SolidColorMaterial>(unishape.Material, out vismat);
+                        SolidColorMaterial vismat; unishape.Material.Convert<SolidColorMaterial>(out vismat);
                         if (vismat != null)
                         {
                             // Assume every vertex uses the same frame of reference.

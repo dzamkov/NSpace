@@ -93,6 +93,11 @@ namespace NSpace.Physics
             }
         }
 
+        void IConvertible<IVolume>.Convert<D>(out D Result)
+        {
+            Result = this as D;
+        }
+
         private IVolumeMaterial _Material;
         private ReferenceFrame _Frame;
     }

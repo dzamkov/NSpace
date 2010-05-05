@@ -41,6 +41,11 @@ namespace NSpace.Physics
             }
         }
 
+        void IConvertible<IVolume>.Convert<D>(out D Result)
+        {
+            Result = this as D;
+        }
+
         private IVolume _Minuend;
         private IVolume _Subtrahend;
     }
@@ -77,6 +82,11 @@ namespace NSpace.Physics
             {
                 return this._Subtrahend;
             }
+        }
+
+        void IConvertible<ISurface>.Convert<D>(out D Result)
+        {
+            Result = this as D;
         }
 
         private ISurface _Minuend;

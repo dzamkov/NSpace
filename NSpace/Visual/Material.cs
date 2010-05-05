@@ -90,6 +90,11 @@ namespace NSpace.Visual
             Radiosity = this._Radiosity;
         }
 
+        void IConvertible<ISurfaceMaterial>.Convert<D>(out D Result)
+        {
+            Result = this as D;
+        }
+
         private Color _Color;
         private double _Radiosity;
     }

@@ -10,7 +10,7 @@ namespace NSpace.Physics
     /// <summary>
     /// A static substance that describes what makes up a volume.
     /// </summary>
-    public interface IVolumeMaterial : IImmutable
+    public interface IVolumeMaterial : IImmutable, IConvertible<IVolumeMaterial>
     {
         /// <summary>
         /// Gets the surface material this would produce if a volume of the
@@ -22,7 +22,7 @@ namespace NSpace.Physics
     /// <summary>
     /// A static material that describes what makes up a surface.
     /// </summary>
-    public interface ISurfaceMaterial : IImmutable
+    public interface ISurfaceMaterial : IImmutable, IConvertible<ISurfaceMaterial>
     {
 
     }
@@ -43,6 +43,11 @@ namespace NSpace.Physics
             {
                 return this._SurfaceMaterial;
             }
+        }
+
+        void IConvertible<IVolumeMaterial>.Convert<D>(out D Result)
+        {
+            Result = this as D;
         }
 
         private ISurfaceMaterial _SurfaceMaterial;

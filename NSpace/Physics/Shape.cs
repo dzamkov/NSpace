@@ -18,7 +18,7 @@ namespace NSpace.Physics
     /// <summary>
     /// A shape that occupies a three dimensional volume in space.
     /// </summary>
-    public interface IVolume : IShape
+    public interface IVolume : IShape, IConvertible<IVolume>
     {
         /// <summary>
         /// Gets the surface that defines the shape of the volume.
@@ -58,7 +58,7 @@ namespace NSpace.Physics
     /// <summary>
     /// A shaped, or curved, two dimensional region in space that may change over time.
     /// </summary>
-    public interface ISurface : IShape
+    public interface ISurface : IShape, IConvertible<ISurface>
     {
 
     }
