@@ -95,10 +95,10 @@ namespace NSpace
                 {
                     if (this._Parent != null)
                     {
-                        return new CompoundFrameRelation(Other._ParentRelation.Inverse, 
-                            new CompoundFrameRelation(
-                                this._Parent.GetRelation(Other._Parent),
-                                this._ParentRelation)); 
+                        return new CompoundFrameRelation(new IFrameRelation[] {
+                            Other._ParentRelation.Inverse, 
+                            this._Parent.GetRelation(Other._Parent),
+                            this._ParentRelation}); 
                     }
                     else
                     {
@@ -108,11 +108,11 @@ namespace NSpace
             }
             if (this.Level > Other.Level)
             {
-                return new CompoundFrameRelation(this._Parent.GetRelation(Other), this._ParentRelation);
+                return new CompoundFrameRelation(new IFrameRelation[] { this._Parent.GetRelation(Other), this._ParentRelation });
             }
             else
             {
-                return new CompoundFrameRelation(Other._ParentRelation.Inverse, this.GetRelation(Other.Parent));
+                return new CompoundFrameRelation(new IFrameRelation[] { Other._ParentRelation.Inverse, this.GetRelation(Other.Parent) });
             }
         }
 
@@ -158,31 +158,39 @@ namespace NSpace
     }
 
     /// <summary>
-    /// A frame relation this is the combonation of two others applied together(A applied to B).
+    /// A frame relation this is the combonation of several frame relations applied together in reverse
+    /// order. (Last applied to First).
     /// </summary>
     public class CompoundFrameRelation : IFrameRelation
     {
-        public CompoundFrameRelation(IFrameRelation A, IFrameRelation B)
+        public CompoundFrameRelation(IEnumerable<IFrameRelation> Source)
         {
-            this._A = A;
-            this._B = B;
+            this._Source = Source;
         }
 
         Event IFrameRelation.Transform(Event Event)
         {
-            return this._B.Transform(this._A.Transform(Event));
+            foreach (IFrameRelation relate in this._Source)
+            {
+                Event = relate.Transform(Event);
+            }
+            return Event;
         }
 
         IFrameRelation IFrameRelation.Inverse
         {
             get 
             {
-                return new CompoundFrameRelation(this._B.Inverse, this._A.Inverse);
+                LinkedList<IFrameRelation> newrelate = new LinkedList<IFrameRelation>();
+                foreach (IFrameRelation relate in this._Source)
+                {
+                    newrelate.AddFirst(relate.Inverse);
+                }
+                return new CompoundFrameRelation(newrelate);
             }
         }
 
-        private IFrameRelation _A;
-        private IFrameRelation _B;
+        private IEnumerable<IFrameRelation> _Source;
     }
 
     /// <summary>
