@@ -251,12 +251,12 @@ namespace NSpace
         /// <summary>
         /// Creates a matrix which scales each axis by the specified amount.
         /// </summary>
-        public static Matrix Scale(double X, double Y, double Z)
+        public static Matrix Scale(Vector Amount)
         {
             return new Matrix(
-                X, 0.0, 0.0, 0.0,
-                0.0, Y, 0.0, 0.0,
-                0.0, 0.0, Z, 0.0,
+                Amount.X, 0.0, 0.0, 0.0,
+                0.0, Amount.Y, 0.0, 0.0,
+                0.0, 0.0, Amount.Z, 0.0,
                 0.0, 0.0, 0.0, 1.0);
         }
 

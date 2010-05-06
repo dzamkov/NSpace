@@ -44,6 +44,7 @@ namespace NSpace.Physics
             get 
             { 
                 // Create a surface mesh for the cube.
+                // TODO: REWRITE THIS
                 Vector[] vertices = new Vector[8];
                 int[] indices = new int[36];
                 for (int t = 0; t < 8; t++)
@@ -62,12 +63,24 @@ namespace NSpace.Physics
                     {
                         mindices[t] = (t / m) * m * 2 + (t % m) + m * l;
                     }
-                    indices[(c * 6) + 0] = mindices[0];
-                    indices[(c * 6) + 1] = mindices[1];
-                    indices[(c * 6) + 2] = mindices[2];
-                    indices[(c * 6) + 3] = mindices[2];
-                    indices[(c * 6) + 4] = mindices[1];
-                    indices[(c * 6) + 5] = mindices[3];
+                    if (c % 6 == 1 || c % 6 == 2 || c % 6 == 5)
+                    {
+                        indices[(c * 6) + 0] = mindices[0];
+                        indices[(c * 6) + 1] = mindices[1];
+                        indices[(c * 6) + 2] = mindices[2];
+                        indices[(c * 6) + 3] = mindices[2];
+                        indices[(c * 6) + 4] = mindices[1];
+                        indices[(c * 6) + 5] = mindices[3];
+                    }
+                    else
+                    {
+                        indices[(c * 6) + 0] = mindices[0];
+                        indices[(c * 6) + 1] = mindices[2];
+                        indices[(c * 6) + 2] = mindices[1];
+                        indices[(c * 6) + 3] = mindices[2];
+                        indices[(c * 6) + 4] = mindices[3];
+                        indices[(c * 6) + 5] = mindices[1];
+                    }
                 }
 
                 return new SimpleMesh(this._Frame, this._Material.SurfaceMaterial, vertices, indices);

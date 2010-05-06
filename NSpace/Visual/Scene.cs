@@ -72,6 +72,10 @@ namespace NSpace.Visual
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadMatrix(ref view);
 
+            // Wireframe for testing
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+            GL.Enable(EnableCap.CullFace);
+
             // Render
             this._RenderVolume(this._Volume, Time);
         }

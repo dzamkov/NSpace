@@ -86,6 +86,13 @@ namespace NSpace.Physics
 
         void IConvertible<ISurface>.Convert<D>(out D Result)
         {
+            if (typeof(D) == typeof(IStaticMesh))
+            {
+                // Convert difference to mesh
+                // But i wont do it now
+                // because its hard
+                throw new NotImplementedException();
+            }
             Result = this as D;
         }
 

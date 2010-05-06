@@ -27,28 +27,16 @@ namespace NSpace
             ReferenceFrame camera = a.CreateChild(new AfflineTransformFrameRelation(Matrix.Lookat(new Vector(0.0, 0.0, 1.0), new Vector(-30.0, 0.0, 30.0), new Vector())));
 
             // Add some cubes
-            List<IVolume> cubes = new List<IVolume>();
-            Random rand = new Random();
-            for (int t = 0; t < 10; t++)
-            {
-                ReferenceFrame b = r.CreateChild(new AfflineTransformFrameRelation(
-                    Matrix.Translate(
-                        new Vector(
-                            (rand.NextDouble() * 10.0) - 5.0, 
-                            (rand.NextDouble() * 10.0) - 5.0, 
-                            (rand.NextDouble() * 10.0) - 5.0))));
-                ReferenceFrame c = b.CreateChild(new AfflineTransformFrameRelation(
-                    Matrix.Scale(rand.NextDouble() + 1.0)));
-                ReferenceFrame d = c.CreateChild(new RotationalFrameRelation(
-                    new Time(rand.NextDouble() * 6.0 + 1.0)));
-                cubes.Add(new Cube(d, 
-                    new SimpleVolumeMaterial(
-                        new SolidColorMaterial(
-                            Color.HLSA(rand.NextDouble() * 360.0, 0.5, 1.0, 1.0), 
-                            0.1))));
-            }
+            ReferenceFrame bigcubeframe = r.CreateChild(new AfflineTransformFrameRelation(Matrix.Scale(10.0)));
+            Cube bigcube = new Cube(bigcubeframe, new SimpleVolumeMaterial(new SolidColorMaterial(Color.RGB(0.0, 0.5, 0.5), 0.1)));
+            ReferenceFrame smallcubeframe = r.CreateChild(new AfflineTransformFrameRelation(
+                Matrix.Transform(Matrix.Scale(new Vector(15.0, 3.0, 6.0)), 
+                    Matrix.Transform(
+                        Matrix.Translate(new Vector(0.0, -2.0, 2.0)),
+                        Matrix.Yaw(0.2)))));
+            Cube smallcube = new Cube(smallcubeframe, new SimpleVolumeMaterial(new SolidColorMaterial(Color.RGB(0.0, 1.0, 0.0), 0.1)));
 
-            this._Scene = new Scene(new Union(cubes), camera, (double)this.Width / (double)this.Height);
+            this._Scene = new Scene(new Union(new IVolume[] { bigcube, smallcube }), camera, (double)this.Width / (double)this.Height);
 
 
             this._Time = new Time(0.0);
