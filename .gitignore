@@ -2,5 +2,9 @@
 /obj
 */bin
 */obj
+*/Debug
+*/Release
+*.vcproj.*
 *.userprefs
 *.suo
+*.ncb
