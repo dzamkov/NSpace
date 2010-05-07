@@ -52,6 +52,7 @@
     <Compile Include="Color.cs" />
     <Compile Include="Convert.cs" />
     <Compile Include="Curve.cs" />
+    <Compile Include="Event.cs" />
     <Compile Include="Immutable.cs" />
     <Compile Include="Physics\Cube.cs" />
     <Compile Include="Physics\Difference.cs" />

@@ -107,17 +107,20 @@ namespace NSpace.Visual
                         if (vismat != null)
                         {
                             // Assume every vertex uses the same frame of reference.
-                            IFrameRelation relate = this._Camera.GetRelation(surface.Frame);
-                            GL.Begin(BeginMode.Triangles);
-                            GL.Color4(vismat.Color);
-                            foreach (IStaticMeshTriangle tri in surface.Triangles)
+                            ISpatialFrameRelation relate; this._Camera.GetRelation(surface.Frame).Convert<ISpatialFrameRelation>(out relate);
+                            if (relate != null)
                             {
-                                foreach (IStaticMeshVertex vert in tri.Vertices)
+                                GL.Begin(BeginMode.Triangles);
+                                GL.Color4(vismat.Color);
+                                foreach (IStaticMeshTriangle tri in surface.Triangles)
                                 {
-                                    GL.Vertex3(relate.Transform(new Event(vert.Position, Time)).Point);
+                                    foreach (IStaticMeshVertex vert in tri.Vertices)
+                                    {
+                                        GL.Vertex3(relate.Transform(new Event(vert.Position, Time)).Point);
+                                    }
                                 }
+                                GL.End();
                             }
-                            GL.End();
                         }
                     }
                 }
