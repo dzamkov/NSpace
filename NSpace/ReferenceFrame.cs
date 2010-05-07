@@ -80,7 +80,7 @@ namespace NSpace
                 {
                     if (this._Parent != null)
                     {
-                        return new CompoundFrameRelation<IFrameRelation>(new IFrameRelation[] {
+                        return new CompoundFrameRelation(new IFrameRelation[] {
                             Other._ParentRelation.Inverse, 
                             this._Parent.GetRelation(Other._Parent),
                             this._ParentRelation}); 
@@ -93,11 +93,11 @@ namespace NSpace
             }
             if (this.Level > Other.Level)
             {
-                return new CompoundFrameRelation<IFrameRelation>(new IFrameRelation[] { this._Parent.GetRelation(Other), this._ParentRelation });
+                return new CompoundFrameRelation(new IFrameRelation[] { this._Parent.GetRelation(Other), this._ParentRelation });
             }
             else
             {
-                return new CompoundFrameRelation<IFrameRelation>(new IFrameRelation[] { Other._ParentRelation.Inverse, this.GetRelation(Other.Parent) });
+                return new CompoundFrameRelation(new IFrameRelation[] { Other._ParentRelation.Inverse, this.GetRelation(Other.Parent) });
             }
         }
 
@@ -126,7 +126,7 @@ namespace NSpace
     /// <summary>
     /// Relation from one frame of reference to another.
     /// </summary>
-    public interface IFrameRelation : IImmutable, IConvertible<IFrameRelation>
+    public interface IFrameRelation : IImmutable
     {
         /// <summary>
         /// Converts an event in the source frame of this relation to an event
@@ -170,10 +170,9 @@ namespace NSpace
     /// order. (Last applied to First).
     /// </summary>
     /// <typeparam name="T">The base type of the frame relations this holds.</typeparam>
-    public class CompoundFrameRelation<T> : IFrameRelation
-        where T : IFrameRelation
+    public class CompoundFrameRelation : IFrameRelation
     {
-        public CompoundFrameRelation(IEnumerable<T> Source)
+        public CompoundFrameRelation(IEnumerable<IFrameRelation> Source)
         {
             this._Source = Source;
         }
@@ -181,7 +180,7 @@ namespace NSpace
         /// <summary>
         /// Gets the source frame relations for this compound frame relation.
         /// </summary>
-        public IEnumerable<T> Source
+        public IEnumerable<IFrameRelation> Source
         {
             get
             {
@@ -207,97 +206,11 @@ namespace NSpace
                 {
                     newrelate.AddFirst(relate.Inverse);
                 }
-                return new CompoundFrameRelation<IFrameRelation>(newrelate);
+                return new CompoundFrameRelation(newrelate);
             }
         }
 
-        public void Convert<D>(out D Result)
-            where D : class, IFrameRelation
-        {
-            Result = this as D;
-            if (Result == null)
-            {
-                if (typeof(D).IsGenericType && typeof(D).GetGenericTypeDefinition() == typeof(CompoundFrameRelation<IFrameRelation>).GetGenericTypeDefinition())
-                {
-                    // Convert between types of compound frame relations.
-                    Type framerelationtype = typeof(D).GetGenericArguments()[0];
-                    List<object> frames = new List<object>();
-                    foreach (T fr in this._Source)
-                    {
-                        
-                        if (!framerelationtype.IsAssignableFrom(fr.GetType()))
-                        {
-                            convertible = false;
-                            break;
-                        }
-                    }
-                    if (convertible)
-                    {
-                        Result = typeof(CompoundFrameRelation<IFrameRelation>).GetGenericTypeDefinition().MakeGenericType(new Type[] { framerelationtype })
-                            .GetConstructors()[0].Invoke(new object[] { this._Source }) as D;
-                    }
-                }
-                else
-                {
-                    if (typeof(D) == typeof(ISpatialFrameRelation))
-                    {
-                        CompoundFrameRelation<ISpatialFrameRelation> statframe; this.Convert<CompoundFrameRelation<ISpatialFrameRelation>>(out statframe);
-                        Result = new Spatial<ISpatialFrameRelation>(statframe.Source) as D;
-                    }
-                    if (typeof(D) == typeof(IStaticFrameRelation))
-                    {
-                        CompoundFrameRelation<IStaticFrameRelation> statframe; this.Convert<CompoundFrameRelation<IStaticFrameRelation>>(out statframe);
-                        Result = new Static<IStaticFrameRelation>(statframe.Source) as D;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Compound frame relation as a spatial frame relation.
-        /// </summary>
-        private class Spatial<T> : CompoundFrameRelation<T>, ISpatialFrameRelation
-            where T : class, ISpatialFrameRelation
-        {
-            public Spatial(IEnumerable<T> Source)
-                : base(Source)
-            {
-
-            }
-
-            public Time Transform(Time Time)
-            {
-                foreach (T relate in this.Source)
-                {
-                    Time = relate.Transform(Time);
-                }
-                return Time;
-            }
-        }
-
-        /// <summary>
-        /// Compound frame relation as a Static frame relation.
-        /// </summary>
-        private class Static<T> : Spatial<T>, IStaticFrameRelation
-            where T : class, IStaticFrameRelation
-        {
-            public Static(IEnumerable<T> Source)
-                : base(Source)
-            {
-
-            }
-
-            public Vector Transform(Vector Point)
-            {
-                foreach (T relate in this.Source)
-                {
-                    Point = relate.Transform(Point);
-                }
-                return Point;
-            }
-        }
-
-        private IEnumerable<T> _Source;
+        private IEnumerable<IFrameRelation> _Source;
     }
 
 
@@ -332,11 +245,6 @@ namespace NSpace
         Vector IStaticFrameRelation.Transform(Vector Point)
         {
             return Point;
-        }
-
-        void IConvertible<IFrameRelation>.Convert<D>(out D Result)
-        {
-            Result = this as D;
         }
     }
 
@@ -373,11 +281,6 @@ namespace NSpace
             return Time;
         }
 
-        void IConvertible<IFrameRelation>.Convert<D>(out D Result)
-        {
-            Result = this as D;
-        }
-
         private Matrix _Transform;
     }
 
@@ -410,11 +313,6 @@ namespace NSpace
         Time ISpatialFrameRelation.Transform(Time Time)
         {
             return Time;
-        }
-
-        void IConvertible<IFrameRelation>.Convert<D>(out D Result)
-        {
-            Result = this as D;
         }
 
         private Time _Period;
