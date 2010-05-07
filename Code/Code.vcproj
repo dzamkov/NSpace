@@ -157,6 +157,14 @@
 	</References>
 	<Files>
 		<File
+			RelativePath=".\Lexer.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Lexer.h"
+			>
+		</File>
+		<File
 			RelativePath=".\Main.cpp"
 			>
 		</File>
