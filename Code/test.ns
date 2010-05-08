@@ -1,1 +1,12 @@
-print("Hello World!");
+object streamreader = new {
+	
+};
+
+object stream = new {
+
+};
+
+stream main = function {
+	
+	
+};
