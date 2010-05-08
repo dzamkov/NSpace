@@ -1,16 +1,17 @@
-AssignmentChars = set(["=", "~"])
+AssignmentChar = "="
 StringLiteralDelimiter = set(["\"", "'"])
 EscapeChar = "\\"
 EscapedCharTranslation = { "n" : "\n", '"' : '"', '\\' : '\\'  }
 WhiteSpaceChars = set([" ", "\n", "\t"])
 IsWordChar = lambda C: type(C).__name__ == "str" and C.isalpha() or C == "_"
-KeyWords = set(["function", "new"])
+KeyWords = set(["function", "class", "new"])
 StatementEnd = ";"
 
 """
-Error given when the lexer receieves bad input (syntax error is script)
+Exception given when the lexer receieves bad input (syntax error is script) and cant
+process it into nodes.
 """
-class LexerError:
+class LexerException(Exception):
 
     """
     A message that describes what the bad input is.
@@ -48,11 +49,13 @@ class Lexer:
     def __Process(self):
         self.__ProcessStringLiterals()
         self.__ProcessWhiteSpace()
+        self.__StripWhiteSpace()
         self.__ProcessWords()
         self.__ProcessKeyWords()
         self.__ProcessWordExpressions()
         self.__ProcessAssignments()
         self.__ProcessStatements()
+        self.__ProcessBlocks()
         pass
 
     """
@@ -165,24 +168,24 @@ class Lexer:
     def __ProcessAssignments(self):
         self.__Replace([
             lambda x: isinstance(x, WhiteSpaceNode),
-            lambda x: x in AssignmentChars,
+            lambda x: x = AssignmentChar,
             lambda x: isinstance(x, WhiteSpaceNode)],
-            lambda y: [AssignmentNode(y[1])])
+            lambda y: [AssignmentNode()])
         self.__Replace([
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: x in AssignmentChars,
+            lambda x: x = AssignmentChar,
             lambda x: isinstance(x, WhiteSpaceNode)],
-            lambda y: [y[0], AssignmentNode(y[1])])
+            lambda y: [y[0], AssignmentNode()])
         self.__Replace([
             lambda x: isinstance(x, WhiteSpaceNode),
-            lambda x: x in AssignmentChars,
+            lambda x: x = AssignmentChar,
             lambda x: isinstance(x, ExpressionNode)],
-            lambda y: [AssignmentNode(y[1]), y[2]])
+            lambda y: [AssignmentNode(), y[2]])
         self.__Replace([
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: x in AssignmentChars,
+            lambda x: x = AssignmentChar,
             lambda x: isinstance(x, ExpressionNode)],
-            lambda y: [y[0], AssignmentNode(y[1]), y[2]])
+            lambda y: [y[0], AssignmentNode(), y[2]])
         pass
 
     """
@@ -223,6 +226,62 @@ class Lexer:
         pass
 
     """
+    Finds and processes blocks.
+    """
+    def __ProcessBlocks(self):
+        # Any set of statements seperated only by whitespace are blocks
+        newstring = []
+        run = None
+        while len(self.__CurrentString) > 0:
+            c = self.__CurrentString.pop(0)
+            if isinstance(c, WhiteSpaceNode):
+                if run != None:
+                    run.append(c)
+                else:
+                    newstring.append(c)
+            else:
+                if isinstance(c, StatementNode):
+                    if run == None:
+                        run = [c]
+                    else:
+                        run.append(c)
+                else:
+                    statements = []
+                    for s in run:
+                        if isinstance(s, StatementNode):
+                            statements.append(s)
+                    if len(statements) > 1:
+                        bn = BlockNode()
+                        bn.Statements = statements
+                        newstring.append(bn)
+                        if isinstance(run[-1], WhiteSpaceNode):
+                            newstring.append(WhiteSpaceNode())
+                    else:
+                        newstring.extend(run)
+                        run = None
+        if run != None:
+            statements = []
+            for s in run:
+                if isinstance(s, StatementNode):
+                    statements.append(s)
+            if len(statements) > 1:
+                bn = BlockNode()
+                bn.Statements = statements
+                newstring.append(bn)
+            else:
+                newstring.extend(run)
+        self.__CurrentString = newstring
+
+    """
+    Strips whitespace and the start and end of the current string.
+    """
+    def __StripWhiteSpace(self):
+        if isinstance(self.__CurrentString[-1], WhiteSpaceNode):
+            self.__CurrentString.pop()
+        if isinstance(self.__CurrentString[0], WhiteSpaceNode):
+            self.__CurrentString.pop(0)
+
+    """
     Finds and replaces a pattern with the specified rules found in the
     current string of the lexer. Rules are a list of functions that either
     return true if a character follows the rules or false if not. Result
@@ -254,7 +313,10 @@ class Lexer:
     """
     def Finish(self):
         self.__Process()
-        return self.__CurrentString
+        if len(self.__CurrentString) == 1:
+            return self.__CurrentString[0]
+        if len(self.__CurrentString) == 0:
+            return None
         
 
 """
@@ -334,17 +396,9 @@ class WordExpressionNode(ExpressionNode, WordNode):
     pass
 
 """
-A node that represents an assignment operation.
+A node that represents an assignment operation. "="...
 """
 class AssignmentNode(Node):
-
-    """
-    The character used for the assignment, usually "=" or "~".
-    """
-    AssignmentChar = None
-
-    def __init__(self, Char):
-        self.AssignmentChar = Char
 
     pass
 
@@ -361,12 +415,12 @@ A node that represents a declaration statement, in the form "x y;"
 class DeclarationStatementNode(StatementNode):
 
     """
-    The type used to declare with.
+    The type used to declare with. (ExpressionNode)
     """
     Type = None
 
     """
-    The variable that is declared.
+    The variable that is declared. (WordNode)
     """
     Variable = None
 
@@ -429,3 +483,15 @@ class AssignmentStatementNode(StatementNode):
         self.Value = Value
 
     pass
+
+
+"""
+A node that represents an ordered list of statements executed one after another. A compound
+statement if you will...
+"""
+class BlockNode(StatementNode):
+
+    """
+    The list of statements contained in the block.
+    """
+    Statements = None
