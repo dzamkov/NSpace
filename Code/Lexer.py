@@ -168,22 +168,22 @@ class Lexer:
     def __ProcessAssignments(self):
         self.__Replace([
             lambda x: isinstance(x, WhiteSpaceNode),
-            lambda x: x = AssignmentChar,
+            lambda x: x == AssignmentChar,
             lambda x: isinstance(x, WhiteSpaceNode)],
             lambda y: [AssignmentNode()])
         self.__Replace([
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: x = AssignmentChar,
+            lambda x: x == AssignmentChar,
             lambda x: isinstance(x, WhiteSpaceNode)],
             lambda y: [y[0], AssignmentNode()])
         self.__Replace([
             lambda x: isinstance(x, WhiteSpaceNode),
-            lambda x: x = AssignmentChar,
+            lambda x: x == AssignmentChar,
             lambda x: isinstance(x, ExpressionNode)],
             lambda y: [AssignmentNode(), y[2]])
         self.__Replace([
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: x = AssignmentChar,
+            lambda x: x == AssignmentChar,
             lambda x: isinstance(x, ExpressionNode)],
             lambda y: [y[0], AssignmentNode(), y[2]])
         pass
