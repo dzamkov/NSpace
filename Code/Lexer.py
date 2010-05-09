@@ -5,7 +5,7 @@ EscapedCharTranslation = { "n" : "\n", '"' : '"', '\\' : '\\'  }
 WhiteSpaceChars = set([" ", "\n", "\t"])
 IsWordChar = lambda C: type(C).__name__ == "str" and C.isalpha() or C == "_"
 KeyWords = set(["function", "class", "new"])
-StatementEnd = ";"
+StatementEndChar = ";"
 
 """
 Exception given when the lexer receieves bad input (syntax error is script) and cant
@@ -49,11 +49,10 @@ class Lexer:
     def __Process(self):
         self.__ProcessStringLiterals()
         self.__ProcessWhiteSpace()
-        self.__StripWhiteSpace()
         self.__ProcessWords()
         self.__ProcessKeyWords()
         self.__ProcessWordExpressions()
-        self.__ProcessAssignments()
+        self.__StripWhiteSpace()
         self.__ProcessStatements()
         self.__ProcessBlocks()
         pass
@@ -163,65 +162,27 @@ class Lexer:
         pass
 
     """
-    Finds and processes assignment characters.
-    """
-    def __ProcessAssignments(self):
-        self.__Replace([
-            lambda x: isinstance(x, WhiteSpaceNode),
-            lambda x: x == AssignmentChar,
-            lambda x: isinstance(x, WhiteSpaceNode)],
-            lambda y: [AssignmentNode()])
-        self.__Replace([
-            lambda x: isinstance(x, ExpressionNode),
-            lambda x: x == AssignmentChar,
-            lambda x: isinstance(x, WhiteSpaceNode)],
-            lambda y: [y[0], AssignmentNode()])
-        self.__Replace([
-            lambda x: isinstance(x, WhiteSpaceNode),
-            lambda x: x == AssignmentChar,
-            lambda x: isinstance(x, ExpressionNode)],
-            lambda y: [AssignmentNode(), y[2]])
-        self.__Replace([
-            lambda x: isinstance(x, ExpressionNode),
-            lambda x: x == AssignmentChar,
-            lambda x: isinstance(x, ExpressionNode)],
-            lambda y: [y[0], AssignmentNode(), y[2]])
-        pass
-
-    """
     Finds and processes statements.
     """
     def __ProcessStatements(self):
 
-        # Replace statement ends
-        self.__Replace([
-            lambda x: isinstance(x, WhiteSpaceNode),
-            lambda x: x == StatementEnd],
-            lambda y: [StatementEndNode()])
-        self.__Replace([
-            lambda x: x == StatementEnd],
-            lambda y: [StatementEndNode()])
-
-        # Replace statements
         self.__Replace([
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: isinstance(x, WhiteSpaceNode),
             lambda x: isinstance(x, WordNode),
-            lambda x: isinstance(x, StatementEndNode)],
-            lambda y: [DeclarationStatementNode(y[0], y[2])])
+            lambda x: x == StatementEndChar],
+            lambda y: [DeclarationStatementNode(y[0], y[1])])
         self.__Replace([
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: isinstance(x, WhiteSpaceNode),
             lambda x: isinstance(x, WordNode),
-            lambda x: isinstance(x, AssignmentNode),
+            lambda x: x == AssignmentChar,
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: isinstance(x, StatementEndNode)],
-            lambda y: [DefinitionStatementNode(y[0], y[2], y[3], y[4])])
+            lambda x: x == StatementEndChar],
+            lambda y: [DefinitionStatementNode(y[0], y[1], y[3])])
         self.__Replace([
             lambda x: isinstance(x, WordNode),
-            lambda x: isinstance(x, AssignmentNode) and x.AssignmentChar == "=",
+            lambda x: x == AssignmentChar,
             lambda x: isinstance(x, ExpressionNode),
-            lambda x: isinstance(x, StatementEndNode)],
+            lambda x: x == StatementEndChar],
             lambda y: [AssignmentStatementNode(y[0], y[2])])
         pass
 
@@ -229,57 +190,41 @@ class Lexer:
     Finds and processes blocks.
     """
     def __ProcessBlocks(self):
-        # Any set of statements seperated only by whitespace are blocks
         newstring = []
         run = None
         while len(self.__CurrentString) > 0:
             c = self.__CurrentString.pop(0)
-            if isinstance(c, WhiteSpaceNode):
-                if run != None:
+            if isinstance(c, StatementNode):
+                if run == None:
+                    run = [c]
+                else:
                     run.append(c)
-                else:
-                    newstring.append(c)
             else:
-                if isinstance(c, StatementNode):
-                    if run == None:
-                        run = [c]
-                    else:
-                        run.append(c)
+                if len(run) > 1:
+                    bn = BlockNode()
+                    bn.Statements = run
+                    newstring.append(bn)
                 else:
-                    statements = []
-                    for s in run:
-                        if isinstance(s, StatementNode):
-                            statements.append(s)
-                    if len(statements) > 1:
-                        bn = BlockNode()
-                        bn.Statements = statements
-                        newstring.append(bn)
-                        if isinstance(run[-1], WhiteSpaceNode):
-                            newstring.append(WhiteSpaceNode())
-                    else:
-                        newstring.extend(run)
-                        run = None
+                    newstring.extend(run)
+                    run = None
         if run != None:
-            statements = []
-            for s in run:
-                if isinstance(s, StatementNode):
-                    statements.append(s)
-            if len(statements) > 1:
+            if len(run) > 1:
                 bn = BlockNode()
-                bn.Statements = statements
+                bn.Statements = run
                 newstring.append(bn)
             else:
                 newstring.extend(run)
         self.__CurrentString = newstring
 
     """
-    Strips whitespace and the start and end of the current string.
+    Strips whitespace in the string.
     """
     def __StripWhiteSpace(self):
-        if isinstance(self.__CurrentString[-1], WhiteSpaceNode):
-            self.__CurrentString.pop()
-        if isinstance(self.__CurrentString[0], WhiteSpaceNode):
-            self.__CurrentString.pop(0)
+        newstring = []
+        for c in self.__CurrentString:
+            if not isinstance(c, WhiteSpaceNode):
+                newstring.append(c)
+        self.__CurrentString = newstring
 
     """
     Finds and replaces a pattern with the specified rules found in the
@@ -359,14 +304,6 @@ class KeyWordNode(Node):
     pass
 
 """
-A node that signals the end of a statement.
-"""
-class StatementEndNode(Node):
-
-    pass
-
-
-"""
 A node that represents an expression
 """
 class ExpressionNode(Node):
@@ -392,13 +329,6 @@ class StringLiteralNode(ExpressionNode):
 An expression from a word. HINT: A VARIABLE
 """
 class WordExpressionNode(ExpressionNode, WordNode):
-
-    pass
-
-"""
-A node that represents an assignment operation. "="...
-"""
-class AssignmentNode(Node):
 
     pass
 
@@ -446,19 +376,13 @@ class DefinitionStatementNode(StatementNode):
     Variable = None
 
     """
-    The type of assignment used.
-    """
-    Assignment = None
-    
-    """
     The value the variable is set to.
     """
     Value = None
 
-    def __init__(self, Type, Variable, Assignment, Value):
+    def __init__(self, Type, Variable, Value):
         self.Type = Type
         self.Variable = Variable
-        self.Assignment = Assignment
         self.Value = Value
 
     pass
