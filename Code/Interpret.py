@@ -14,6 +14,9 @@ def Interpret(Script, Variables):
 
     # Add some variables
     Variables["string"] = str
+    Variables["bool"] = bool
+    Variables["true"] = True
+    Variables["false"] = False
 
     # Run
     RunStatement(n, Variables, [])
@@ -75,10 +78,20 @@ def RunStatement(StatementNode, Variables, FillValues):
         Variables[StatementNode.Variable.Value] = Convert(val, typ)
     if isinstance(StatementNode, AssignmentStatementNode):
         val = EvaluateExpression(StatementNode.Value, Variables)
-        Variables[StatementNode.Variable] = val
+        Variables[StatementNode.Variable.Value] = val
+    if isinstance(StatementNode, IfStatementNode):
+        if Convert(EvaluateExpression(StatementNode.Condition, Variables), bool):
+            return RunStatement(StatementNode.TrueStatement, Variables, FillValues)
+        else:
+            return RunStatement(StatementNode.FalseStatement, Variables, FillValues)
     pass
 
 # Test script
 n = Interpret("""
-string main = "hello world";
+bool x = false;
+if(x) {
+	string meh = "MEH";
+} else {
+	string unmeh = "UNMEH";
+};
 """, dict())

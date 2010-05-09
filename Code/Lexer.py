@@ -4,7 +4,7 @@ EscapeChar = "\\"
 EscapedCharTranslation = { "n" : "\n", '"' : '"', '\\' : '\\'  }
 WhiteSpaceChars = set([" ", "\n", "\t"])
 IsWordChar = lambda C: type(C).__name__ == "str" and C.isalpha() or C == "_"
-KeyWords = set(["function", "class", "new"])
+KeyWords = set(["function", "class", "new", "if", "else"])
 StatementEndChar = ";"
 
 """
@@ -53,8 +53,11 @@ class Lexer:
         self.__ProcessKeyWords()
         self.__ProcessWordExpressions()
         self.__StripWhiteSpace()
-        self.__ProcessStatements()
-        self.__ProcessBlocks()
+        lastlen = 0
+        while lastlen != len(self.__CurrentString):
+            lastlen = len(self.__CurrentString)
+            self.__ProcessStatements()
+            self.__ProcessBlocks()
         pass
 
     """
@@ -166,6 +169,7 @@ class Lexer:
     """
     def __ProcessStatements(self):
 
+        # Simple statements (assignment, declaration, definition)
         self.__Replace([
             lambda x: isinstance(x, ExpressionNode),
             lambda x: isinstance(x, WordNode),
@@ -184,6 +188,33 @@ class Lexer:
             lambda x: isinstance(x, ExpressionNode),
             lambda x: x == StatementEndChar],
             lambda y: [AssignmentStatementNode(y[0], y[2])])
+
+        # Complex statements (if, while, for)
+        self.__Replace([
+            lambda x: isinstance(x, KeyWordNode) and x.Value == "if",
+            lambda x: x == "(",
+            lambda x: isinstance(x, ExpressionNode),
+            lambda x: x == ")",
+            lambda x: x == "{",
+            lambda x: isinstance(x, StatementNode),
+            lambda x: x == "}",
+            lambda x: x == StatementEndChar],
+            lambda y: [IfStatementNode(y[2], y[5], None)])
+        self.__Replace([
+            lambda x: isinstance(x, KeyWordNode) and x.Value == "if",
+            lambda x: x == "(",
+            lambda x: isinstance(x, ExpressionNode),
+            lambda x: x == ")",
+            lambda x: x == "{",
+            lambda x: isinstance(x, StatementNode),
+            lambda x: x == "}",
+            lambda x: isinstance(x, KeyWordNode) and x.Value == "else",
+            lambda x: x == "{",
+            lambda x: isinstance(x, StatementNode),
+            lambda x: x == "}",
+            lambda x: x == StatementEndChar],
+            lambda y: [IfStatementNode(y[2], y[5], y[9])])
+        
         pass
 
     """
@@ -200,13 +231,16 @@ class Lexer:
                 else:
                     run.append(c)
             else:
-                if len(run) > 1:
-                    bn = BlockNode()
-                    bn.Statements = run
-                    newstring.append(bn)
-                else:
-                    newstring.extend(run)
+                if run != None:
+                    if len(run) > 1:
+                        bn = BlockNode()
+                        bn.Statements = run
+                        newstring.append(bn)
+                    else:
+                        newstring.extend(run)
                     run = None
+                newstring.append(c)
+                
         if run != None:
             if len(run) > 1:
                 bn = BlockNode()
@@ -407,6 +441,32 @@ class AssignmentStatementNode(StatementNode):
         self.Value = Value
 
     pass
+
+"""
+A node that represents an if statement.
+"""
+class IfStatementNode(StatementNode):
+
+    """
+    The condition of the if statement. (ExpressionNode)
+    """
+    Condition = None
+
+    """
+    The statement executed on a true condition
+    """
+    TrueStatement = None
+
+    """
+    The statement executed on a false condition, or none if nothing
+    is executed.
+    """
+    FalseStatement = None
+
+    def __init__(self, Condition, TrueStatement, FalseStatement):
+        self.Condition = Condition
+        self.TrueStatement = TrueStatement
+        self.FalseStatement = FalseStatement
 
 
 """
