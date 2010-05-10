@@ -5,7 +5,6 @@ EscapedCharTranslation = { "n" : "\n", '"' : '"', '\\' : '\\'  }
 WhiteSpaceChars = set([" ", "\n", "\t"])
 IsWordChar = lambda C: type(C).__name__ == "str" and C.isalpha() or C == "_"
 KeyWords = set(["function", "class", "new", "if", "else"])
-StatementEndChar = ";"
 
 """
 Exception given when the lexer receieves bad input (syntax error is script) and cant
@@ -17,6 +16,15 @@ class LexerException(Exception):
     A message that describes what the bad input is.
     """
     Message = None
+
+    """
+    The string of nodes and characters that the lexer failed to parse.
+    """
+    String = None
+
+    def __init__(self, Message, String):
+        self.Message = Message
+        self.String = String
 
 """
 Takes input characters defining a script and outputs a node-like representation
@@ -169,24 +177,11 @@ class Lexer:
     """
     def __ProcessStatements(self):
 
-        # Simple statements (assignment, declaration, definition)
-        self.__Replace([
-            lambda x: isinstance(x, ExpressionNode),
-            lambda x: isinstance(x, WordNode),
-            lambda x: x == StatementEndChar],
-            lambda y: [DeclarationStatementNode(y[0], y[1])])
-        self.__Replace([
-            lambda x: isinstance(x, ExpressionNode),
-            lambda x: isinstance(x, WordNode),
-            lambda x: x == AssignmentChar,
-            lambda x: isinstance(x, ExpressionNode),
-            lambda x: x == StatementEndChar],
-            lambda y: [DefinitionStatementNode(y[0], y[1], y[3])])
+        # Simple statements (assignment, declaration)
         self.__Replace([
             lambda x: isinstance(x, WordNode),
             lambda x: x == AssignmentChar,
-            lambda x: isinstance(x, ExpressionNode),
-            lambda x: x == StatementEndChar],
+            lambda x: isinstance(x, ExpressionNode)],
             lambda y: [AssignmentStatementNode(y[0], y[2])])
 
         # Complex statements (if, while, for)
@@ -197,23 +192,17 @@ class Lexer:
             lambda x: x == ")",
             lambda x: x == "{",
             lambda x: isinstance(x, StatementNode),
-            lambda x: x == "}",
-            lambda x: x == StatementEndChar],
+            lambda x: x == "}"],
             lambda y: [IfStatementNode(y[2], y[5], None)])
         self.__Replace([
-            lambda x: isinstance(x, KeyWordNode) and x.Value == "if",
-            lambda x: x == "(",
-            lambda x: isinstance(x, ExpressionNode),
-            lambda x: x == ")",
-            lambda x: x == "{",
-            lambda x: isinstance(x, StatementNode),
-            lambda x: x == "}",
+            lambda x: isinstance(x, IfStatementNode) and x.FalseStatement == None,
             lambda x: isinstance(x, KeyWordNode) and x.Value == "else",
             lambda x: x == "{",
             lambda x: isinstance(x, StatementNode),
-            lambda x: x == "}",
-            lambda x: x == StatementEndChar],
-            lambda y: [IfStatementNode(y[2], y[5], y[9])])
+            lambda x: x == "}"],
+            lambda y: [IfStatementNode(y[0].Condition, y[0].TrueStatement, y[3])])
+            
+        
         
         pass
 
@@ -296,6 +285,7 @@ class Lexer:
             return self.__CurrentString[0]
         if len(self.__CurrentString) == 0:
             return None
+        raise LexerException("Lexer failed to fully parse string", self.__CurrentString)
         
 
 """
@@ -374,55 +364,7 @@ class StatementNode(Node):
     pass
 
 """
-A node that represents a declaration statement, in the form "x y;"
-"""
-class DeclarationStatementNode(StatementNode):
-
-    """
-    The type used to declare with. (ExpressionNode)
-    """
-    Type = None
-
-    """
-    The variable that is declared. (WordNode)
-    """
-    Variable = None
-
-    def __init__(self, Type, Variable):
-        self.Type = Type
-        self.Variable = Variable
-
-    pass
-
-"""
-A node that represents a definition statement, in the form "x y = z;"
-"""
-class DefinitionStatementNode(StatementNode):
-    
-    """
-    The type used to define with.
-    """
-    Type = None
-
-    """
-    The variable that is defined.
-    """
-    Variable = None
-
-    """
-    The value the variable is set to.
-    """
-    Value = None
-
-    def __init__(self, Type, Variable, Value):
-        self.Type = Type
-        self.Variable = Variable
-        self.Value = Value
-
-    pass
-
-"""
-A node that represents an assignment statement, in the form "x = y;"
+A node that represents an assignment statement, in the form "x = y"
 """
 class AssignmentStatementNode(StatementNode):
 

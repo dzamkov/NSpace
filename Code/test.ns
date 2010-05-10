@@ -1,12 +1,21 @@
-object streamreader = new {
+var<var><class> cast = function {
+	class type;
+	return function {
+		return type
+	}
+};
+
+
+
+var StreamReader = class {
 	
 };
 
-object stream = new {
+var Stream = class {
 
 };
 
-stream main = function {
+Stream Main = function {
 	
 	
 };
