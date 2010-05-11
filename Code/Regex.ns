@@ -1,0 +1,60 @@
+-- A regular expression pattern that can be used
+-- to match against a list of values
+RegexPattern = class
+
+	-- Takes a string and an object and tries to find matches of this
+	-- pattern in the string. This function returns an altered string with
+	-- all occurences of the pattern replaced with a tuple which is made
+	-- of the object that was given as a parameter to this function and
+	-- pattern-specific information about the match
+	arg Match
+	
+	assert Match ~= null
+end
+
+-- A pattern that checks for a specific character in 
+-- a string
+AtomPattern = function
+	
+	-- The character to check against
+	arg Character
+
+	return RegexPattern(function
+		arg String
+		arg Object
+		
+		newstring = list()
+		for char in String
+			if char == Character
+				newstring = newstring.append([Object, null])
+			else
+				newstring = newstring.append(char)
+			end
+		end
+		
+		return newstring
+	end
+end
+
+-- A pattern, made from a list of other patterns, which tries matching any of
+-- the patterns it was given. The patterns are listed by priority, if two patterns
+-- conflict with each other, the one closer to the begining of the pattern list
+-- will match
+OrSetPattern = function
+
+	-- The patterns to match against
+	arg Patterns
+	
+	return RegexPattern(function
+		arg String
+		arg Object
+		
+		newstring = String
+		for pattern in Patterns
+			newstring = pattern.Match(newstring, Object)
+		end
+		
+		return newstring
+	end
+
+end
