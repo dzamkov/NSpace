@@ -2,14 +2,25 @@
 -- to match against a list of values
 RegexPattern = class
 
-	-- Takes a string and an object and tries to find matches of this
-	-- pattern in the string. This function returns an altered string with
-	-- all occurences of the pattern replaced with a tuple which is made
-	-- of the object that was given as a parameter to this function and
-	-- pattern-specific information about the match
+	-- Takes a string and finds all possible matches of this pattern in it. Returns
+	-- a set of RegexMatch's
 	arg Match
 	
-	assert Match ~= null
+end
+
+-- A single individual match by a regular expression pattern
+RegexMatch = class
+
+	-- The index at the first character in the match
+	arg CharStart
+	
+	-- The index at the last character in the match.  The length of the match would be
+	-- CharEnd - CharStart
+	arg CharEnd
+	
+	-- Pattern specific information about the match
+	arg Info
+
 end
 
 -- A pattern that checks for a specific character in 
@@ -21,25 +32,20 @@ AtomPattern = function
 
 	return RegexPattern(function
 		arg String
-		arg Object
 		
-		newstring = list()
-		for char in String
-			if char == Character
-				newstring = newstring.append([Object, null])
-			else
-				newstring = newstring.append(char)
+		matches = set()
+		for x in range(0, String.length)
+			if String[x] == Character
+				matches = matches.add(RegexMatch(x, x + 1, null))
 			end
 		end
 		
-		return newstring
-	end
+		return matches
+	end)
 end
 
 -- A pattern, made from a list of other patterns, which tries matching any of
--- the patterns it was given. The patterns are listed by priority, if two patterns
--- conflict with each other, the one closer to the begining of the pattern list
--- will match
+-- the patterns it was given.
 OrSetPattern = function
 
 	-- The patterns to match against
@@ -47,14 +53,28 @@ OrSetPattern = function
 	
 	return RegexPattern(function
 		arg String
-		arg Object
 		
-		newstring = String
-		for pattern in Patterns
-			newstring = pattern.Match(newstring, Object)
+		matches = set()
+		for p in Patterns
+			matches = matches.include(p.Match(String))
 		end
 		
-		return newstring
+		return matches
 	end
 
+end
+
+-- A pattern, that takes another pattern and finds all strings that match it consecutively
+-- at least once.
+QuantificationPattern = function
+
+	-- The pattern to look for
+	arg Pattern
+
+	return RegexPattern(function
+		arg String
+		
+		matches = Pattern.Match(String)
+		newmatches = set()
+		
 end
