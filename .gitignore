@@ -9,3 +9,6 @@
 *.suo
 *.ncb
 *.pyc
+*/dist
+*.lkshw
+*.lkshs
