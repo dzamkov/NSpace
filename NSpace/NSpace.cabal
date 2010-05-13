@@ -2,8 +2,8 @@ name: NSpace
 version: 0.0.1
 cabal-version: -any
 build-type: Simple
-license: AllRightsReserved
-license-file: ""
+license: BSD3
+license-file: LICENSE
 copyright: (c) 2010, Dmitry Zamkov
 maintainer:
 build-depends: GLUT -any, OpenGL -any, base -any
@@ -24,7 +24,7 @@ extra-source-files:
 extra-tmp-files:
  
 executable: NSpace
-main-is: Main.hs
+main-is: NSpace/Main.hs
 buildable: True
 build-tools:
 cpp-options:
