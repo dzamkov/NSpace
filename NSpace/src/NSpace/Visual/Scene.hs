@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 --
--- Module      :  Main
+-- Module      :  NSpace.Visual.Scene
 -- Copyright   :  (c) 2010, Dmitry Zamkov
 -- License     :  BSD3 (See LICENSE)
 --
