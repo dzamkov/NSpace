@@ -8,7 +8,8 @@
 
 module NSpace.Shape.Shape (
 	Shape,
-	StaticShape
+	StaticShape,
+	getStaticFrame
 ) where 
 
 import NSpace.ReferenceFrame
@@ -17,11 +18,11 @@ import NSpace.ReferenceFrame
 -- of substance. The coordinates and measurements of shapes are given in terms
 -- of a frame of reference.
 
-class (FrameRelation b) => Shape a b where
+class (FrameRelation fr) => Shape a fr | a -> fr where
 
 
 -- A shape that may be static in terms of a frame of reference. That is, to say,
 -- the shape is the same in relation to the frame of reference at every time.
 
-class (Shape a b) => StaticShape a b where 
-	getStaticFrame			::	Maybe (ReferenceFrame b)
+class (Shape a fr) => StaticShape a fr where 
+	getStaticFrame			::	a -> Maybe (ReferenceFrame fr)

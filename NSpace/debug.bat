@@ -1,3 +1,3 @@
 cd src
-ghci "NSpace/Main.hs" -XMultiParamTypeClasses
+ghci "NSpace/DebugMain.hs" -XMultiParamTypeClasses -XFlexibleInstances -XFunctionalDependencies
 pause

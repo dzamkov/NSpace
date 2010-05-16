@@ -9,11 +9,6 @@
 import Graphics.Rendering.OpenGL
 import Graphics.UI.GLUT
 import NSpace.Visual.Scene
-import NSpace.Vector
-import NSpace.ReferenceFrame
-import NSpace.Shape.Volume
-import NSpace.Shape.Mesh
-import NSpace.Shape.Shape
 
 main = do
 	createWindow "NSpace"
