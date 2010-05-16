@@ -1,3 +1,3 @@
 cd src
-ghci "NSpace/Main.hs"
+ghci "NSpace/Main.hs" -XMultiParamTypeClasses
 pause

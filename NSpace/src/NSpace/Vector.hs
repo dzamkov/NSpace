@@ -12,10 +12,12 @@ module NSpace.Vector (
 	subVec
 ) where
 
+-- A vector represents a point in a local three dimensional coordinate space.
+
 data Vector		=	Vector {
-							getX :: Double,
-							getY :: Double,
-							getZ :: Double } deriving(Eq, Show)
+							getX	::	Double,
+							getY	::	Double,
+							getZ	::	Double } deriving(Eq, Show)
 
 addVec		::	Vector -> Vector -> Vector
 addVec a b	=	Vector (getX a + getX b) (getY a + getY b) (getZ a + getZ b) 
