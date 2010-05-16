@@ -8,8 +8,10 @@
 
 module NSpace.Shape.Surface (
 	Surface,
+	UniformSurface,
 	SurfaceMaterial,
-	SimpleSurfaceMaterial(..)
+	SimpleSurfaceMaterial(..),
+	getSurfaceMaterial
 ) where 
 
 import NSpace.ReferenceFrame
@@ -19,6 +21,11 @@ import NSpace.Shape.Shape
 -- no thickness and has an inside and outside.
 
 class (Shape a fr, SurfaceMaterial mat) => Surface a fr mat | a -> mat where 
+
+-- A surface with only up of only one material.
+
+class (Surface a fr mat) => UniformSurface a fr mat where
+	getSurfaceMaterial			::	a -> mat
 
 -- Represents an oriented substance that makes up a material. Materials exist
 -- for every point on the surface.

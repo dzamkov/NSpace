@@ -8,37 +8,37 @@
 
 module NSpace.Visual.Scene ( 
 	Scene(..),
-	renderScene
+	renderScene,
+	showScene
 ) where
-	
-import Graphics.Rendering.OpenGL	
 
-data Scene			=		Scene {
-		
+import Graphics.Rendering.OpenGL	
+import Graphics.UI.GLUT
+import NSpace.Shape.Mesh
+import NSpace.Vector
+
+data Scene mesh fr mat tri ver		=		Scene {
+		getMesh		::	mesh
 	}
 	
-renderScene			::		Scene -> IO ()
-renderScene(x)		=		do
+renderScene			:: (Mesh mesh fr mat tri ver) => Scene mesh fr mat tri ver -> IO ()
+renderScene x		=		do
 	clear [ColorBuffer]
-	renderPrimitive Quads $ do
-		color $ (Color3 (1.0::GLfloat) 0 0)
-		vertex $ (Vertex3 (0::GLfloat) 0 0)
-		vertex $ (Vertex3 (0::GLfloat) 0.2 0)
-		vertex $ (Vertex3 (0.2::GLfloat) 0.2 0)
-		vertex $ (Vertex3 (0.2::GLfloat) 0 0)
-		color $ (Color3 (0::GLfloat) 1 0)
-		vertex $ (Vertex3 (0::GLfloat) 0 0)
-		vertex $ (Vertex3 (0::GLfloat) (-0.2) 0)
-		vertex $ (Vertex3 (0.2::GLfloat) (-0.2) 0)
-		vertex $ (Vertex3 (0.2::GLfloat) 0 0)
-		color $ (Color3 (0::GLfloat) 0 1)
-		vertex $ (Vertex3 (0::GLfloat) 0 0)
-		vertex $ (Vertex3 (0::GLfloat) (-0.2) 0)
-		vertex $ (Vertex3 ((-0.2)::GLfloat) (-0.2) 0)
-		vertex $ (Vertex3 ((-0.2)::GLfloat) 0 0)
-		color $ (Color3 (1::GLfloat) 0 1)
-		vertex $ (Vertex3 (0::GLfloat) 0 0)
-		vertex $ (Vertex3 (0::GLfloat) 0.2 0)
-		vertex $ (Vertex3 ((-0.2::GLfloat)) 0.2 0)
-		vertex $ (Vertex3 ((-0.2::GLfloat)) 0 0)
+	renderMesh (getMesh x)
 	flush
+
+showScene 			::	(Mesh mesh fr mat tri ver) => Scene mesh fr mat tri ver -> IO ()
+showScene x			=	do
+								createWindow ""
+								windowSize $= Size 640 480
+								displayCallback $= (renderScene x)
+								mainLoop
+	
+renderMesh			::	(Mesh mesh fr mat tri ver) => mesh -> IO ()
+renderMesh x		=	do renderPrimitive Triangles $ (mapM_ (\x -> renderTri x) (getMeshTriangles x))
+
+renderTri			::	(MeshTriangle tri fr mat ver) => tri -> IO ()
+renderTri x			=	do mapM_ (\x -> renderVer x) (getTriangleVertices x)
+
+renderVer			::	(MeshVertex ver fr) => ver -> IO ()
+renderVer x			=	do vertex $ toVertex3 (getVertexPosition x)

@@ -9,8 +9,11 @@
 module NSpace.Vector (
 	Vector(..),
 	addVec,
-	subVec
+	subVec,
+	toVertex3
 ) where
+
+import Graphics.Rendering.OpenGL
 
 -- A vector represents a point in a local three dimensional coordinate space.
 
@@ -23,4 +26,7 @@ addVec		::	Vector -> Vector -> Vector
 addVec a b	=	Vector (getX a + getX b) (getY a + getY b) (getZ a + getZ b) 
 
 subVec		::	Vector -> Vector -> Vector
-subVec a b	=	Vector (getX a - getX b) (getY a - getY b) (getZ a - getZ b) 
+subVec a b	=	Vector (getX a - getX b) (getY a - getY b) (getZ a - getZ b)
+
+toVertex3		::	Vector -> Vertex3 GLdouble
+toVertex3 a		=	Vertex3 (getX a) (getY a) (getZ a)

@@ -9,7 +9,11 @@
 module NSpace.Shape.Volume (
 	Volume,
 	BoundedVolume,
-	VolumeMaterial
+	UniformVolume,
+	VolumeMaterial,
+	getMaterialAt,
+	getSurface,
+	getVolumeMaterial
 ) where 
 
 import NSpace.Event
@@ -29,6 +33,12 @@ class (Shape a fr, VolumeMaterial mat) => Volume a fr mat | a -> mat  where
 	
 class (Volume a fr mat, Surface surf fr smat) => BoundedVolume a fr mat surf smat | a -> surf where
 	getSurface				::	a -> Maybe surf
+	
+-- A volume made of only one kind of substance. Every point is either in the volume and has
+-- the particular substance or is outside the volume.
+	
+class (Volume a fr mat) => UniformVolume a fr mat where
+	getVolumeMaterial		::	a -> mat
 
 -- A possible substance that can occupy a point in a volume.
 

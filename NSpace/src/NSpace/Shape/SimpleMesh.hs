@@ -47,8 +47,14 @@ extractTriangles a (x:y:z:s)		=	[a !! x, a !! y, a !! z]:(extractTriangles a s)
 extractTriangles a b					=	[]
 											
 instance (SurfaceMaterial mat, FrameRelation fr) => Mesh (SimpleMesh fr mat) fr mat (SimpleMeshTriangle fr mat) (SimpleMeshVertex fr) where 
-	getMeshTriangles a 	=	map (\t -> SimpleMeshTriangle (getMMaterial a) (getMReferenceFrame a) t) $ extractTriangles (getMVertices a) (getMIndices a)
-
+	getMeshTriangles a 	=	map (convertTriangle a) $ extractTriangles (getMVertices a) (getMIndices a)
+								where
+									convertTriangle 			::	(SimpleMesh fr mat) -> [Vector] -> (SimpleMeshTriangle fr mat)
+									convertTriangle a b 		=	SimpleMeshTriangle (getMMaterial a) (getMReferenceFrame a) b	
+								
+instance (SurfaceMaterial mat, FrameRelation fr) => UniformSurface (SimpleMesh fr mat) fr mat where
+	getSurfaceMaterial a		=	getMMaterial a
+	
 instance (SurfaceMaterial mat, FrameRelation fr) => Surface (SimpleMesh fr mat) fr mat where
 
 instance (SurfaceMaterial mat, FrameRelation fr) => StaticShape (SimpleMesh fr mat) fr where
@@ -60,6 +66,9 @@ instance (SurfaceMaterial mat, FrameRelation fr) => Shape (SimpleMesh fr mat) fr
 
 instance (SurfaceMaterial mat, FrameRelation fr) => MeshTriangle (SimpleMeshTriangle fr mat) fr mat (SimpleMeshVertex fr) where
 	getTriangleVertices a	= map (\v -> SimpleMeshVertex (getTReferenceFrame a) v) (getTVertices a)
+	
+instance (SurfaceMaterial mat, FrameRelation fr) => UniformSurface (SimpleMeshTriangle fr mat) fr mat where
+	getSurfaceMaterial a		=	getTMaterial a
 	
 instance (SurfaceMaterial mat, FrameRelation fr) => Surface (SimpleMeshTriangle fr mat) fr mat where
 
