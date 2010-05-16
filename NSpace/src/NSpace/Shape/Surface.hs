@@ -12,11 +12,12 @@ module NSpace.Shape.Surface (
 ) where 
 
 import NSpace.ReferenceFrame
+import NSpace.Shape.Shape
 
 -- Represents a surface, which is a dynamic area in spacetime. A surface has
 -- no thickness and has an inside and outside.
 
-class (SurfaceMaterial b, FrameRelation c) => Surface a b c where 
+class (Shape a b, SurfaceMaterial c) => Surface a b c where 
 
 -- Represents an oriented substance that makes up a material. Materials exist
 -- for every point on the surface.

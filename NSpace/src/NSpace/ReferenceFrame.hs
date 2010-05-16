@@ -8,6 +8,7 @@
 
 module NSpace.ReferenceFrame (
 	FrameRelation,
+	SimpleFrameRelation(..),
 	FrameDefinition(..),
 	ReferenceFrame,
 	absoluteFrame,
@@ -30,6 +31,19 @@ class (Eq a) => FrameRelation a where
 	getInverse			::	a -> a
 	identity				::	a
 	composition			::	a -> a -> a
+
+-- A type of frame relation where every instance is an identity frame relation.	
+
+data SimpleFrameRelation 	=	SimpleFrameRelation
+
+instance Eq SimpleFrameRelation where
+	a == b		=	True
+	
+instance FrameRelation SimpleFrameRelation where
+	transformEvent _ y	=	y
+	getInverse _			=	SimpleFrameRelation
+	identity					=	SimpleFrameRelation
+	composition _ _		=	SimpleFrameRelation
 	
 -- Frame definitions define a frame of reference in terms of another. The
 -- parent frame of reference is the one used for reference while the parent

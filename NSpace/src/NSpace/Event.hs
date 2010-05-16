@@ -12,6 +12,10 @@ module NSpace.Event (
 
 import NSpace.Vector
 
+-- Represents a time within a frame of reference
+
+type Time	=	Double
+
 -- An event is a point in four-dimensional space time, specified with an 
 -- actual position and the time the point is at that position.
 
