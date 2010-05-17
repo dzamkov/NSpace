@@ -12,7 +12,10 @@ import NSpace.Shape.SimpleMesh
 import NSpace.Shape.Surface
 import NSpace.Visual.Scene
 import NSpace.ReferenceFrame
+import NSpace.Matrix
 import NSpace.Vector
+
+testMat				=	Matrix  1 4 3 5  7 8 6 3  3 4 5 6  1 2 3 4
 
 testSimpleMesh		=	createSimpleMesh referenceFrame surfaceMaterial verts inds
 						where 
