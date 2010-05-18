@@ -11,6 +11,10 @@ module NSpace.Matrix (
 	multMat,
 	transMat,
 	transMatVec,
+	translateMat,
+	lookAtMat,
+	alignMat,
+	identityMat,
 	invMat
 ) where
 
@@ -18,12 +22,6 @@ import qualified Graphics.Rendering.OpenGL as GL
 import NSpace.Event
 import NSpace.Vector
 import NSpace.ReferenceFrame
-
--- A matrix representing an affline transform appliable to vectors.
--- [X.X	Y.X	Z.X	T.X]
--- [X.Y	Y.Y	Z.Y	T.Y]
--- [X.Z	Y.Z	Z.Z	T.Z]
--- [0		0		0		1  ]
 
 data Matrix		=	Matrix {
 							getM11 :: Double,
@@ -42,6 +40,34 @@ data Matrix		=	Matrix {
 							getM42 :: Double,
 							getM43 :: Double,
 							getM44 :: Double } deriving(Eq, Show)
+
+-- Takes three vectors that correspond to the axis's and a last
+-- vector for translations and creates a new matrix representing
+-- the coordinate space formed.
+							
+remapMat				::	Vector -> Vector -> Vector -> Vector -> Matrix
+remapMat a b c d	=	Matrix m11 m12 m13 m14 m21 m22 m23 m24 m31 m32 m33 m34 m41 m42 m43 m44
+						where
+							m11	=	getX a
+							m21	=	getY a
+							m31	=	getZ a
+							m41	=	0
+							
+							m12	=	getX b
+							m22	=	getY b
+							m32	=	getZ b
+							m42	=	0
+							
+							m13	=	getX c
+							m23	=	getY c
+							m33	=	getZ c
+							m43	=	0
+							
+							m14	=	getX d
+							m24	=	getY d
+							m34	=	getZ d
+							m44	=	1
+							
 						
 transMatVec			::	Matrix -> Vector -> Vector
 transMatVec a b		=	Vector nx ny nz
@@ -50,34 +76,38 @@ transMatVec a b		=	Vector nx ny nz
 							ny		=	((getM21 a) * (getX b)) + ((getM22 a) * (getY b)) + ((getM23 a) * (getZ b)) + getM24 a
 							nz		=	((getM31 a) * (getX b)) + ((getM32 a) * (getY b)) + ((getM33 a) * (getZ b)) + getM34 a
 							
+-- Multiplies two matrices together
+							
 multMat			::	Matrix -> Matrix -> Matrix
-multMat a b		= Matrix m11 m12 m13 m14 m21 m22 m23 m24 m31 m32 m33 m43 m41 m42 m43 m44
+multMat a b		= Matrix m11 m12 m13 m14 m21 m22 m23 m24 m31 m32 m33 m34 m41 m42 m43 m44
 					where
 						m11 	=	((getM11 a) * (getM11 b)) + ((getM12 a) * (getM21 b)) + ((getM13 a) * (getM31 b)) + ((getM14 a) * (getM41 b))
 						m12	=	((getM11 a) * (getM12 b)) + ((getM12 a) * (getM22 b)) + ((getM13 a) * (getM32 b)) + ((getM14 a) * (getM42 b))
 						m13	=	((getM11 a) * (getM13 b)) + ((getM12 a) * (getM23 b)) + ((getM13 a) * (getM33 b)) + ((getM14 a) * (getM43 b))
 						m14	=	((getM11 a) * (getM14 b)) + ((getM12 a) * (getM24 b)) + ((getM13 a) * (getM34 b)) + ((getM14 a) * (getM44 b))
 
-						m21	=	((getM21 b) * (getM11 b)) + ((getM22 b) * (getM21 b)) + ((getM23 b) * (getM31 b)) + ((getM24 b) * (getM41 b))
-						m22	=	((getM21 b) * (getM12 b)) + ((getM22 b) * (getM22 b)) + ((getM23 b) * (getM32 b)) + ((getM24 b) * (getM42 b))
-						m23	=	((getM21 b) * (getM13 b)) + ((getM22 b) * (getM23 b)) + ((getM23 b) * (getM33 b)) + ((getM24 b) * (getM43 b))
-						m24	=	((getM21 b) * (getM14 b)) + ((getM22 b) * (getM24 b)) + ((getM23 b) * (getM34 b)) + ((getM24 b) * (getM44 b))
+						m21	=	((getM21 a) * (getM11 b)) + ((getM22 a) * (getM21 b)) + ((getM23 a) * (getM31 b)) + ((getM24 a) * (getM41 b))
+						m22	=	((getM21 a) * (getM12 b)) + ((getM22 a) * (getM22 b)) + ((getM23 a) * (getM32 b)) + ((getM24 a) * (getM42 b))
+						m23	=	((getM21 a) * (getM13 b)) + ((getM22 a) * (getM23 b)) + ((getM23 a) * (getM33 b)) + ((getM24 a) * (getM43 b))
+						m24	=	((getM21 a) * (getM14 b)) + ((getM22 a) * (getM24 b)) + ((getM23 a) * (getM34 b)) + ((getM24 a) * (getM44 b))
 
-						m31	=	((getM31 b) * (getM11 b)) + ((getM32 b) * (getM21 b)) + ((getM33 b) * (getM31 b)) + ((getM34 b) * (getM41 b))
-						m32	=	((getM31 b) * (getM12 b)) + ((getM32 b) * (getM22 b)) + ((getM33 b) * (getM32 b)) + ((getM34 b) * (getM42 b))
-						m33	=	((getM31 b) * (getM13 b)) + ((getM32 b) * (getM23 b)) + ((getM33 b) * (getM33 b)) + ((getM34 b) * (getM43 b))
-						m34	=	((getM31 b) * (getM14 b)) + ((getM32 b) * (getM24 b)) + ((getM33 b) * (getM34 b)) + ((getM34 b) * (getM44 b))
+						m31	=	((getM31 a) * (getM11 b)) + ((getM32 a) * (getM21 b)) + ((getM33 a) * (getM31 b)) + ((getM34 a) * (getM41 b))
+						m32	=	((getM31 a) * (getM12 b)) + ((getM32 a) * (getM22 b)) + ((getM33 a) * (getM32 b)) + ((getM34 a) * (getM42 b))
+						m33	=	((getM31 a) * (getM13 b)) + ((getM32 a) * (getM23 b)) + ((getM33 a) * (getM33 b)) + ((getM34 a) * (getM43 b))
+						m34	=	((getM31 a) * (getM14 b)) + ((getM32 a) * (getM24 b)) + ((getM33 a) * (getM34 b)) + ((getM34 a) * (getM44 b))
 						
-						m41	=	((getM41 b) * (getM11 b)) + ((getM42 b) * (getM21 b)) + ((getM43 b) * (getM31 b)) + ((getM44 b) * (getM41 b))
-						m42	=	((getM41 b) * (getM12 b)) + ((getM42 b) * (getM22 b)) + ((getM43 b) * (getM32 b)) + ((getM44 b) * (getM42 b))
-						m43	=	((getM41 b) * (getM13 b)) + ((getM42 b) * (getM23 b)) + ((getM43 b) * (getM33 b)) + ((getM44 b) * (getM43 b))
-						m44	=	((getM41 b) * (getM14 b)) + ((getM42 b) * (getM24 b)) + ((getM43 b) * (getM34 b)) + ((getM44 b) * (getM44 b))
+						m41	=	((getM41 a) * (getM11 b)) + ((getM42 a) * (getM21 b)) + ((getM43 a) * (getM31 b)) + ((getM44 a) * (getM41 b))
+						m42	=	((getM41 a) * (getM12 b)) + ((getM42 a) * (getM22 b)) + ((getM43 a) * (getM32 b)) + ((getM44 a) * (getM42 b))
+						m43	=	((getM41 a) * (getM13 b)) + ((getM42 a) * (getM23 b)) + ((getM43 a) * (getM33 b)) + ((getM44 a) * (getM43 b))
+						m44	=	((getM41 a) * (getM14 b)) + ((getM42 a) * (getM24 b)) + ((getM43 a) * (getM34 b)) + ((getM44 a) * (getM44 b))
+						
+-- Transforms the second matrix by the first
 						
 transMat			:: Matrix -> Matrix -> Matrix
-transMat			=	multMat
+transMat	a b	=	multMat b a
 							
 invMat			::	Matrix -> Matrix
-invMat a			= Matrix nm11 nm12 nm13 nm14 nm21 nm22 nm23 nm24 nm31 nm32 nm33 nm43 nm41 nm42 nm43 nm44
+invMat a			= Matrix nm11 nm12 nm13 nm14 nm21 nm22 nm23 nm24 nm31 nm32 nm33 nm34 nm41 nm42 nm43 nm44
 					where
 						m11	=	((getM22 a) * (getM33 a) * (getM44 a)) + ((getM23 a) * (getM34 a) * (getM42 a)) + ((getM24 a) * (getM32 a) * (getM43 a)) -
 							 ((getM22 a) * (getM34 a) * (getM43 a)) - ((getM23 a) * (getM32 a) * (getM44 a)) - ((getM24 a) * (getM33 a) * (getM42 a))
@@ -115,7 +145,7 @@ invMat a			= Matrix nm11 nm12 nm13 nm14 nm21 nm22 nm23 nm24 nm31 nm32 nm33 nm43 
 						m44	=	((getM11 a) * (getM22 a) * (getM33 a)) + ((getM12 a) * (getM23 a) * (getM31 a)) + ((getM13 a) * (getM21 a) * (getM32 a)) -
 							 ((getM11 a) * (getM23 a) * (getM32 a)) - ((getM12 a) * (getM21 a) * (getM33 a)) - ((getM13 a) * (getM22 a) * (getM31 a))
 
-						det 	= 	((getM11 a) * m11) + ((getM12 a) * m21) + ((getM13 a) * m31) + ((getM14 a) * m41);
+						det 	= 	((getM11 a) * m11) + ((getM12 a) * m21) + ((getM13 a) * m31) + ((getM14 a) * m41)
 						nm11 	=	m11 / det
 						nm12 	=	m12 / det
 						nm13 	=	m13 / det
@@ -133,6 +163,25 @@ invMat a			= Matrix nm11 nm12 nm13 nm14 nm21 nm22 nm23 nm24 nm31 nm32 nm33 nm43 
 						nm43 	=	m43 / det
 						nm44 	=	m44 / det
 
+translateMat		::	Vector -> Matrix
+translateMat a		=	remapMat xVec yVec zVec a
+						
+-- Takes an up vector and a foward vector and projects
+-- the coordinate space based on it
+
+alignMat			::	Vector -> Vector -> Matrix
+alignMat a b	=	remapMat x y z zeroVec
+					where
+						x	=	normVec b
+						y	=	normVec $ crossVec a x
+						z	=	normVec $ crossVec x y
+
+-- Creates a lookat matrix from the up vector, view position
+-- and view target
+						
+lookAtMat			::	Vector -> Vector -> Vector -> Matrix
+lookAtMat a b c	=	transMat (alignMat a (subVec c b)) (translateMat b)
+						
 identityMat		::	Matrix
 identityMat		=	Matrix 1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
 
@@ -142,7 +191,7 @@ instance FrameRelation Matrix where
 	identity											=	identityMat
 	
 instance FrameRelationComposite Matrix Matrix Matrix where
-	composition a b			=	multMat a b
+	composition a b			=	transMat a b
 	
 instance SpatialFrameRelation Matrix where
 	transformTime a b			=	b
