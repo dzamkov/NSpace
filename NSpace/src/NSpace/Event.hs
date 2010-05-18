@@ -7,7 +7,8 @@
 -----------------------------------------------------------------------------
 
 module NSpace.Event (
-	Event(..)
+	Event(..),
+	Time
 ) where
 
 import NSpace.Vector
@@ -21,4 +22,4 @@ type Time	=	Double
 
 data Event	=	Event {
 						getPosition	::	Vector,
-						getTime		::	Double } deriving (Eq, Show)
+						getTime		::	Time } deriving (Eq, Show)

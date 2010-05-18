@@ -7,7 +7,10 @@
 -----------------------------------------------------------------------------
 
 module NSpace.ReferenceFrame (
-	FrameRelation,
+	FrameRelation(..),
+	FrameRelationComposite(..),
+	SpatialFrameRelation(..),
+	StaticFrameRelation(..),
 	SimpleFrameRelation(..),
 	FrameDefinition(..),
 	ReferenceFrame,
@@ -16,6 +19,7 @@ module NSpace.ReferenceFrame (
 ) where
 
 import NSpace.Event
+import NSpace.Vector
 
 -- Frames of reference can hold local coordinate systems that are related
 -- to other frames of reference. A frame of reference is defined in terms
@@ -30,8 +34,21 @@ class (Eq a) => FrameRelation a where
 	transformEvent		::	a -> Event -> Event
 	getInverse			::	a -> a
 	identity				::	a
-	composition			::	a -> a -> a
 
+class (FrameRelation a, FrameRelation b, FrameRelation c) => FrameRelationComposite a b c | a b -> c where
+	composition			::	a -> b -> c
+
+-- A frame relation where input position does not affect output time.
+	
+class (FrameRelation a) => SpatialFrameRelation a where
+	transformTime		::	a -> Time -> Time
+	
+-- A spatial frame relation where input time does not affect output position. Position
+-- and time are seperate in these frame relations.
+
+class (SpatialFrameRelation a) => StaticFrameRelation a where
+	transformPosition		::	a -> Vector -> Vector
+	
 -- A type of frame relation where every instance is an identity frame relation.	
 
 data SimpleFrameRelation 	=	SimpleFrameRelation
@@ -43,7 +60,9 @@ instance FrameRelation SimpleFrameRelation where
 	transformEvent _ y	=	y
 	getInverse _			=	SimpleFrameRelation
 	identity					=	SimpleFrameRelation
-	composition _ _		=	SimpleFrameRelation
+
+instance FrameRelationComposite SimpleFrameRelation SimpleFrameRelation SimpleFrameRelation where
+	composition a b		=	SimpleFrameRelation
 	
 -- Frame definitions define a frame of reference in terms of another. The
 -- parent frame of reference is the one used for reference while the parent
