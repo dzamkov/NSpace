@@ -9,6 +9,7 @@
 module NSpace.ReferenceFrame (
 	FrameRelation(..),
 	FrameRelationComposite(..),
+	EitherFrameRelation(..),
 	SpatialFrameRelation(..),
 	StaticFrameRelation(..),
 	SimpleFrameRelation(..),
@@ -37,6 +38,21 @@ class (Eq a) => FrameRelation a where
 
 class (FrameRelation a, FrameRelation b, FrameRelation c) => FrameRelationComposite a b c | a b -> c where
 	composition			::	a -> b -> c
+
+data EitherFrameRelation a b c	=	(FrameRelation a, FrameRelation b, FrameRelationComposite a b c) => LeftFrameRelation a | RightFrameRelation b
+
+instance (FrameRelation a, FrameRelation b, FrameRelationComposite a b c) => FrameRelation (EitherFrameRelation a b c) where
+	transformEvent (LeftFrameRelation x) y		=	transformEvent x y
+	transformEvent (RightFrameRelation x) y	=	transformEvent x y
+	getInverse (LeftFrameRelation x)				=	LeftFrameRelation (getInverse x)
+	getInverse (RightFrameRelation x)			=	RightFrameRelation (getInverse x)
+	identity												=	LeftFrameRelation (identity)
+	
+instance (FrameRelation a, FrameRelation b, FrameRelationComposite a b c) => Eq (EitherFrameRelation a b c) where
+	(LeftFrameRelation x) == (LeftFrameRelation y)		=	x == y
+	(RightFrameRelation x) == (RightFrameRelation y)	=	x == y
+	(LeftFrameRelation x) == (RightFrameRelation y)		=	False
+	(RightFrameRelation x) == (LeftFrameRelation y)		=	False
 
 -- A frame relation where input position does not affect output time.
 	
