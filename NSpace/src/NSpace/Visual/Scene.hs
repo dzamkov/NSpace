@@ -17,9 +17,11 @@ import Graphics.UI.GLUT hiding(Matrix)
 import NSpace.Shape.Mesh
 import NSpace.Vector
 import NSpace.Matrix
+import NSpace.ReferenceFrame
 
 data Scene mesh fr mat tri ver		=		Scene {
-		getMesh		::	mesh
+		getMesh				::	mesh,
+		getCameraFrame		::	ReferenceFrame fr
 	}
 	
 renderScene			:: (Mesh mesh fr mat tri ver) => Scene mesh fr mat tri ver -> IO ()

@@ -8,15 +8,16 @@
 
 module NSpace.ReferenceFrame (
 	FrameRelation(..),
-	FrameRelationComposite(..),
-	EitherFrameRelation(..),
+	Composite(..),
 	SpatialFrameRelation(..),
 	StaticFrameRelation(..),
 	SimpleFrameRelation(..),
 	FrameDefinition(..),
 	ReferenceFrame,
 	absoluteFrame,
-	createChildFrame
+	createChildFrame,
+	createIChildFrame,
+	getRelation
 ) where
 
 import NSpace.Event
@@ -31,28 +32,13 @@ import NSpace.Vector
 -- Frame relations show relation between different frames. They can transform
 -- events in the coordinate system of one frame of reference to another.
 
-class (Eq a) => FrameRelation a where
+class (Eq a, Composite a a a) => FrameRelation a where
 	transformEvent		::	a -> Event -> Event
 	getInverse			::	a -> a
 	identity				::	a
 
-class (FrameRelation a, FrameRelation b, FrameRelation c) => FrameRelationComposite a b c | a b -> c where
+class Composite a b c | a b -> c where
 	composition			::	a -> b -> c
-
-data EitherFrameRelation a b c	=	(FrameRelation a, FrameRelation b, FrameRelationComposite a b c) => LeftFrameRelation a | RightFrameRelation b
-
-instance (FrameRelation a, FrameRelation b, FrameRelationComposite a b c) => FrameRelation (EitherFrameRelation a b c) where
-	transformEvent (LeftFrameRelation x) y		=	transformEvent x y
-	transformEvent (RightFrameRelation x) y	=	transformEvent x y
-	getInverse (LeftFrameRelation x)				=	LeftFrameRelation (getInverse x)
-	getInverse (RightFrameRelation x)			=	RightFrameRelation (getInverse x)
-	identity												=	LeftFrameRelation (identity)
-	
-instance (FrameRelation a, FrameRelation b, FrameRelationComposite a b c) => Eq (EitherFrameRelation a b c) where
-	(LeftFrameRelation x) == (LeftFrameRelation y)		=	x == y
-	(RightFrameRelation x) == (RightFrameRelation y)	=	x == y
-	(LeftFrameRelation x) == (RightFrameRelation y)		=	False
-	(RightFrameRelation x) == (LeftFrameRelation y)		=	False
 
 -- A frame relation where input position does not affect output time.
 	
@@ -77,7 +63,7 @@ instance FrameRelation SimpleFrameRelation where
 	getInverse _			=	SimpleFrameRelation
 	identity					=	SimpleFrameRelation
 
-instance FrameRelationComposite SimpleFrameRelation SimpleFrameRelation SimpleFrameRelation where
+instance Composite SimpleFrameRelation SimpleFrameRelation SimpleFrameRelation where
 	composition a b		=	SimpleFrameRelation
 	
 -- Frame definitions define a frame of reference in terms of another. The
@@ -101,12 +87,39 @@ absoluteFrame		=	ReferenceFrame Nothing 0
 
 -- Creates a child frame with the specified frame definition.
 
-createChildFrame			::	FrameDefinition a -> ReferenceFrame a
+createChildFrame			::	(FrameRelation a) => FrameDefinition a -> ReferenceFrame a
 createChildFrame d		=	ReferenceFrame (Just d) ((getLevel $ getParent d) + 1)
+
+createIChildFrame									::	(FrameRelation a) => FrameDefinition a -> ReferenceFrame a
+createIChildFrame (FrameDefinition a b)	=	createChildFrame (FrameDefinition a (getInverse b))
 
 -- Gets the relation from one frame of reference to another.
 
 getRelation			:: (FrameRelation a) => ReferenceFrame a -> ReferenceFrame a -> a
-getRelation x y	=	if 		x == y
-							then		identity
-							else		undefined
+getRelation x y	=	if 		getLevel x == getLevel y
+							then		if		x	==	y
+										then	identity
+										else	arcRelation x y
+							else		if		getLevel x > getLevel y
+										then	lowerRelation x y
+										else	raiseRelation x y
+							
+						where
+							arcRelation																				::	(FrameRelation a) => ReferenceFrame a -> ReferenceFrame a -> a
+							arcRelation (ReferenceFrame (Just a) _) (ReferenceFrame (Just b) _)	=	composition r1 $ composition r2 r3
+																														where
+																															r1		=	(getParentRelation a)
+																															r2		=	(getRelation (getParent a) (getParent b))
+																															r3		=	(getInverse $ getParentRelation b)
+																					
+							lowerRelation											::	(FrameRelation a) => ReferenceFrame a -> ReferenceFrame a -> a
+							lowerRelation a (ReferenceFrame (Just b) _)	=	composition r1 r2
+																						where
+																							r1		=	(getRelation a (getParent b))
+																							r2		=	(getInverse $ getParentRelation b)
+							
+							raiseRelation											::	(FrameRelation a) => ReferenceFrame a -> ReferenceFrame a -> a
+							raiseRelation (ReferenceFrame (Just a) _) b	=	composition r1 r2
+																						where
+																							r1		=	(getParentRelation a)
+																							r2		=	(getRelation (getParent a) b)

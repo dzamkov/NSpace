@@ -196,7 +196,7 @@ instance FrameRelation Matrix where
 	getInverse a									=	invMat a
 	identity											=	identityMat
 	
-instance FrameRelationComposite Matrix Matrix Matrix where
+instance Composite Matrix Matrix Matrix where
 	composition a b			=	transMat a b
 	
 instance SpatialFrameRelation Matrix where

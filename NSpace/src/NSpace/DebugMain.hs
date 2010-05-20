@@ -17,11 +17,14 @@ import NSpace.Vector
 
 testMat				=	Matrix  1 4 3 5  7 8 6 3  3 4 5 6  1 2 3 4
 
+cameraFrame 		=	createChildFrame $ FrameDefinition absoluteFrame (lookAtMat (Vector 0 0 1) (Vector (-5) (-5) (-5)) zeroVec)
+objectFrame			=	createChildFrame $ FrameDefinition absoluteFrame identityMat
+
 testSimpleMesh		=	createSimpleMesh referenceFrame surfaceMaterial verts inds
 						where 
-							referenceFrame 	=	absoluteFrame :: ReferenceFrame SimpleFrameRelation
+							referenceFrame 	=	objectFrame
 							surfaceMaterial	=	SimpleSurfaceMaterial
 							verts					=	[Vector 0.5 0.5 0.0, Vector 0.5 0.0 0.0, Vector 0.0 0.0 0.0]
 							inds					=	[0, 1, 2]
 							
-main					=	showScene (Scene testSimpleMesh)
+main					=	showScene (Scene testSimpleMesh cameraFrame)
