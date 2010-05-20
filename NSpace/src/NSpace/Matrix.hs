@@ -8,6 +8,7 @@
 
 module NSpace.Matrix (
 	Matrix(..),
+	AfflineFrameRelation(..),
 	multMat,
 	transMat,
 	transMatVec,
@@ -191,16 +192,24 @@ lookAtMat a b c	=	transMat (alignMat a (subVec c b)) (translateMat b)
 identityMat		::	Matrix
 identityMat		=	Matrix 1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
 
+-- A static frame relation with a completely linear transform.
+	
+class (SpatialFrameRelation a) => AfflineFrameRelation a where
+	getRelationMatrix		::	a -> Matrix
+
+instance Composite Matrix Matrix Matrix where
+	composition a b			=	transMat a b
+
 instance FrameRelation Matrix where
 	transformEvent a (Event pos time)		=	Event (transMatVec a pos) time
 	getInverse a									=	invMat a
 	identity											=	identityMat
-	
-instance Composite Matrix Matrix Matrix where
-	composition a b			=	transMat a b
 	
 instance SpatialFrameRelation Matrix where
 	transformTime a b			=	b
 	
 instance StaticFrameRelation Matrix where
 	transformPosition a b	=	transMatVec a b 
+	
+instance AfflineFrameRelation Matrix where
+	getRelationMatrix a		=	a

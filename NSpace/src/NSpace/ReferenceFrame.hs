@@ -11,6 +11,7 @@ module NSpace.ReferenceFrame (
 	Composite(..),
 	SpatialFrameRelation(..),
 	StaticFrameRelation(..),
+	TimeDependentFrameRelation(..),
 	SimpleFrameRelation(..),
 	FrameDefinition(..),
 	ReferenceFrame,
@@ -50,6 +51,15 @@ class (FrameRelation a) => SpatialFrameRelation a where
 
 class (SpatialFrameRelation a) => StaticFrameRelation a where
 	transformPosition		::	a -> Vector -> Vector
+	
+-- Frame relation where a "slice" can be taken at a particular time. The resulting frame relation
+-- will at all times represent a single time in the original frame relation.
+	
+class (SpatialFrameRelation a, StaticFrameRelation b) => TimeDependentFrameRelation a b | a -> b where
+	sliceFrameRelation	::	a -> Time -> b
+	
+instance (StaticFrameRelation a) => TimeDependentFrameRelation a a where
+	sliceFrameRelation x y		=	x
 	
 -- A type of frame relation where every instance is an identity frame relation.	
 
