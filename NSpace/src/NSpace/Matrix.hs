@@ -15,6 +15,7 @@ module NSpace.Matrix (
 	lookAtMat,
 	alignMat,
 	identityMat,
+	matElems,
 	invMat
 ) where
 
@@ -68,6 +69,11 @@ remapMat a b c d	=	Matrix m11 m12 m13 m14 m21 m22 m23 m24 m31 m32 m33 m34 m41 m4
 							m34	=	getZ d
 							m44	=	1
 							
+matElems		::	Matrix -> [Double]
+matElems a	=	[getM11 a, getM12 a, getM13 a, getM14 a,
+					getM21 a, getM22 a, getM23 a, getM24 a,
+					getM31 a, getM32 a, getM33 a, getM34 a,
+					getM41 a, getM42 a, getM43 a, getM44 a]
 						
 transMatVec			::	Matrix -> Vector -> Vector
 transMatVec a b		=	Vector nx ny nz

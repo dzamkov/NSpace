@@ -12,10 +12,11 @@ module NSpace.Visual.Scene (
 	showScene
 ) where
 
-import Graphics.Rendering.OpenGL	
-import Graphics.UI.GLUT
+import Graphics.Rendering.OpenGL hiding(Matrix)
+import Graphics.UI.GLUT hiding(Matrix)
 import NSpace.Shape.Mesh
 import NSpace.Vector
+import NSpace.Matrix
 
 data Scene mesh fr mat tri ver		=		Scene {
 		getMesh		::	mesh
@@ -24,7 +25,13 @@ data Scene mesh fr mat tri ver		=		Scene {
 renderScene			:: (Mesh mesh fr mat tri ver) => Scene mesh fr mat tri ver -> IO ()
 renderScene x		=		do
 	clear [ColorBuffer]
-	renderMesh (getMesh x)
+	
+	loadIdentity
+	perspective (pi / 5) 1 0.01 100.0
+	preservingMatrix $ do
+		setMatrix $ invMat $ lookAtMat (Vector 0 0 1) (Vector (-10) 0 3) zeroVec
+		renderMesh (getMesh x)
+		
 	flush
 
 showScene 			::	(Mesh mesh fr mat tri ver) => Scene mesh fr mat tri ver -> IO ()
@@ -42,3 +49,9 @@ renderTri x			=	do mapM_ (\x -> renderVer x) (getTriangleVertices x)
 
 renderVer			::	(MeshVertex ver fr) => ver -> IO ()
 renderVer x			=	do vertex $ toVertex3 (getVertexPosition x)
+
+setMatrix			::	Matrix -> IO ()
+setMatrix a			=	do
+								mat <- (newMatrix ColumnMajor (matElems a) :: IO (GLmatrix GLdouble))
+								matrix (Nothing)	$=	mat
+								
