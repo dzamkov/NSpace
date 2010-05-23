@@ -9,9 +9,19 @@ namespace NSpaceCode
     /// <summary>
     /// Represents a value.
     /// </summary>
-    public class Expression
+    public abstract class Expression
     {
+        /// <summary>
+        /// Matches a pattern to this expression. The specified pattern can contain generalized variables
+        /// that are specified in the values dictionary. If the pattern is matched, this function returns true
+        /// and the values in the dictionary are set to the values that are expressed in this expression.
+        /// </summary>
+        public abstract bool Match(Expression Pattern, ref Dictionary<Variable, Expression> Values);
 
+        /// <summary>
+        /// Replaces a variable in the expression and returns the result.
+        /// </summary>
+        public abstract Expression Replace(Variable Var, Variable With);
     }
 
     /// <summary>
@@ -38,6 +48,39 @@ namespace NSpaceCode
             get
             {
                 return this._Name;
+            }
+        }
+
+        public override bool Match(Expression Pattern, ref Dictionary<Variable, Expression> Values)
+        {
+            Variable v = Pattern as Variable;
+            if (v != null)
+            {
+                if (Values.ContainsKey(v))
+                {
+                    Values[v] = this;
+                    return true;
+                }
+                else
+                {
+                    return v == this;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override Expression Replace(Variable Var, Variable With)
+        {
+            if (this == Var)
+            {
+                return With;
+            }
+            else
+            {
+                return this;
             }
         }
 
@@ -90,6 +133,33 @@ namespace NSpaceCode
             }
         }
 
+        public override bool Match(Expression Pattern, ref Dictionary<Variable, Expression> Values)
+        {
+            Application a = Pattern as Application;
+            if (a != null)
+            {
+                return this._Argument.Match(a._Argument, ref Values) && this._Function.Match(a._Function, ref Values);
+            }
+            else
+            {
+                Variable v = Pattern as Variable;
+                if (v != null)
+                {
+                    if (Values.ContainsKey(v))
+                    {
+                        Values[v] = this;
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        public override Expression Replace(Variable Var, Variable With)
+        {
+            return new Application(this._Function.Replace(Var, With), this._Argument.Replace(Var, With));
+        }
+
         public override string ToString()
         {
             Application arg = this._Argument as Application;
@@ -139,6 +209,34 @@ namespace NSpaceCode
             {
                 return this._Exp;
             }
+        }
+
+        public override bool Match(Expression Pattern, ref Dictionary<Variable, Expression> Values)
+        {
+            ForAll f = Pattern as ForAll;
+            if (f != null)
+            {
+
+            }
+        }
+
+        public override Expression Replace(Variable Var, Variable With)
+        {
+            bool ismainvar = false;
+            foreach (Variable v in this._Vars)
+            {
+                if (v == Var)
+                {
+                    ismainvar = true;
+                    break;
+                }
+            }
+
+            if (!ismainvar)
+            {
+                return new ForAll(this._Vars, this._Exp.Replace(Var, With));
+            }
+            return this;
         }
 
         public override string ToString()
