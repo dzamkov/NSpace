@@ -5,6 +5,7 @@
 */Debug
 */Release
 *.vcproj.*
+*.user
 *.userprefs
 *.suo
 *.ncb
