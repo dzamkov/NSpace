@@ -13,7 +13,10 @@ module NSpaceCode.Expression (
 	boundExpVars,
 	remapExpVars,
 	mapExps,
-	createFunc
+	createFunc,
+	SpecialVarSet(..),
+	TruthSet(..),
+	createProgram
 ) where 
 
 import qualified Data.Set as Set
@@ -26,7 +29,7 @@ import qualified Data.Map as Map
 
 data Expression		=	
 	Variable Int |
-	Function Expression Expression
+	Function Expression Expression deriving (Show, Ord, Eq)
 	
 -- Creates a variable from a variable index.
 	
@@ -84,4 +87,21 @@ mapExps a b x		=	remapExpVars a ((Map.!) (snd fullmap))
 createFunc			::	Expression -> Expression -> Expression
 createFunc x y		=	Function x y
 												
-												
+-- Programs are defined by a special variable set and a true expression. A truth
+-- set contains expressions that are all true.
+							
+data SpecialVarSet	=	SpecialVarSet {
+	getTrueVar		::	Int,
+	getFalseVar		::	Int,
+	getEqualsVar	::	Int,
+	getAndVar		::	Int,
+	getIFTVar		::	Int } deriving (Show, Eq)
+	
+data TruthSet	=	TruthSet {
+	getTrueExpressions	::	Set.Set Expression,
+	getSpecialVarSet	::	SpecialVarSet }
+	
+-- Creates a program from a true expression and special var set.
+	
+createProgram		::	Expression -> SpecialVarSet -> TruthSet
+createProgram x y	=	TruthSet (Set.singleton x) y
