@@ -31,3 +31,10 @@ exp6	=	createFunc (createFunc var4 var6) var7			-- x + 7
 exp7	=	createFunc (createFunc var4 var8) var9			-- 3 + 9
 exp8	=	createFunc (createFunc var3 exp6) exp7			-- x + 7 = 3 + 9
 exp9	=	createFunc (createFunc var5 exp5) exp8			-- forall a, b, c (a + b = c) = (a = c - b) and x + 7 = 3 + 9 
+
+instance Reference Integer where
+	equalRef		=	3
+	andRef		=	5
+	orRef			=	11
+	iteRef		=	12
+	notRef		=	13
