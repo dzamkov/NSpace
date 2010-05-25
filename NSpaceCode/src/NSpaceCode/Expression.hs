@@ -8,6 +8,7 @@
 
 module NSpaceCode.Expression (
 	Expression,
+	Reference(..),
 	createVar,
 	createFunc,
 	createForAll,
@@ -28,7 +29,17 @@ import qualified Data.Map as Map
 data Expression a		=	
 	Variable a |
 	Function (Expression a) (Expression a) |
-	ForAll (Set.Set a) (Set.Set a) (Expression a) deriving (Show, Eq)
+	ForAll (Set.Set a) (Expression a) |
+	Scope (Map.Map a a) (Expression a) deriving (Show, Eq)
+	
+-- Data that uniquely identifies a particular variable.
+	
+class (Eq a) => Reference a where
+	equalRef		::	a	-- Reference to the equal function ((eq a) b) = (a = b)
+	andRef		:: a	-- Reference to the and function
+	orRef			::	a	-- Reference to the or function
+	iteRef		::	a	-- Reference to the if then else function
+	notRef		::	a	-- Reference to the not function
 	
 -- Creates a new variable expression.
 	
@@ -45,21 +56,24 @@ createFunc x y		=	Function x y
 -- Creates a special forall expression which is true if and only if the
 -- inner expression is true for all possible values of the specified variables.
 											
-createForAll			:: (Ord a) => (Set.Set a) -> (Set.Set a) -> Expression a -> Expression a
-createForAll x y z	=	ForAll x y z
+createForAll			:: (Ord a) => (Set.Set a) -> Expression a -> Expression a
+createForAll x y		=	ForAll x y
 												
 -- Gets the set of variables bound by an expression.
 												
 getBoundVars						::	(Ord a) => Expression a -> (Set.Set a)
 getBoundVars (Variable x)		=	Set.singleton x
 getBoundVars (Function x y)	=	Set.union (getBoundVars x) (getBoundVars y)
-getBoundVars (ForAll x y z)	=	y
+getBoundVars (ForAll x y)		=	(getBoundVars y)
+getBoundVars (Scope x y)		=	Map.foldrWithKey (\k a b -> if Set.member a innerbound then Set.insert k b else b) (Set.empty) x
+										where
+											innerbound = (getBoundVars y)
 
 -- Given a forall expression, this will return all the dynamic
 -- variables defined by it.
 
 getDynamicVars							::	(Ord a) => Expression a -> (Set.Set a) 
-getDynamicVars (ForAll x _ _)		=	x
+getDynamicVars (ForAll x _)		=	x
 getDynamicVars _						=	Set.empty
 												
 -- Replaces a variable in an expression.

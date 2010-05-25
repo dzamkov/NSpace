@@ -26,7 +26,7 @@ exp1	=	createFunc (createFunc var3 exp0) var2			-- a + b = c
 exp2	=	createFunc (createFunc var10 var2) var1		-- c - b
 exp3	=	createFunc (createFunc var3 var0) exp2			-- a = c - b
 exp4	=	createFunc (createFunc var3 exp1) exp3			-- (a + b = c) = (a = c - b)
-exp5	=	createForAll (Set.fromList [0, 1, 2]) (Set.fromList [3, 4, 10]) exp4	-- forall a, b, c (a + b = c) = (a = c - b)
+exp5	=	createForAll (Set.fromList [0, 1, 2]) exp4	-- forall a, b, c (a + b = c) = (a = c - b)
 exp6	=	createFunc (createFunc var4 var6) var7			-- x + 7
 exp7	=	createFunc (createFunc var4 var8) var9			-- 3 + 9
 exp8	=	createFunc (createFunc var3 exp6) exp7			-- x + 7 = 3 + 9
