@@ -12,14 +12,13 @@ module NSpaceCode.Expression (
 	Pattern(..),
 	PatternReference(..),
 	patternMatch,
+	toPattern,
 	createVar,
 	createFunc,
 	createForAll,
 	createScope,
 	getBoundVars,
 	getDynamicVars,
-	TruthSet(..),
-	createTruthSet
 ) where 
 
 import qualified Data.Set as Set
@@ -39,17 +38,18 @@ data Expression a		=
 -- A pattern of an expression that can match a variety of expressions based
 -- on a template expression.
 	
-data Pattern a b		=
-	Pattern (Expression (PatternReference a b)) deriving (Show, Ord, Eq)
+type Pattern a b		=	Expression (PatternReference a b)
 	
 -- Data that uniquely identifies a particular variable.
 	
-class (Eq a) => Reference a where
+class (Eq a, Ord a) => Reference a where
 	equalRef		::	a	-- Reference to the equal function ((eq a) b) = (a = b)
 	andRef		:: a	-- Reference to the and function
 	orRef			::	a	-- Reference to the or function
 	iteRef		::	a	-- Reference to the if then else function
 	notRef		::	a	-- Reference to the not function
+	trueRef		::	a	-- Reference to true constant
+	falseRef		::	a	-- Reference to false constant
 	
 -- Reference type used in patterns. A definite reference matches only the
 -- specified reference. A flexible reference matches any reference.
@@ -58,21 +58,31 @@ data PatternReference a b		=
 	Definite a |
 	Flexible b deriving (Show, Ord, Eq)
 	
-instance (Reference a, Eq b) => Reference (PatternReference a b) where
+instance (Reference a, Ord a, Ord b, Eq b) => Reference (PatternReference a b) where
 	equalRef		=	(Definite equalRef)
  	andRef		=	(Definite andRef)
 	orRef			=	(Definite orRef)
 	iteRef		=	(Definite iteRef)
 	notRef		=	(Definite notRef)
+	trueRef		=	(Definite trueRef)
+	falseRef		=	(Definite falseRef)
+	
+-- Converts an expression to a pattern.
+
+toPattern						:: (Ord a, Ord b) => Expression a -> Pattern a b
+toPattern (Variable x)		=	Variable (Definite x)
+toPattern (Function x y)	=	Function (toPattern x) (toPattern y)
+toPattern (ForAll x y)		=	ForAll (Set.map (\z -> Definite z) x) (toPattern y)
+toPattern (Scope x y)		=	Scope (Set.map (\z -> Definite z) x) (toPattern y) 
 	
 -- Matches a pattern to an expression and fills in the flexible values
 -- if the match was sucsessful.
 	
 patternMatch	::	(Ord b) => Pattern a b -> Expression a -> Maybe (Map.Map b (Expression a))
 
-patternMatch (Pattern (Variable (Flexible x))) y		=	Just (Map.singleton x y)	
+patternMatch (Variable (Flexible x)) y		=	Just (Map.singleton x y)	
 
-patternMatch (Pattern (Function i h)) (Function j k)	=	case (patternMatch (Pattern i) j, patternMatch (Pattern h) k) of
+patternMatch (Function i h) (Function j k)	=	case (patternMatch i j, patternMatch h k) of
 		(Just x, Just y)		->		Just (Map.union x y)
 		_							->		Nothing
 		
@@ -121,12 +131,3 @@ getBoundVars (Scope x y)		=	Set.difference (getBoundVars y) x
 getDynamicVars							::	(Ord a) => Expression a -> (Set.Set a) 
 getDynamicVars (ForAll x _)		=	x
 getDynamicVars _						=	Set.empty
-																
--- A set of true expressions that relates variables.
-														
-data TruthSet a	=	TruthSet (Set.Set (Expression a))
-
--- Creates a truth set from a single true statement.
-
-createTruthSet		::	(Ord a) => Expression a -> TruthSet a
-createTruthSet x	=	TruthSet (Set.singleton x) 

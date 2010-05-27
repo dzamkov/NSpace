@@ -8,9 +8,10 @@
 
 import qualified Data.Set as Set
 import NSpaceCode.Expression
+import NSpaceCode.Value
 
 -- Test exp:	forall a, b, c (a + b = c) = (a = c - b) and x + 7 = 3 + 9
-var0	=	createVar 0 	-- a
+var0	=	createVar 0	:: Expression Integer 	-- a
 var1	=	createVar 1 	-- b
 var2	=	createVar 2 	-- c
 var3	=	createVar 3 	-- =
@@ -38,3 +39,8 @@ instance Reference Integer where
 	orRef			=	11
 	iteRef		=	12
 	notRef		=	13
+	trueRef		=	14
+	falseRef		=	15
+	
+truevalue		=	createTrueValue exp9							-- assume big expression is true
+valx				=	getExpressionValue truevalue (var6)		-- solve for x
