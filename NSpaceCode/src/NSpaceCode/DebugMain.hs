@@ -11,5 +11,5 @@ import qualified Data.Set as Set
 import NSpaceCode.Expression
 import NSpaceCode.Value
 
-testExp			=	Definite (Function Variable Variable) (Map.fromList [(0, "lol"), (1, "omg")])
-abstractExp		=	Definite (Function Variable Variable) (Map.empty)
+testExp			=	funcDefinite (varDefinite "lol") (varDefinite "wtf")
+abstractExp		=	funcDefinite (abstractDefinite) (abstractDefinite)

@@ -10,6 +10,9 @@ module NSpaceCode.Expression (
 	Expression(..),
 	getBoundVars,
 	Definite(..),
+	varDefinite,
+	abstractDefinite,
+	funcDefinite,
 	patternMatch,
 	splitDefiniteFunction
 ) where 
@@ -58,6 +61,29 @@ splitDefiniteFunction (Definite (Function x y) m)	=	res
 		xmap	=	Map.filterWithKey (\k _ -> k < xsize) m
 		ymap	=	Map.fromList (map (\(k, v) -> (k - xsize, v)) (Map.toList $ Map.filterWithKey (\k _ -> k >= xsize) m))
 		res	=	(Definite x xmap, Definite y ymap)
+		
+-- Takes a value and creates a definite variable for the value
+		
+varDefinite			:: a -> Definite a
+varDefinite x		=	Definite (Variable) (Map.singleton 0 x)
+
+-- Creates an abstract variable, for use in pattern matching
+
+abstractDefinite		::	Definite a
+abstractDefinite		=	Definite (Variable) (Map.empty)
+
+-- Combines two variable maps given the size of the first variable set.
+
+combineVarMap			::	Int -> (Map.Map Int a) -> (Map.Map Int a) -> (Map.Map Int a)
+combineVarMap s x y	=	Map.union x (Map.fromList $ (map (\(k, v) -> (k + s, v)) (Map.toList y)))
+
+-- Takes two definite expressions and applies them to each other to
+-- create a function
+
+funcDefinite	::	Definite a -> Definite a -> Definite a
+funcDefinite (Definite se sm) (Definite pe pm)	=	res
+	where
+		res	=	Definite (Function se pe) (combineVarMap (getBoundVars se) sm pm)
 	
 -- Given a definite expression and a generalized expression (one with less defined variables), this will
 -- try to match the pattern expression with the first expression. If sucsessful, the result will be
@@ -74,11 +100,11 @@ patternMatch (Definite se sm) (Definite (Variable) pm)	=	res
 												else	 Nothing
 							_				->	Nothing
 					else	Just (Map.singleton 0 (Definite se sm))
-patternMatch (Definite (Function sef sea) sm) (Definite (Function pef pea) pm)	= res
+patternMatch (Definite (Function sef sea) sm) (Definite (Function pef pea) pm)	=	res
 	where
-		sizepef	=	getBoundVars pef
+		sizesef	=	getBoundVars sef
 		splits	=	splitDefiniteFunction (Definite (Function sef sea) sm)
 		splitp	=	splitDefiniteFunction (Definite (Function pef pea) pm)
 		res		=	case (patternMatch (fst splits) (fst splitp), patternMatch (snd splits) (snd splitp)) of
-			(Just nsm, Just npm)		->	Just (Map.union nsm (Map.fromList $ (map (\(k, v) -> (k + sizepef, v)) (Map.toList npm))))
+			(Just nsm, Just npm)		->	Just (combineVarMap sizesef nsm npm)
 			_								-> Nothing
