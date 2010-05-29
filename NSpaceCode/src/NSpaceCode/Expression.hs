@@ -14,8 +14,9 @@ module NSpaceCode.Expression (
 	abstractDefinite,
 	funcDefinite,
 	foldDefinite,
+	unfoldDefinite,
 	patternMatch,
-	splitDefiniteFunction
+	splitDefinite
 ) where 
 
 import qualified Data.Set as Set
@@ -55,13 +56,36 @@ data Definite a		=
 -- Splits a definite of a function expression into the function
 -- and argument parts.
 	
-splitDefiniteFunction	::	Definite a -> (Definite a, Definite a)
-splitDefiniteFunction (Definite (Function x y) m)	=	res
+splitDefinite	::	Definite a -> (Definite a, Definite a)
+splitDefinite (Definite (Function x y) m)	=	res
 	where
 		xsize	=	getBoundVars x
 		xmap	=	Map.filterWithKey (\k _ -> k < xsize) m
 		ymap	=	Map.fromList (map (\(k, v) -> (k - xsize, v)) (Map.toList $ Map.filterWithKey (\k _ -> k >= xsize) m))
 		res	=	(Definite x xmap, Definite y ymap)
+		
+-- Takes a definite made from a fold and gets the expression part
+-- of the fold.
+		
+unfoldDefinite		::	Definite a -> Definite a
+unfoldDefinite (Definite (Fold s e) m)	=	res
+	where
+		size			=	getBoundVars (Fold s e)
+		val			=	Map.lookup (size - 1) m
+		foldfunc				::	Maybe b -> (Map.Map Int b) -> Int -> (Int, [(Int, b)]) -> (Int, [(Int, b)])
+		foldfunc v l x (y, z)	=	if 	Set.member x s
+											then	case v of
+														(Just w)		->	(y, (x, w):z)
+														Nothing		->	(y, z)
+											else	case Map.lookup y l of
+														(Just w)		->	(y + 1, (x, w):z)
+														Nothing		->	(y + 1, z)
+		res			=	Definite e (Map.fromList $ snd $ foldr (foldfunc val m) (0, []) [0..(getBoundVars e - 1)])
+		
+-- Adds some variables to the variable map in a definite
+		
+unionDefinite							::	Definite a -> (Map.Map Int a) -> Definite a
+unionDefinite (Definite e m) y	=	Definite e (Map.union m y)
 		
 -- Takes a value and creates a definite variable for the value
 		
@@ -96,6 +120,11 @@ removeVarMap m s		=	Map.fromList $ snd $ foldr foldfunc (0, []) (Map.toList m)
 											then	(y + 1, z)
 											else	(y, (w - y, x):z)
 		
+-- Gets the variable map for a definite
+
+getVarMap						::	Definite a -> (Map.Map Int a)
+getVarMap (Definite _ m)	=	m
+
 -- Creates a definite where the specified variables in the first definite are equal to
 -- the same value at all times. The resulting variable is moved to the end of the variable
 -- list. In order for the fold to be sucsessful, all the specified variables should have the
@@ -132,8 +161,8 @@ patternMatch (Definite se sm) (Definite (Variable) pm)	=	res
 patternMatch (Definite (Function sef sea) sm) (Definite (Function pef pea) pm)	=	res
 	where
 		sizesef	=	getBoundVars sef
-		splits	=	splitDefiniteFunction (Definite (Function sef sea) sm)
-		splitp	=	splitDefiniteFunction (Definite (Function pef pea) pm)
+		splits	=	splitDefinite (Definite (Function sef sea) sm)
+		splitp	=	splitDefinite (Definite (Function pef pea) pm)
 		res		=	case (patternMatch (fst splits) (fst splitp), patternMatch (snd splits) (snd splitp)) of
 			(Just nsm, Just npm)		->	Just (combineVarMap sizesef nsm npm)
 			_								-> Nothing
