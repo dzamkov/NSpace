@@ -16,7 +16,9 @@ module NSpaceCode.Expression (
 	foldDefinite,
 	unfoldDefinite,
 	patternMatch,
-	splitDefinite
+	splitDefinite,
+	convertDefinite,
+	unionDefinite
 ) where 
 
 import qualified Data.Set as Set
@@ -142,11 +144,18 @@ foldDefinite (Definite e m) s		=	res
 		res	=	if		(Set.size s) > 0
 					then	Definite (Fold s e) nmap
 					else 	undefined
+					
+-- Cant really explain this...
+					
+convertDefinite							:: Definite a -> Definite (Definite a)
+convertDefinite (Definite e m)		=	Definite e (Map.map (\x -> varDefinite x) m)
 	
 -- Given a definite expression and a generalized expression (one with less defined variables), this will
 -- try to match the pattern expression with the first expression. If sucsessful, the result will be
 -- a map of variables in the pattern expression matched with the concrete value that have in the first
 -- expression.
+
+-- Note: if there are any abstract variables in the searched expression, behavior is undefinied
 	
 patternMatch	::	(Eq a, Ord a) => Definite a -> Definite a -> Maybe (Map.Map Int (Definite a))
 patternMatch (Definite se sm) (Definite (Variable) pm)	=	res
@@ -166,3 +175,19 @@ patternMatch (Definite (Function sef sea) sm) (Definite (Function pef pea) pm)	=
 		res		=	case (patternMatch (fst splits) (fst splitp), patternMatch (snd splits) (snd splitp)) of
 			(Just nsm, Just npm)		->	Just (combineVarMap sizesef nsm npm)
 			_								-> Nothing
+patternMatch s p@(Definite (Fold pfs pe) pm)	=	res
+	where
+		unp	=	unfoldDefinite p
+		emat	=	patternMatch s unp
+		res	=	case emat of
+						(Just w)	->	if		unfoldDefinite fpfilled == pfilled
+										then	Just (Map.difference (getVarMap fpfilled) pm)
+										else	Nothing
+							where
+								pfilled	=	(unionDefinite (convertDefinite unp) w)
+								fpfilled	=	foldDefinite pfilled pfs
+						Nothing	->	Nothing
+patternMatch s@(Definite (Fold sfs se) sm) p	=	res
+	where
+		res	=	patternMatch (unfoldDefinite s) p
+		
