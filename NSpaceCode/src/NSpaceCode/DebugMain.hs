@@ -13,3 +13,5 @@ import NSpaceCode.Value
 
 testExp			=	funcDefinite (varDefinite "lol") (varDefinite "wtf")
 abstractExp		=	funcDefinite (abstractDefinite) (abstractDefinite)
+selfApplyTestExp		=	foldDefinite (funcDefinite (varDefinite "rofl") (varDefinite "rofl")) (Set.fromList [0, 1])
+selfApplyAbstractExp	=	foldDefinite (funcDefinite (abstractDefinite) (abstractDefinite)) (Set.fromList [0, 1])

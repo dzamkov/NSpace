@@ -13,6 +13,7 @@ module NSpaceCode.Expression (
 	varDefinite,
 	abstractDefinite,
 	funcDefinite,
+	foldDefinite,
 	patternMatch,
 	splitDefiniteFunction
 ) where 
@@ -84,6 +85,34 @@ funcDefinite	::	Definite a -> Definite a -> Definite a
 funcDefinite (Definite se sm) (Definite pe pm)	=	res
 	where
 		res	=	Definite (Function se pe) (combineVarMap (getBoundVars se) sm pm)
+		
+-- Removes the specified variables from a variable map and moves the variables back as needed
+
+removeVarMap			::	(Map.Map Int a) -> (Set.Set Int) -> (Map.Map Int a)
+removeVarMap m s		=	Map.fromList $ snd $ foldr foldfunc (0, []) (Map.toList m)
+	where
+		foldfunc						::	(Int, a) -> (Int, [(Int, a)]) -> (Int, [(Int, a)])
+		foldfunc (w, x) (y, z)	=	if		Set.member w s
+											then	(y + 1, z)
+											else	(y, (w - y, x):z)
+		
+-- Creates a definite where the specified variables in the first definite are equal to
+-- the same value at all times. The resulting variable is moved to the end of the variable
+-- list. In order for the fold to be sucsessful, all the specified variables should have the
+-- same value.
+		
+foldDefinite	::	Definite a -> (Set.Set Int) -> Definite a
+foldDefinite (Definite e m) s		=	res
+	where
+		size	=	getBoundVars e
+		nval	=	Map.lookup (Set.findMin s) m
+		pmap	=	removeVarMap m s
+		nmap	=	case nval of
+						Just x		->	Map.insert (size - (Set.size s)) x pmap
+						Nothing		->	pmap
+		res	=	if		(Set.size s) > 0
+					then	Definite (Fold s e) nmap
+					else 	undefined
 	
 -- Given a definite expression and a generalized expression (one with less defined variables), this will
 -- try to match the pattern expression with the first expression. If sucsessful, the result will be
