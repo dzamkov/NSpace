@@ -10,7 +10,8 @@ module NSpaceCode.Expression (
 	Expression(..),
 	getBoundVars,
 	Definite(..),
-	patternMatch
+	patternMatch,
+	splitDefiniteFunction
 ) where 
 
 import qualified Data.Set as Set
@@ -47,17 +48,37 @@ getBoundVars (Scope x y)		=	(getBoundVars y) - (Set.size x)
 data Definite a		=
 	Definite Expression (Map.Map Int a) deriving (Show, Ord, Eq)
 	
+-- Splits a definite of a function expression into the function
+-- and argument parts.
+	
+splitDefiniteFunction	::	Definite a -> (Definite a, Definite a)
+splitDefiniteFunction (Definite (Function x y) m)	=	res
+	where
+		xsize	=	getBoundVars x
+		xmap	=	Map.filterWithKey (\k _ -> k < xsize) m
+		ymap	=	Map.fromList (map (\(k, v) -> (k - xsize, v)) (Map.toList $ Map.filterWithKey (\k _ -> k >= xsize) m))
+		res	=	(Definite x xmap, Definite y ymap)
+	
 -- Given a definite expression and a generalized expression (one with less defined variables), this will
 -- try to match the pattern expression with the first expression. If sucsessful, the result will be
 -- a map of variables in the pattern expression matched with the concrete value that have in the first
 -- expression.
 	
 patternMatch	::	(Eq a, Ord a) => Definite a -> Definite a -> Maybe (Map.Map Int (Definite a))
-patternMatch (Definite se sm) (Definite (Variable) pm)	=	if Map.member 0 pm
-																				then	case se of
-																						(Variable)	->	if 	(Map.lookup 0 sm) == (Map.lookup 0 pm)
-																											then 	(Just Map.empty)
-																											else	 Nothing
-																						_				->	Nothing
-																				else	Just (Map.singleton 0 (Definite se sm))
-																						
+patternMatch (Definite se sm) (Definite (Variable) pm)	=	res
+	where
+		res	=	if Map.member 0 pm
+					then	case se of
+							(Variable)	->	if 	(Map.lookup 0 sm) == (Map.lookup 0 pm)
+												then 	(Just Map.empty)
+												else	 Nothing
+							_				->	Nothing
+					else	Just (Map.singleton 0 (Definite se sm))
+patternMatch (Definite (Function sef sea) sm) (Definite (Function pef pea) pm)	= res
+	where
+		sizepef	=	getBoundVars pef
+		splits	=	splitDefiniteFunction (Definite (Function sef sea) sm)
+		splitp	=	splitDefiniteFunction (Definite (Function pef pea) pm)
+		res		=	case (patternMatch (fst splits) (fst splitp), patternMatch (snd splits) (snd splitp)) of
+			(Just nsm, Just npm)		->	Just (Map.union nsm (Map.fromList $ (map (\(k, v) -> (k + sizepef, v)) (Map.toList npm))))
+			_								-> Nothing
