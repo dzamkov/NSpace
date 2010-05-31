@@ -12,11 +12,4 @@ import Data.Maybe
 import NSpaceCode.Expression
 import NSpaceCode.Value
 
-testExp			=	funcDefinite (varDefinite "lol") (varDefinite "wtf")
-abstractExp		=	funcDefinite (abstractDefinite) (abstractDefinite)
-selfApplyTestExp		=	foldDefinite (funcDefinite (varDefinite "rofl") (varDefinite "rofl")) (Set.fromList [0, 1])
-selfApplyAbstractExp	=	foldDefinite (funcDefinite (abstractDefinite) (abstractDefinite)) (Set.fromList [0, 1])
-complexTestExp	=	foldDefinite (funcDefinite (funcDefinite (varDefinite "rofl") (varDefinite "omg")) (varDefinite "rofl")) (Set.fromList [0, 2])
-
-v		=	patternMatch (unfoldDefinite selfApplyTestExp) (unfoldDefinite selfApplyAbstractExp)
-r		=	patternMatch selfApplyTestExp selfApplyAbstractExp
+truegr	=	trueGroup :: SimpleGroup String

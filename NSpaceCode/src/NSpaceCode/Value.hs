@@ -7,64 +7,95 @@
 -----------------------------------------------------------------------------
 
 module NSpaceCode.Value (
-	LogicOperationSet(..),
-	Statement(..),
-	getConclusion,
+	Constant(..),
 	Value(..),
-	createTrueValue
+	Group(..),
+	SimpleGroup(..),
+	SimpleValue(..),
+	trueGroup
 ) where 
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import NSpaceCode.Expression
 
--- Contains a map of known logic operations for a specified type.
+-- A type usable as a constant
+	
+class (Eq a) => Constant a where
+	equalCon		::	a
+	iteCon		:: a
+	andCon		:: a
+	orCon			:: a
+	xorCon		::	a
+	trueCon		::	a
+	falseCon		::	a
+	
+instance Constant [Char] where
+	equalCon		=	"="
+	iteCon		=	"ite"
+	andCon		=	"and"
+	orCon			=	"or"
+	xorCon		=	"xor"
+	trueCon		=	"true"
+	falseCon		=	"false"
 
-data LogicOperationSet a 	=	LogicOperationSet {
-	equalOp	::	a,
-	andOp		::	a,
-	orOp		::	a,
-	xorOp		::	a,
-	iteOp		::	a,
-	trueOp	::	a,
-	falseOp	::	a}
-	
--- An expression known to be true in a system.
-	
-data Statement a	=
-	Axiom (Definite a) |
-	Deduction (Definite a) (Statement a) |
-	Substitution (Definite a) (Statement a) (Statement a)
-	
--- Gets the conclusion part of a statement, which is a true definite expression
+-- A representation of any value that can be created from the application of constants.
 
-getConclusion								::	Statement a -> Definite a
-getConclusion (Axiom x)					=	x
-getConclusion (Deduction x _)			=	x
-getConclusion (Substitution x _ _)	=	x
+class (Constant b) => Value a b | a -> b where 
+	isTrue				::	a -> Bool	
+	valueVariable		::	a -> Set.Set b			-- Set of known single constants that equal that value exactly
+	
+-- Group of related values.
+	
+-- Filtering filters the values in the group based on related values within the group.
+	
+class (Value b c) => Group a b c | a -> b where
+	groupSize				::	a -> Int
+	groupValue				:: a -> Int -> b
+	groupFilterValue		::	a -> Int -> c -> a
+	groupFilterFunction	::	a -> Int -> a
+	groupFilterFold		:: a -> (Set.Set Int) -> a		-- Filters values such that the specified values are equal
+	groupIgnore				::	a -> Int -> a 					--	Removes a value from the group
+	groupMerge				::	a -> a -> a						-- Appends one group to another
+	
+-- Simple unoptimized group
 
--- A value represented by an infinite set of expressions that are equivelant to
--- each other. B is the type of variables in the expressions for the value. 
+data SimpleGroup a	=
+	TrueGroup |
+	EmptyGroup Int
 
-class Value a b where 
-	matchValue			::	a -> Definite b -> Int -> a	-- Given a pattern, this finds a value for the specified abstract variable in the pattenr.
-	singleVariable		::	a -> Maybe b						-- Tries getting a single variable for the value
+data SimpleValue a	=
+	TrueValue
 	
--- Creates a value from a true definite expression.
+instance (Constant a) => Value (SimpleValue a) a where
+	isTrue (TrueValue)				=	True
+	valueVariable (TrueValue)		=	undefined
 	
-createTrueValue		::	Definite a -> LogicOperationSet a -> StatementValue a
-createTrueValue x y	=	StatementValue (StatementSet (Set.empty) (Set.singleton $ Axiom x) y) (varDefinite $ trueOp y)
-
--- Set of statements and logical rules governing them
-
-data StatementSet a	=	StatementSet {
-	getClosedSet	::	Set.Set (Statement a),		--	Fully processed statements
-	getOpenSet		::	Set.Set (Statement a), 		-- Statements, whose derived statements are still unknown
-	getLogic			:: LogicOperationSet a }		-- Logical operations
+instance (Constant a) => Group (SimpleGroup a) (SimpleValue a) a where
+	groupSize (TrueGroup)						=	1
+	groupSize (EmptyGroup s)					=	s
 	
--- Value made by statements
+	groupValue (TrueGroup) _					=	TrueValue
+	groupValue (EmptyGroup _) _				=	undefined
 	
-data StatementValue a	=	StatementValue {
-	getStatementSet		::	StatementSet a,	-- Statements about system
-	getValueExpression	::	Definite a }		-- Expression of the value in system
+	groupFilterValue (TrueGroup) _ y			= 	if 	y == trueCon
+															then	TrueGroup
+															else	EmptyGroup 1
+	groupFilterValue (EmptyGroup _) _ _		=	undefined
 	
+	
+	groupFilterFunction (TrueGroup) _ 		=	undefined
+	groupFilterFunction (EmptyGroup _) _	=	undefined
+	
+	groupFilterFold (TrueGroup) _				=	undefined
+	groupFilterFold (EmptyGroup _) _			=	undefined
+	
+	groupIgnore (TrueGroup) _					=	undefined
+	groupIgnore (EmptyGroup s) _				=	EmptyGroup (s - 1)
+	
+	groupMerge _ _									=	undefined
+	
+-- A group with a single true value.
+	
+trueGroup		::	SimpleGroup a
+trueGroup		=	TrueGroup
