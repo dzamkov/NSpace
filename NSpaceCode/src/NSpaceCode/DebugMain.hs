@@ -12,4 +12,4 @@ import Data.Maybe
 import NSpaceCode.Expression
 import NSpaceCode.Value
 
-truegr	=	trueGroup :: SimpleGroup String
+true	=	tableFilterValue (tableFree :: SimpleTable String) 0 "true"
