@@ -27,6 +27,7 @@ class (Eq a) => Constant a where
 	andCon		:: a
 	orCon			:: a
 	xorCon		::	a
+	notCon		::	a
 	trueCon		::	a
 	falseCon		::	a
 	
@@ -36,6 +37,7 @@ instance Constant [Char] where
 	andCon		=	"and"
 	orCon			=	"or"
 	xorCon		=	"xor"
+	notCon		=	"not"
 	trueCon		=	"true"
 	falseCon		=	"false"
 
@@ -43,7 +45,7 @@ instance Constant [Char] where
 
 class (Constant b) => Value a b | a -> b where 
 	isTrue				::	a -> Bool	
-	valueVariable		::	a -> Set.Set b			-- Set of known single constants that equal that value exactly
+	valueConstant		::	a -> Set.Set b			-- Set of known single constants that equal that value exactly
 	
 -- Group of related values.
 	
@@ -61,41 +63,50 @@ class (Value b c) => Group a b c | a -> b where
 -- Simple unoptimized group
 
 data SimpleGroup a	=
-	TrueGroup |
+	ConstGroup a |
 	EmptyGroup Int
-
+	
 data SimpleValue a	=
-	TrueValue
+	SimpleValue Bool (Set.Set a)
 	
 instance (Constant a) => Value (SimpleValue a) a where
-	isTrue (TrueValue)				=	True
-	valueVariable (TrueValue)		=	undefined
+	isTrue (SimpleValue x _)				=	x
+	valueConstant (SimpleValue _ x)		=	x
 	
 instance (Constant a) => Group (SimpleGroup a) (SimpleValue a) a where
-	groupSize (TrueGroup)						=	1
-	groupSize (EmptyGroup s)					=	s
-	
-	groupValue (TrueGroup) _					=	TrueValue
-	groupValue (EmptyGroup _) _				=	undefined
-	
-	groupFilterValue (TrueGroup) _ y			= 	if 	y == trueCon
-															then	TrueGroup
-															else	EmptyGroup 1
-	groupFilterValue (EmptyGroup _) _ _		=	undefined
+	groupSize (ConstGroup _)						=	1
+	groupSize (EmptyGroup s)						=	s
 	
 	
-	groupFilterFunction (TrueGroup) _ 		=	undefined
-	groupFilterFunction (EmptyGroup _) _	=	undefined
 	
-	groupFilterFold (TrueGroup) _				=	undefined
-	groupFilterFold (EmptyGroup _) _			=	undefined
+	groupValue (ConstGroup c) _					=	SimpleValue (c == trueCon) (Set.singleton c)
+	groupValue (EmptyGroup _) _					=	undefined
 	
-	groupIgnore (TrueGroup) _					=	undefined
-	groupIgnore (EmptyGroup s) _				=	EmptyGroup (s - 1)
 	
-	groupMerge _ _									=	undefined
+	
+	groupFilterValue (ConstGroup c) _ y			= 	if 	y == c
+																then	ConstGroup c
+																else	EmptyGroup 1
+	groupFilterValue (EmptyGroup _) _ _			=	undefined
+	
+	
+	groupFilterFunction (EmptyGroup s) _		=	EmptyGroup (s + 1)
+	groupFilterFunction x y							=	undefined
+	
+	
+	groupFilterFold (ConstGroup _) _				=	undefined
+	groupFilterFold (EmptyGroup _) _				=	undefined
+	
+	
+	
+	groupIgnore (ConstGroup _) _					=	undefined
+	groupIgnore (EmptyGroup s) _					=	EmptyGroup (s - 1)
+	
+	
+	
+	groupMerge _ _										=	undefined
 	
 -- A group with a single true value.
 	
-trueGroup		::	SimpleGroup a
-trueGroup		=	TrueGroup
+trueGroup		::	(Constant a) => SimpleGroup a
+trueGroup		=	ConstGroup trueCon
