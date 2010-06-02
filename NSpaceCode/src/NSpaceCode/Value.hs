@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 
 module NSpaceCode.Value (
-	Constant(..),
+	Cons(..),
 	Value(..),
 	Table(..),
 	SimpleTable(..),
@@ -20,7 +20,7 @@ import NSpaceCode.Expression
 
 -- A type usable as a constant
 	
-class (Eq a) => Constant a where
+class (Eq a) => Cons a where
 	equalCon		::	a
 	iteCon		:: a
 	andCon		:: a
@@ -30,7 +30,7 @@ class (Eq a) => Constant a where
 	trueCon		::	a
 	falseCon		::	a
 	
-instance Constant [Char] where
+instance Cons [Char] where
 	equalCon		=	"="
 	iteCon		=	"ite"
 	andCon		=	"and"
@@ -42,7 +42,7 @@ instance Constant [Char] where
 
 -- A representation of any value that can be created from the application of constants.
 
-class (Constant b) => Value a b | a -> b where 
+class (Cons b) => Value a b | a -> b where 
 	isTrue				::	a -> Bool	
 	valueConstant		::	a -> Maybe b		-- Constant that evaluates to this value perfectly, if one exists and is known
 	
@@ -54,23 +54,12 @@ class (Value b c) => Table a b c | a -> b where
 	tableFree				::	a								-- Table that contains all possible values in one column
 	tableColumns			::	a -> Int
 	tableEmpty				::	a -> Bool
-	tableValue				::	a -> Int -> Maybe b		-- Gets a value at the column, if only one row exists
-	tableFilterValue		::	a -> Int -> c -> a
-	tableFilterFunction	::	a -> Int -> a
-	tableFilterFold		::	a -> (Set.Set Int) -> a
-	tableFilterForall		::	a -> Int -> a -> Int -> a
+	tableValue				::	a -> Maybe [b]				--	Gets the values of the table if only one row exists
+	tableFilter				::	a -> Int -> c -> a		--	Requires a column to have a certain value, removes the column
+	tableApply				::	a -> Int -> Int -> a		--	Applies a column to another column as a function
+	tableJoin				:: a -> Int -> Int -> a		--	Remove all rows where the specified columns are different
 	tableIgnore				::	a -> Int -> a
 	tableMerge				::	a -> a -> a
-
--- Filters can be used to narrow down the possible values in a table. Filtering by function
--- will remove all rows where the specified column can not be expressed as a function application
--- of one value onto another. The specified column is ignored and the function and arguments are prepended
--- as columns to the begining of the table. Filtering by value will remove the specified column and all rows
--- where that column is not of the specified value. Filtering by fold will remove all rows where the specified
--- columns are different. Filtering by forall, perhaps the most complicated filter, works like filter by value on
--- the first table at the specified column, it filters by true if and only if the specified column of the other 
--- provided table contains all possible values and all other columns in the table are congruent at all rows. The
--- values of these extra columns are prepended to the first table.
 	
 
 -- A simple unoptimizied implemementation of a value
@@ -78,7 +67,7 @@ class (Value b c) => Table a b c | a -> b where
 data SimpleValue a =
 	ConstantValue a deriving(Show)
 
-instance (Constant a) => Value (SimpleValue a) a where
+instance (Cons a) => Value (SimpleValue a) a where
 	isTrue (ConstantValue x)			=	x == trueCon
 	valueConstant (ConstantValue x)	=	Just x
 
@@ -89,7 +78,7 @@ data SimpleTable a =
 	FreeTable |
 	ConstantTable a deriving(Show)
 	
-instance (Constant a) => Table (SimpleTable a) (SimpleValue a) a where
+instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableFree	=	FreeTable
 	
 	tableColumns (EmptyTable x)		=	x
@@ -100,27 +89,9 @@ instance (Constant a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableEmpty (FreeTable)			=	False
 	tableEmpty (ConstantTable _)	=	False
 	
-	tableValue (EmptyTable _) _		=	Nothing
-	tableValue (FreeTable) _			=	Nothing
-	tableValue (ConstantTable x) _	=	Just (ConstantValue x)
-	
-	tableFilterValue (EmptyTable x) _ _		=	EmptyTable (x - 1)
-	tableFilterValue (FreeTable) _ c			=	ConstantTable c
-	tableFilterValue (ConstantTable x) _ v	=	res
-		where
-			res	=	if		v == x
-						then	ConstantTable x
-						else	EmptyTable 1
-	
-	tableFilterFunction (EmptyTable x) _		=	EmptyTable (x + 1)
-	tableFilterFunction (FreeTable) _			=	tableMerge FreeTable FreeTable
-	tableFilterFunction (ConstantTable _) _	=	undefined
-	
-	tableFilterFold (EmptyTable x) s		=	EmptyTable (x - (Set.size s) + 1)
-	tableFilterFold (FreeTable) _			=	undefined
-	tableFilterFold (ConstantTable _) _	=	undefined
-	
-	tableFilterForall _ _ _ _		=	undefined
+	tableValue (EmptyTable _)		=	Nothing
+	tableValue (FreeTable)			=	Nothing
+	tableValue (ConstantTable x)	=	Just [ConstantValue x]
 	
 	tableIgnore (EmptyTable x) _		=	EmptyTable (x - 1)
 	tableIgnore (FreeTable) _			=	EmptyTable 0
