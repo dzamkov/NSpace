@@ -55,7 +55,7 @@ class (Value b c) => Table a b c | a -> b where
 	tableFree				::	a								-- Table that contains all possible values in one column
 	tableColumns			::	a -> Int
 	tableIsEmpty			::	a -> Bool
-	tableValue				::	a -> Maybe [b]					--	Gets the values of the table if only one row exists
+	tableValue				::	a -> Int -> Maybe b			--	Gets the value of a column the table if not empty, and the same at all rows
 	tableFilter				::	Int -> c -> a -> a			--	Requires a column to have a certain value, removes the column
 	tableApply				::	Int -> Int -> a -> a			--	Applies a column to another column as a function
 	tableJoin				::	(Set.Set Int) -> a -> a		--	Remove all rows where the specified columns are different
@@ -102,9 +102,9 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableIsEmpty (FreeTable)			=	False
 	tableIsEmpty (ConstantTable _)	=	False
 	
-	tableValue (EmptyTable _)		=	Nothing
-	tableValue (FreeTable)			=	Nothing
-	tableValue (ConstantTable x)	=	Just [ConstantValue x]
+	tableValue (EmptyTable _) _		=	Nothing
+	tableValue (FreeTable) _			=	Nothing
+	tableValue (ConstantTable x) _	=	Just (ConstantValue x)
 	
 	tableFilter x y z		=	FilterTable z x y
 	

@@ -38,7 +38,7 @@ notFunc		=	(tableEmpty :: SimpleTable String) <^-^>
 					
 					
 -- Now I can use the not function
-useNotFunc x 	=	case tableValue (tableFilter 1 x (notFunc)) of
-							Just y	->		y !! 2
+useNotFunc x 	=	case tableValue (tableFilter 1 x (notFunc)) 2 of
+							Just y	->		y
 							Nothing	->		undefined 	-- darn
 					
