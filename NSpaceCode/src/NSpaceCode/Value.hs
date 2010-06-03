@@ -51,14 +51,15 @@ class (Cons b) => Value a b | a -> b where
 -- of values and their applications that compose another set of values.
 	
 class (Value b c) => Table a b c | a -> b where
+	tableEmpty				::	a								-- Empty table with 0 columns and rows
 	tableFree				::	a								-- Table that contains all possible values in one column
 	tableColumns			::	a -> Int
-	tableEmpty				::	a -> Bool
-	tableValue				::	a -> Maybe [b]				--	Gets the values of the table if only one row exists
-	tableFilter				::	a -> Int -> c -> a		--	Requires a column to have a certain value, removes the column
-	tableApply				::	a -> Int -> Int -> a		--	Applies a column to another column as a function
-	tableJoin				:: a -> Int -> Int -> a		--	Remove all rows where the specified columns are different
-	tableIgnore				::	a -> Int -> a
+	tableIsEmpty			::	a -> Bool
+	tableValue				::	a -> Maybe [b]					--	Gets the values of the table if only one row exists
+	tableFilter				::	Int -> c -> a -> a			--	Requires a column to have a certain value, removes the column
+	tableApply				::	Int -> Int -> a -> a			--	Applies a column to another column as a function
+	tableJoin				::	(Set.Set Int) -> a -> a		--	Remove all rows where the specified columns are different
+	tableIgnore				::	Int -> a -> a
 	tableMerge				::	a -> a -> a
 	
 
@@ -76,25 +77,44 @@ instance (Cons a) => Value (SimpleValue a) a where
 data SimpleTable a =
 	EmptyTable Int |
 	FreeTable |
-	ConstantTable a deriving(Show)
+	ConstantTable a |
+	FilterTable (SimpleTable a) Int a |
+	ApplyTable (SimpleTable a) Int Int |
+	JoinTable (SimpleTable a) (Set.Set Int) |
+	IgnoreTable (SimpleTable a) Int |
+	MergeTable (SimpleTable a) (SimpleTable a) deriving(Show)
 	
 instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
+	tableEmpty	=	EmptyTable 0
+
 	tableFree	=	FreeTable
 	
 	tableColumns (EmptyTable x)		=	x
 	tableColumns (FreeTable)			=	1
 	tableColumns (ConstantTable _)	=	1
+	tableColumns (FilterTable x _ _)	=	(tableColumns x) - 1
+	tableColumns (ApplyTable x _ _)	=	(tableColumns x) + 1
+	tableColumns (JoinTable x y)		=	(tableColumns x) - (Set.size y) + 1
+	tableColumns (IgnoreTable x _)	=	(tableColumns x) - 1
+	tableColumns (MergeTable x y)		=	(tableColumns x) + (tableColumns y)
 	
-	tableEmpty (EmptyTable _)		=	True
-	tableEmpty (FreeTable)			=	False
-	tableEmpty (ConstantTable _)	=	False
+	tableIsEmpty (EmptyTable _)		=	True
+	tableIsEmpty (FreeTable)			=	False
+	tableIsEmpty (ConstantTable _)	=	False
 	
 	tableValue (EmptyTable _)		=	Nothing
 	tableValue (FreeTable)			=	Nothing
 	tableValue (ConstantTable x)	=	Just [ConstantValue x]
 	
-	tableIgnore (EmptyTable x) _		=	EmptyTable (x - 1)
-	tableIgnore (FreeTable) _			=	EmptyTable 0
-	tableIgnore (ConstantTable _) _	=	EmptyTable 0
+	tableFilter x y z		=	FilterTable z x y
 	
-	tableMerge _ _		=	undefined
+	tableJoin x y			=	JoinTable y x
+	
+	tableApply x y z		=	ApplyTable z x y
+	
+	tableIgnore _ (EmptyTable x)		=	EmptyTable (x - 1)
+	tableIgnore _ (FreeTable)			=	EmptyTable 0
+	tableIgnore _ (ConstantTable _)	=	EmptyTable 0
+	tableIgnore y x						=	IgnoreTable x y
+	
+	tableMerge x y		=	MergeTable x y
