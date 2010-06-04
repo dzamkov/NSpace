@@ -11,7 +11,8 @@ module NSpaceCode.Value (
 	Value(..),
 	Table(..),
 	SimpleTable(..),
-	SimpleValue(..)
+	SimpleValue(..),
+	reduceTable
 ) where 
 
 import qualified Data.Set as Set
@@ -43,8 +44,8 @@ instance Cons [Char] where
 -- A representation of any value that can be created from the application of constants.
 
 class (Cons b) => Value a b | a -> b where 
-	isTrue				::	a -> Bool	
-	valueConstant		::	a -> Maybe b		-- Constant that evaluates to this value perfectly, if one exists and is known
+	constantValue		::	b -> a				-- Constructs a value from a single constant
+	getConstant			::	a -> Maybe b		-- Constant that evaluates to this value perfectly, if one exists and is known
 	
 
 -- (Possibly infinite) table of interrelated values. Such a table can describe possible combinations
@@ -56,7 +57,7 @@ class (Value b c) => Table a b c | a -> b where
 	tableColumns			::	a -> Int
 	tableIsEmpty			::	a -> Bool
 	tableValue				::	a -> Int -> Maybe b			--	Gets the value of a column the table if not empty, and the same at all rows
-	tableFilter				::	Int -> c -> a -> a			--	Requires a column to have a certain value, removes the column
+	tableFilter				::	Int -> b -> a -> a			--	Requires a column to have a certain value
 	tableApply				::	Int -> Int -> a -> a			--	Applies a column to another column as a function
 	tableJoin				::	(Set.Set Int) -> a -> a		--	Remove all rows where the specified columns are different
 	tableIgnore				::	Int -> a -> a
@@ -69,16 +70,16 @@ data SimpleValue a =
 	ConstantValue a deriving(Show)
 
 instance (Cons a) => Value (SimpleValue a) a where
-	isTrue (ConstantValue x)			=	x == trueCon
-	valueConstant (ConstantValue x)	=	Just x
+	constantValue x					=	ConstantValue x
+	getConstant (ConstantValue x)	=	Just x
 
 -- A simple unoptimizied implemenentation of a table
 
 data SimpleTable a =
 	EmptyTable Int |
 	FreeTable |
-	ConstantTable a |
-	FilterTable (SimpleTable a) Int a |
+	ConstantTable (SimpleValue a) |
+	FilterTable (SimpleTable a) Int (SimpleValue a) |
 	ApplyTable (SimpleTable a) Int Int |
 	JoinTable (SimpleTable a) (Set.Set Int) |
 	IgnoreTable (SimpleTable a) Int |
@@ -104,7 +105,7 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	
 	tableValue (EmptyTable _) _		=	Nothing
 	tableValue (FreeTable) _			=	Nothing
-	tableValue (ConstantTable x) _	=	Just (ConstantValue x)
+	tableValue (ConstantTable x) _	=	Just x
 	
 	tableFilter x y z		=	FilterTable z x y
 	
@@ -118,3 +119,10 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableIgnore y x						=	IgnoreTable x y
 	
 	tableMerge x y		=	MergeTable x y
+	
+-- Tries to reduce a table to a simpler form
+	
+reduceTable		::	(Cons a) => SimpleTable a -> SimpleTable a
+
+reduceTable x	=	x
+		
