@@ -12,7 +12,7 @@ module NSpaceCode.Value (
 	Table(..),
 	SimpleTable(..),
 	SimpleValue(..),
-	reduceTable
+	simplify
 ) where 
 
 import qualified Data.Set as Set
@@ -60,7 +60,7 @@ class (Value b c) => Table a b c | a -> b where
 	tableFilter				::	Int -> b -> a -> a			--	Requires a column to have a certain value
 	tableApply				::	Int -> Int -> a -> a			--	Applies a column to another column as a function
 	tableJoin				::	(Set.Set Int) -> a -> a		--	Remove all rows where the specified columns are different
-	tableIgnore				::	Int -> a -> a
+	tableSubsect			::	(Set.Set Int) -> a -> a		--	Gets a subsection of the table, specified with a set of columns
 	tableMerge				::	a -> a -> a
 	
 
@@ -82,7 +82,7 @@ data SimpleTable a =
 	FilterTable (SimpleTable a) Int (SimpleValue a) |
 	ApplyTable (SimpleTable a) Int Int |
 	JoinTable (SimpleTable a) (Set.Set Int) |
-	IgnoreTable (SimpleTable a) Int |
+	SubsectTable (SimpleTable a) (Set.Set Int) |
 	MergeTable (SimpleTable a) (SimpleTable a) deriving(Show)
 	
 instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
@@ -96,7 +96,6 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableColumns (FilterTable x _ _)	=	(tableColumns x) - 1
 	tableColumns (ApplyTable x _ _)	=	(tableColumns x) + 1
 	tableColumns (JoinTable x y)		=	(tableColumns x) - (Set.size y) + 1
-	tableColumns (IgnoreTable x _)	=	(tableColumns x) - 1
 	tableColumns (MergeTable x y)		=	(tableColumns x) + (tableColumns y)
 	
 	tableIsEmpty (EmptyTable _)		=	True
@@ -113,16 +112,26 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	
 	tableApply x y z		=	ApplyTable z x y
 	
-	tableIgnore _ (EmptyTable x)		=	EmptyTable (x - 1)
-	tableIgnore _ (FreeTable)			=	EmptyTable 0
-	tableIgnore _ (ConstantTable _)	=	EmptyTable 0
-	tableIgnore y x						=	IgnoreTable x y
+	tableSubsect x z	=	SubsectTable z x
 	
 	tableMerge x y		=	MergeTable x y
 	
 -- Tries to reduce a table to a simpler form
-	
-reduceTable		::	(Cons a) => SimpleTable a -> SimpleTable a
+simplify	::	(Cons a) => SimpleTable a -> SimpleTable a
 
-reduceTable x	=	x
+simplify norm@(FilterTable tab pos val)	=	res
+	where
+		ntab	=	simplify tab
+		res	=	case ntab of
+			(FreeTable)			->	ConstantTable val
+			(ApplyTable intab func arg)	->	if 	pos < tableColumns intab
+														then	ApplyTable (simplify (FilterTable intab pos val)) func arg
+														else	norm
+			(FilterTable intab inpos inval)	->	FilterTable (simplify (FilterTable intab pos val)) inpos inval
+			_	->	norm
+
+simplify (MergeTable tab (EmptyTable s))	=	EmptyTable (s + tableColumns tab)
+simplify (MergeTable (EmptyTable s) tab)	=	EmptyTable (s + tableColumns tab)
+
+simplify x	=	x
 		
