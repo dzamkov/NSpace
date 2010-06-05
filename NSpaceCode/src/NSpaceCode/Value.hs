@@ -12,10 +12,10 @@ module NSpaceCode.Value (
 	Table(..),
 	SimpleTable(..),
 	SimpleValue(..),
+	Tree(..),
 	simplify,
 	evaluate,
 	simplifyColumn,
-	AppMap(..),
 	appMap
 ) where 
 
@@ -137,20 +137,20 @@ simplify norm@(FilterTable tab pos val)	=	res
 												else	MergeTable taba (simplify (FilterTable tabb (pos - (tableColumns taba)) val))
 			_	->	norm
 
-simplify norm@(ApplyTable tab func arg)	=	res
+simplify (ApplyTable tab func arg)	=	res
 	where
 		ntab	=	simplify tab
 		nnorm	=	ApplyTable ntab func arg
 		
-		createEvaList	::	(Cons a) => SimpleTable a -> AppMap -> Maybe [a]
-		createEvaList x (AppLeaf y)	=	case simplifyColumn (x, y) of
-			((ConstantTable (ConstantValue z)), 0)	->	Just [z]
+		createEvaTree	::	(Cons a) => SimpleTable a -> Tree Int -> Maybe (Tree a)
+		createEvaTree x (Leaf y)	=	case simplifyColumn (x, y) of
+			((ConstantTable (ConstantValue z)), 0)	->	Just (Leaf z)
 			_													->	Nothing
-		createEvaList x (AppBranch y z@(AppLeaf _))	=	case (createEvaList x y, createEvaList x z) of
-			(Just n, Just m)		->	Just (n ++ m)
+		createEvaTree x (Branch y z)	=	case (createEvaTree x y, createEvaTree x z) of
+			(Just n, Just m)		->	Just (Branch n m)
 			_							-> Nothing
 		
-		res 	=	case (createEvaList nnorm (appMap nnorm (tableColumns nnorm - 1))) of
+		res 	=	case (createEvaTree nnorm (appMap nnorm (tableColumns nnorm - 1))) of
 			Just l	->	case (evaluate l) of
 				Just a	->	MergeTable ntab (ConstantTable (ConstantValue a))
 				Nothing	->	nnorm
@@ -168,8 +168,16 @@ simplify x	=	x
 -- result of that applied to the third and so on. If a single constant anwser is possible, it
 -- will be returned.
 
-evaluate	::	(Cons a) => [a] -> Maybe a
-evaluate [x, y]	
+data Tree a =
+	Branch (Tree a) (Tree a) |
+	Leaf a deriving(Show, Eq)
+	
+transformTree	::	(a -> b) -> Tree a -> Tree b
+transformTree x (Leaf y)		=	Leaf (x y)
+transformTree x (Branch y z)	=	Branch (transformTree x y) (transformTree x z)
+
+evaluate	::	(Cons a) => Tree a -> Maybe a
+evaluate (Branch (Leaf x) (Leaf y))
 	|	x == notCon && y == falseCon		=	Just trueCon
 	|	x == notCon && y == trueCon		=	Just falseCon
 	|	otherwise								=	Nothing
@@ -189,22 +197,15 @@ simplifyColumn (x, y)	=	(x, y)
 -- Creates an application map given a table and a column in the table. An application map shows
 -- what columns are applied to what other columns to create the resulting column.
 
-data AppMap	=
-	AppBranch AppMap AppMap	|			-- Application of one thingy to another
-	AppLeaf Int	deriving(Show)			--	Single column of a table
 
-shiftAppMap	::	AppMap -> Int -> AppMap		--	Shifts columns in an appmap by a certain amount
-shiftAppMap (AppBranch x y) z		=	AppBranch (shiftAppMap x z) (shiftAppMap y z)
-shiftAppMap (AppLeaf x) y			=	AppLeaf (x + y)
-	
-appMap	::	(Cons a) => SimpleTable a -> Int -> AppMap
+appMap	::	(Cons a) => SimpleTable a -> Int -> Tree Int
 appMap (ApplyTable subtab func arg) x				=	if 	x	== tableColumns subtab
-																	then	AppBranch (appMap subtab func) (appMap subtab arg)
+																	then	Branch (appMap subtab func) (appMap subtab arg)
 																	else	appMap subtab x
 appMap (MergeTable taba tabb) x						=	if		x < tableColumns taba
 																	then	appMap taba x
-																	else	shiftAppMap (appMap tabb (x - tableColumns taba)) (tableColumns taba)
+																	else	transformTree (+ (tableColumns taba)) (appMap tabb (x - tableColumns taba)) 
 appMap norm@(FilterTable subtab pos val) x		=	if		x == pos
-																	then	AppLeaf x
+																	then	Leaf x
 																	else	appMap subtab x
-appMap _ y			=	AppLeaf y
+appMap _ y			=	Leaf y
