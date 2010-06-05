@@ -54,3 +54,11 @@ testTab	=	(tableEmpty :: SimpleTable String) <^-^>
 				
 valTab	=	tableFilter 1 (constantValue "rofl") (testTab)
 val		=	tableValue valTab 3
+
+-- Test appmap
+appTab	=	simplify ((tableEmpty :: SimpleTable String) <^-^>
+				tableMerge (tableFree) <^-^>
+				tableFilter 0 (constantValue notCon) <^-^>
+				tableMerge (tableFree) <^-^>
+				tableFilter 1 (constantValue trueCon) <^-^>
+				tableApply 0 1)

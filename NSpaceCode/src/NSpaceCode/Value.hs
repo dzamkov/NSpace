@@ -12,7 +12,9 @@ module NSpaceCode.Value (
 	Table(..),
 	SimpleTable(..),
 	SimpleValue(..),
-	simplify
+	simplify,
+	AppMap(..),
+	appMap
 ) where 
 
 import qualified Data.Set as Set
@@ -61,7 +63,7 @@ class (Value b c) => Table a b c | a -> b where
 	tableApply				::	Int -> Int -> a -> a			--	Applies a column to another column as a function
 	tableJoin				::	(Set.Set Int) -> a -> a		--	Remove all rows where the specified columns are different
 	tableSubsect			::	(Set.Set Int) -> a -> a		--	Gets a subsection of the table, specified with a set of columns
-	tableMerge				::	a -> a -> a
+	tableMerge				::	a -> a -> a						-- Note that merged tables must be given in reverse order of column appearence
 	
 
 -- A simple unoptimizied implemementation of a value
@@ -93,9 +95,9 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableColumns (EmptyTable x)		=	x
 	tableColumns (FreeTable)			=	1
 	tableColumns (ConstantTable _)	=	1
-	tableColumns (FilterTable x _ _)	=	(tableColumns x) - 1
+	tableColumns (FilterTable x _ _)	=	(tableColumns x)
 	tableColumns (ApplyTable x _ _)	=	(tableColumns x) + 1
-	tableColumns (JoinTable x y)		=	(tableColumns x) - (Set.size y) + 1
+	tableColumns (JoinTable x y)		=	(tableColumns x)
 	tableColumns (MergeTable x y)		=	(tableColumns x) + (tableColumns y)
 	
 	tableIsEmpty (EmptyTable _)		=	True
@@ -114,7 +116,7 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	
 	tableSubsect x z	=	SubsectTable z x
 	
-	tableMerge x y		=	MergeTable x y
+	tableMerge x y		=	MergeTable y x
 	
 -- Tries to reduce a table to a simpler form
 simplify	::	(Cons a) => SimpleTable a -> SimpleTable a
@@ -145,4 +147,27 @@ simplify (MergeTable (EmptyTable s) tab)	=	EmptyTable (s + tableColumns tab)
 simplify (MergeTable taba tabb)				=	MergeTable (simplify taba) (simplify tabb)
 
 simplify x	=	x
+
+-- Creates an application map given a table and a column in the table. An application map shows
+-- what columns are applied to what other columns to create the resulting column.
+
+data AppMap	=
+	AppBranch AppMap AppMap	|			-- Application of one thingy to another
+	AppLeaf Int	deriving(Show)			--	Single column of a table
+
+shiftAppMap	::	AppMap -> Int -> AppMap		--	Shifts columns in an appmap by a certain amount
+shiftAppMap (AppBranch x y) z		=	AppBranch (shiftAppMap x z) (shiftAppMap y z)
+shiftAppMap (AppLeaf x) y			=	AppLeaf (x + y)
+	
+appMap	::	(Cons a) => SimpleTable a -> Int -> AppMap
+appMap (ApplyTable subtab func arg) x				=	if 	x	== tableColumns subtab
+																	then	AppBranch (appMap subtab func) (appMap subtab arg)
+																	else	appMap subtab x
+appMap (MergeTable taba tabb) x						=	if		x < tableColumns taba
+																	then	appMap taba x
+																	else	shiftAppMap (appMap tabb (x - tableColumns taba)) (tableColumns taba)
+appMap norm@(FilterTable subtab pos val) x		=	if		x == pos
+																	then	AppLeaf x
+																	else	appMap subtab x
+appMap _ y			=	AppLeaf y
 		
