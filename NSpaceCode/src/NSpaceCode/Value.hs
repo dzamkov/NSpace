@@ -13,6 +13,7 @@ module NSpaceCode.Value (
 	SimpleTable(..),
 	SimpleValue(..),
 	simplify,
+	simplifyColumn,
 	AppMap(..),
 	appMap
 ) where 
@@ -138,7 +139,15 @@ simplify norm@(FilterTable tab pos val)	=	res
 simplify norm@(ApplyTable tab func arg)	=	res
 	where
 		ntab	=	simplify tab
-		res	=	ApplyTable ntab func arg
+		nfunc	=	simplifyColumn (ntab, func)
+		narg	=	simplifyColumn (ntab, arg)
+		nnorm	=	ApplyTable ntab func arg
+		res 	=	case nfunc of
+			((ConstantTable (ConstantValue notCon)), 0)	->	case narg of
+				((ConstantTable (ConstantValue trueCon)), 0)		->	simplify (MergeTable tab (ConstantTable (ConstantValue falseCon)))
+				((ConstantTable (ConstantValue falseCon)), 0)	->	simplify (MergeTable tab (ConstantTable (ConstantValue trueCon)))
+				_																->	nnorm
+			_															-> nnorm
 		
 simplify (MergeTable tab (EmptyTable 0))	=	tab
 simplify (MergeTable (EmptyTable 0) tab)	=	tab
@@ -147,6 +156,17 @@ simplify (MergeTable (EmptyTable s) tab)	=	EmptyTable (s + tableColumns tab)
 simplify (MergeTable taba tabb)				=	MergeTable (simplify taba) (simplify tabb)
 
 simplify x	=	x
+
+-- Simplifies a table with the priority being to simplify the specified column.
+
+simplifyColumn	:: (Cons a) => (SimpleTable a, Int) -> (SimpleTable a, Int)
+simplifyColumn ((MergeTable taba tabb), x)			=	if 	x < tableColumns taba
+																		then	simplifyColumn (taba, x)
+																		else	simplifyColumn (tabb, x - (tableColumns taba))
+simplifyColumn ((ApplyTable subtab func arg), x)	=	if		x == tableColumns subtab
+																		then	((ApplyTable subtab func arg), x)
+																		else	simplifyColumn (subtab, x)
+simplifyColumn (x, y)	=	(x, y)
 
 -- Creates an application map given a table and a column in the table. An application map shows
 -- what columns are applied to what other columns to create the resulting column.
@@ -170,4 +190,3 @@ appMap norm@(FilterTable subtab pos val) x		=	if		x == pos
 																	then	AppLeaf x
 																	else	appMap subtab x
 appMap _ y			=	AppLeaf y
-		
