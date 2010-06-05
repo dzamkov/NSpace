@@ -13,6 +13,7 @@ module NSpaceCode.Value (
 	SimpleTable(..),
 	SimpleValue(..),
 	simplify,
+	evaluate,
 	simplifyColumn,
 	AppMap(..),
 	appMap
@@ -139,15 +140,21 @@ simplify norm@(FilterTable tab pos val)	=	res
 simplify norm@(ApplyTable tab func arg)	=	res
 	where
 		ntab	=	simplify tab
-		nfunc	=	simplifyColumn (ntab, func)
-		narg	=	simplifyColumn (ntab, arg)
 		nnorm	=	ApplyTable ntab func arg
-		res 	=	case nfunc of
-			((ConstantTable (ConstantValue notCon)), 0)	->	case narg of
-				((ConstantTable (ConstantValue trueCon)), 0)		->	simplify (MergeTable tab (ConstantTable (ConstantValue falseCon)))
-				((ConstantTable (ConstantValue falseCon)), 0)	->	simplify (MergeTable tab (ConstantTable (ConstantValue trueCon)))
-				_																->	nnorm
-			_															-> nnorm
+		
+		createEvaList	::	(Cons a) => SimpleTable a -> AppMap -> Maybe [a]
+		createEvaList x (AppLeaf y)	=	case simplifyColumn (x, y) of
+			((ConstantTable (ConstantValue z)), 0)	->	Just [z]
+			_													->	Nothing
+		createEvaList x (AppBranch y z@(AppLeaf _))	=	case (createEvaList x y, createEvaList x z) of
+			(Just n, Just m)		->	Just (n ++ m)
+			_							-> Nothing
+		
+		res 	=	case (createEvaList nnorm (appMap nnorm (tableColumns nnorm - 1))) of
+			Just l	->	case (evaluate l) of
+				Just a	->	MergeTable ntab (ConstantTable (ConstantValue a))
+				Nothing	->	nnorm
+			Nothing	->	nnorm
 		
 simplify (MergeTable tab (EmptyTable 0))	=	tab
 simplify (MergeTable (EmptyTable 0) tab)	=	tab
@@ -156,6 +163,17 @@ simplify (MergeTable (EmptyTable s) tab)	=	EmptyTable (s + tableColumns tab)
 simplify (MergeTable taba tabb)				=	MergeTable (simplify taba) (simplify tabb)
 
 simplify x	=	x
+
+-- This will evaluate the function application of the first item applied to the second, the
+-- result of that applied to the third and so on. If a single constant anwser is possible, it
+-- will be returned.
+
+evaluate	::	(Cons a) => [a] -> Maybe a
+evaluate [x, y]	
+	|	x == notCon && y == falseCon		=	Just trueCon
+	|	x == notCon && y == trueCon		=	Just falseCon
+	|	otherwise								=	Nothing
+evaluate _	=	Nothing
 
 -- Simplifies a table with the priority being to simplify the specified column.
 
