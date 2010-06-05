@@ -128,10 +128,21 @@ simplify norm@(FilterTable tab pos val)	=	res
 														then	ApplyTable (simplify (FilterTable intab pos val)) func arg
 														else	norm
 			(FilterTable intab inpos inval)	->	FilterTable (simplify (FilterTable intab pos val)) inpos inval
+			(MergeTable taba tabb)	->	if		pos < tableColumns taba
+												then	MergeTable (simplify (FilterTable taba pos val)) tabb
+												else	MergeTable taba (simplify (FilterTable tabb (pos - (tableColumns taba)) val))
 			_	->	norm
 
+simplify norm@(ApplyTable tab func arg)	=	res
+	where
+		ntab	=	simplify tab
+		res	=	ApplyTable ntab func arg
+		
+simplify (MergeTable tab (EmptyTable 0))	=	tab
+simplify (MergeTable (EmptyTable 0) tab)	=	tab
 simplify (MergeTable tab (EmptyTable s))	=	EmptyTable (s + tableColumns tab)
 simplify (MergeTable (EmptyTable s) tab)	=	EmptyTable (s + tableColumns tab)
+simplify (MergeTable taba tabb)				=	MergeTable (simplify taba) (simplify tabb)
 
 simplify x	=	x
 		
