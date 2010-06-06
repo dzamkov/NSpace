@@ -25,7 +25,7 @@ import NSpaceCode.Expression
 
 -- A type usable as a constant
 	
-class (Eq a) => Cons a where
+class (Eq a, Ord a) => Cons a where
 	equalCon		::	a
 	iteCon		:: a
 	andCon		:: a
@@ -123,19 +123,49 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 -- Tries to reduce a table to a simpler form
 simplify	::	(Cons a) => SimpleTable a -> SimpleTable a
 
-simplify norm@(FilterTable tab pos val)	=	res
+simplify (FilterTable tab pos val)	=	res
 	where
-		ntab	=	simplify tab
-		res	=	case ntab of
-			(FreeTable)			->	ConstantTable val
-			(ApplyTable intab func arg)	->	if 	pos < tableColumns intab
-														then	ApplyTable (simplify (FilterTable intab pos val)) func arg
-														else	norm
+		ntab		=	simplify tab
+		nnorm		=	FilterTable ntab pos val
+		res		=	case ntab of
+			(FreeTable)								->	ConstantTable val
+			(ApplyTable intab func arg)		->	if 	pos < tableColumns intab
+															then	ApplyTable (simplify (FilterTable intab pos val)) func arg
+															else	case (appMap ntab (tableColumns intab)) of
+				(Branch (Branch (Leaf func) (Leaf farg)) (Leaf sarg))		->	case (simplifyColumn (ntab, func)) of
+					((ConstantTable (ConstantValue z)), 0)	->	if 	z == equalCon
+																			then	if		getConstant val == Just trueCon
+																					then	simplify $ MergeTable (JoinTable intab (Set.fromList [farg, sarg])) (ConstantTable (ConstantValue trueCon))
+																					else	nnorm
+																			else	nnorm
+					_													-> nnorm
+				_													->	nnorm
+			(JoinTable intab cols)				->	if 	(Set.member pos cols)
+															then	simplify (JoinTable (Set.fold (\x y -> FilterTable y x val) intab cols) cols)
+															else	nnorm
 			(FilterTable intab inpos inval)	->	FilterTable (simplify (FilterTable intab pos val)) inpos inval
-			(MergeTable taba tabb)	->	if		pos < tableColumns taba
-												then	MergeTable (simplify (FilterTable taba pos val)) tabb
-												else	MergeTable taba (simplify (FilterTable tabb (pos - (tableColumns taba)) val))
-			_	->	norm
+			(MergeTable taba tabb)				->	if		pos < tableColumns taba
+															then	MergeTable (simplify (FilterTable taba pos val)) tabb
+															else	MergeTable taba (simplify (FilterTable tabb (pos - (tableColumns taba)) val))
+			_	->	nnorm
+			
+simplify (JoinTable tab cols)			=	res
+	where
+		ntab		=	simplify tab
+		nnorm		=	JoinTable ntab cols
+		valmap	=	Set.map (\x -> case simplifyColumn (tab, x) of
+			((ConstantTable (ConstantValue y)), 0)	->	Just y
+			_													->	Nothing) cols
+		allSame				::	(Eq a) => [a] -> Bool
+		allSame []			=	True
+		allSame (x:[])		=	True
+		allSame (x:y:s)	=	x == y && (allSame (y:s))
+		
+		res		=	if 	(Set.size cols) < 2
+						then	ntab
+						else	if 	allSame (Set.toList valmap) && head (Set.toList valmap) /= Nothing
+								then	ntab
+								else	nnorm
 
 simplify (ApplyTable tab func arg)	=	res
 	where
