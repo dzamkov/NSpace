@@ -135,7 +135,7 @@ simplify (FilterTable tab pos val)	=	res
 				(Branch (Branch (Leaf func) (Leaf farg)) (Leaf sarg))		->	case (simplifyColumn (ntab, func)) of
 					((ConstantTable (ConstantValue z)), 0)	->	if 	z == equalCon
 																			then	if		getConstant val == Just trueCon
-																					then	simplify $ MergeTable (JoinTable intab (Set.fromList [farg, sarg])) (ConstantTable (ConstantValue trueCon))
+																					then	simplify (MergeTable (JoinTable intab (Set.fromList [farg, sarg])) (ConstantTable (ConstantValue trueCon)))
 																					else	nnorm
 																			else	nnorm
 					_													-> nnorm
@@ -153,7 +153,7 @@ simplify (JoinTable tab cols)			=	res
 	where
 		ntab		=	simplify tab
 		nnorm		=	JoinTable ntab cols
-		valmap	=	Set.map (\x -> case simplifyColumn (tab, x) of
+		valmap	=	Set.map (\x -> case simplifyColumn (ntab, x) of
 			((ConstantTable (ConstantValue y)), 0)	->	Just y
 			_													->	Nothing) cols
 		allSame				::	(Eq a) => [a] -> Bool
@@ -186,8 +186,8 @@ simplify (ApplyTable tab func arg)	=	res
 				Nothing	->	nnorm
 			Nothing	->	nnorm
 		
-simplify (MergeTable tab (EmptyTable 0))	=	tab
-simplify (MergeTable (EmptyTable 0) tab)	=	tab
+simplify (MergeTable tab (EmptyTable 0))	=	simplify tab
+simplify (MergeTable (EmptyTable 0) tab)	=	simplify tab
 simplify (MergeTable tab (EmptyTable s))	=	EmptyTable (s + tableColumns tab)
 simplify (MergeTable (EmptyTable s) tab)	=	EmptyTable (s + tableColumns tab)
 simplify (MergeTable taba tabb)				=	MergeTable (simplify taba) (simplify tabb)
