@@ -64,22 +64,14 @@ parseWhiteSpace input	=	res
 	where
 		-- (Current Newline Ident Size, In WhiteSpace, Current Token Set)
 		pws	::	(Maybe Int, Bool, [Token]) -> Token -> (Maybe Int, Bool, [Token])
-		pws (Nothing, ws, t) (Character c)	=	if		c == ' '
-															then	(Nothing, True, t)
-															else	if		c == '\n' || c == '\r'
-																	then	if		ws
-																			then	(Just 0, True, t ++ [Space])
-																			else	(Just 0, True, t)
-																	else	if		ws
-																			then	(Nothing, False, t ++ [Space, Character c])
-																			else	(Nothing, False, t ++ [Character c])
-		pws (Just x, True, t) (Character c)	=	if		c == '\t'
-															then	(Just (x + 1), True, t)
-															else	(Nothing, False, t ++ [NewLine x])
-		pws (Nothing, ws, t) x					=	if		ws
-															then	(Nothing, False, t ++ [Space, x])
-															else	(Nothing, False, t ++ [x])
-		pws (Just x, True, t) y					=	(Nothing, False, t ++ [NewLine x, y])
+		pws (Nothing, _, t) (Character ' ')		=	(Nothing, True, t)
+		pws (Nothing, _, t) (Character '\r')	=	(Just 0, True, t)
+		pws (Nothing, _, t) (Character '\n')	=	(Just 0, True, t)
+		pws (Nothing, True, t) x					=	(Nothing, False, t ++ [Space, x])
+		pws (Nothing, False, t) x					=	(Nothing, False, t ++ [x])
+		pws (Just _, True, t) (Character '\n')	=	(Just 0, True, t)
+		pws (Just x, True, t) (Character '\t')	=	(Just (x + 1), True, t)
+		pws (Just x, True, t) y						=	(Nothing, False, t ++ [NewLine x, y])
 		
 		res	=	case foldl (\x y -> pws x y) (Nothing, False, []) input of
 			(_, _, x)	->	x
