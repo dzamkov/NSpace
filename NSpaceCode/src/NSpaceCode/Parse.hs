@@ -21,7 +21,8 @@ data Token	=
 	Character Char |
 	Space |
 	NewLine Int |		-- Indents included
-	StringLiteral [Char] deriving (Show)
+	StringLiteral [Char] |
+	Word [Char] deriving (Show)
 
 -- Converts a string to a set of character tokens
 	
@@ -76,9 +77,20 @@ whiteSpaceParse (Just x, True) (Just (Character '\t'))	=	((Just (x + 1), True), 
 whiteSpaceParse (Just x, True) (Just y)						=	((Nothing, False), [NewLine x, y])
 whiteSpaceParse (_, _) _											=	((Nothing, False), [])
 			
+-- (Current Word)
+wordInitial		=	(Nothing) :: (Maybe String)
+
+wordParse (Nothing) (Just (Character c))	=	((Just [c]), [])
+wordParse (Nothing) (Just x)					=	((Nothing), [x])
+wordParse (Nothing) (Nothing)					=	((Nothing), [])
+wordParse (Just s) (Just (Character c))	=	((Just (s ++ [c])), [])
+wordParse (Just s) (Just x)					=	((Nothing), [Word s, x])
+wordParse (Just s) Nothing						=	((Nothing), [Word s])
+			
 -- Parses a text to the highest-level tokens possible.
 				
 parse	::	String -> [Token]
-parse x	=	(streamParse whiteSpaceInitial whiteSpaceParse) 
+parse x	=	(streamParse wordInitial wordParse)
+				$ (streamParse whiteSpaceInitial whiteSpaceParse) 
 				$ (streamParse stringLiteralInitial stringLiteralParse) 
 				$ tokenize x
