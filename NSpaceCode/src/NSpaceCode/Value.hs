@@ -65,7 +65,17 @@ class (Value b c) => Table a b c | a -> b where
 	tableApply				::	Int -> Int -> a -> a			--	Applies a column to another column as a function
 	tableJoin				::	(Set.Set Int) -> a -> a		--	Remove all rows where the specified columns are different
 	tableSubsect			::	(Set.Set Int) -> a -> a		--	Gets a subsection of the table, specified with a set of columns
+	tableProperty			::	a -> Int -> (Map.Map Int Int) -> Int -> a -> a
 	tableMerge				::	a -> a -> a						-- Note that merged tables must be given in reverse order of column appearence
+	
+-- A property operation combines two tables. One that defines a property a group of
+-- values can have and another that uses them. The first two arguments specify a column
+-- in the table that defines the abstract property. The property exists in all rows where
+-- the specified column is true. The next argument is a mapping of columns from the first
+-- table to the second showing the relationship they have. The last argument is a boolean column
+-- in the second table. It is true only where the columns in the second table have the property
+-- described in the first, if the column at the second argument is true everywhere in the first
+-- table.
 	
 
 -- A simple unoptimizied implemementation of a value
@@ -86,6 +96,7 @@ data SimpleTable a =
 	FilterTable (SimpleTable a) Int (SimpleValue a) |
 	ApplyTable (SimpleTable a) Int Int |
 	JoinTable (SimpleTable a) (Set.Set Int) |
+	PropertyTable (SimpleTable a) (SimpleTable a) Int Int (Map.Map Int Int) |
 	SubsectTable (SimpleTable a) (Set.Set Int) |
 	MergeTable (SimpleTable a) (SimpleTable a) deriving(Show)
 	
@@ -110,11 +121,13 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableValue (FreeTable) _			=	Nothing
 	tableValue (ConstantTable x) _	=	Just x
 	
-	tableFilter x y z		=	FilterTable z x y
+	tableFilter x y z			=	FilterTable z x y
 	
-	tableJoin x y			=	JoinTable y x
+	tableJoin x y				=	JoinTable y x
 	
-	tableApply x y z		=	ApplyTable z x y
+	tableApply x y z			=	ApplyTable z x y
+	
+	tableProperty v w x y z	=	PropertyTable v z w y x
 	
 	tableSubsect x z	=	SubsectTable z x
 	
