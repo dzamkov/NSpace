@@ -12,6 +12,9 @@ module NSpaceCode.Parse (
 	parse
 ) where 
 
+import qualified Data.Set as Set
+import qualified Data.Map as Map
+
 -- A portion of an input text given a representation
 
 data Token	=
@@ -25,59 +28,57 @@ data Token	=
 tokenize		::	String -> [Token]
 tokenize []			=	[]
 tokenize (x:xs)	=	(Character x):(tokenize xs)
-	
--- Finds the string literals in a given input.
-	
-parseStringLiterals			::	[Token] -> [Token]
-parseStringLiterals input	=	res
-	where 
-	
-		-- Gives the final character for a char in the form "\x"
-		escapeChar	::	Char -> Char
-		escapeChar '\"'	=	'\"'
-		escapeChar '\\'	=	'\\'
-		escapeChar 'n'		=	'\n'
-		escapeChar 't'		=	'\t'
-	
-		-- (Current String Literal, In Escape, Current Token Set)
-		-- Chars given in order as they appear in the text
-		psl	::	(Maybe String, Bool, [Token]) -> Char -> (Maybe String, Bool, [Token])
-		psl (Nothing, _, x) y		=	if		y == '\"'
-												then	(Just "", False, x)
-												else	(Nothing, False, x ++ [Character y])
-		psl (Just x, False, t) y	=	if		y == '\\'
-												then	(Just x, True, t)
-												else	if 	y == '\"'
-														then	(Nothing, False, t ++ [StringLiteral x])
-														else	(Just (x ++ [y]), False, t)
-		psl (Just x, True, t) y		=	(Just (x ++ [escapeChar y]), False, t)
-		
-		res	=	case foldl (\x y -> case y of
-			Character c		->	psl x c
-			_					->	undefined) (Nothing, False, []) input of
-				(_, _, x)		->		x
 
+-- Parses a string of tokens using a stream function
 
--- Parses white space in a string of tokens as either spaces or newlines.
-parseWhiteSpace			::	[Token] -> [Token]
-parseWhiteSpace input	=	res
+streamParse			::	a -> (a -> Maybe Token -> (a, [Token])) -> [Token] -> [Token]
+streamParse i f t	=	(snd nls) ++ (snd (f (fst nls) Nothing))
 	where
-		-- (Current Newline Ident Size, In WhiteSpace, Current Token Set)
-		pws	::	(Maybe Int, Bool, [Token]) -> Token -> (Maybe Int, Bool, [Token])
-		pws (Nothing, _, t) (Character ' ')		=	(Nothing, True, t)
-		pws (Nothing, _, t) (Character '\r')	=	(Just 0, True, t)
-		pws (Nothing, _, t) (Character '\n')	=	(Just 0, True, t)
-		pws (Nothing, True, t) x					=	(Nothing, False, t ++ [Space, x])
-		pws (Nothing, False, t) x					=	(Nothing, False, t ++ [x])
-		pws (Just _, True, t) (Character '\n')	=	(Just 0, True, t)
-		pws (Just x, True, t) (Character '\t')	=	(Just (x + 1), True, t)
-		pws (Just x, True, t) y						=	(Nothing, False, t ++ [NewLine x, y])
-		
-		res	=	case foldl (\x y -> pws x y) (Nothing, False, []) input of
-			(_, _, x)	->	x
+		foldFunc	::	(a -> Maybe Token -> (a, [Token])) -> (a, [Token]) -> Token -> (a, [Token])
+		foldFunc f (curState, curString) t	=	(fst nextState, curString  ++ snd nextState)
+			where
+				nextState = f (curState) (Just t)
+		nls	=	(foldl (foldFunc f) (i, []) t)
+	
+-- (Current String, In Escape)
+stringLiteralInitial		=	(Nothing, False)
 
-				
+-- Gives the final character for a char in the form "\x"
+escapeChar	::	Char -> Char
+escapeChar '\"'	=	'\"'
+escapeChar '\\'	=	'\\'
+escapeChar 'n'		=	'\n'
+escapeChar 't'		=	'\t'
+
+stringLiteralParse (Nothing, _) (Just (Character c))		=	if		c == '\"'
+																				then	((Just "", False), [])
+																				else	((Nothing, False), [Character c])
+stringLiteralParse (Just s, False) (Just (Character c))	=	if		c == '\\'
+																				then	((Just s, True), [])
+																				else	if		c == '\"'
+																						then	((Nothing, False), [StringLiteral s])
+																						else	((Just (s ++ [c]), False), [])
+stringLiteralParse (Just s, True) (Just (Character c))	=	((Just (s ++ [escapeChar c]), False), [])
+stringLiteralParse (Just s, _) _									=	((Nothing, False), [StringLiteral s])
+stringLiteralParse (Nothing, _) _								=	((Nothing, False), [])
+	
+-- (Current Indent Size, In WhiteSpace)
+whiteSpaceInitial		=	(Nothing, False)
+
+whiteSpaceParse (Nothing, _) (Just (Character ' '))		=	((Nothing, True), [])
+whiteSpaceParse (Nothing, _) (Just (Character '\r'))		=	((Just 0, True), [])
+whiteSpaceParse (Nothing, _) (Just (Character '\n'))		=	((Just 0, True), [])
+whiteSpaceParse (Nothing, True) (Just x)						=	((Nothing, False), [Space, x])
+whiteSpaceParse (Nothing, False) (Just x)						=	((Nothing, False), [x])
+whiteSpaceParse (Just _, True) (Just (Character '\r'))	=	((Just 0, True), [])
+whiteSpaceParse (Just _, True) (Just (Character '\n'))	=	((Just 0, True), [])
+whiteSpaceParse (Just x, True) (Just (Character '\t'))	=	((Just (x + 1), True), [])
+whiteSpaceParse (Just x, True) (Just y)						=	((Nothing, False), [NewLine x, y])
+whiteSpaceParse (_, _) _											=	((Nothing, False), [])
+			
 -- Parses a text to the highest-level tokens possible.
 				
 parse	::	String -> [Token]
-parse x	=	parseWhiteSpace $ parseStringLiterals $ tokenize x
+parse x	=	(streamParse whiteSpaceInitial whiteSpaceParse) 
+				$ (streamParse stringLiteralInitial stringLiteralParse) 
+				$ tokenize x
