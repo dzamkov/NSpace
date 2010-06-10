@@ -34,6 +34,8 @@ class (Eq a, Ord a) => Cons a where
 	notCon		::	a
 	trueCon		::	a
 	falseCon		::	a
+	eval			::	Tree a -> Maybe a
+	eval _		=	Nothing
 	
 instance Cons [Char] where
 	equalCon		=	"="
@@ -65,7 +67,7 @@ class (Value b c) => Table a b c | a -> b where
 	tableApply				::	Int -> Int -> a -> a			--	Applies a column to another column as a function
 	tableJoin				::	(Set.Set Int) -> a -> a		--	Remove all rows where the specified columns are different
 	tableSubsect			::	(Set.Set Int) -> a -> a		--	Gets a subsection of the table, specified with a set of columns
-	tableProperty			::	a -> Int -> (Map.Map Int Int) -> Int -> a -> a
+	tableProperty			::	Int -> Int -> (Map.Map Int Int) -> a -> a -> a
 	tableMerge				::	a -> a -> a						-- Note that merged tables must be given in reverse order of column appearence
 	
 -- A property operation combines two tables. One that defines a property a group of
@@ -127,7 +129,7 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	
 	tableApply x y z			=	ApplyTable z x y
 	
-	tableProperty v w x y z	=	PropertyTable v z w y x
+	tableProperty v w x y z	=	PropertyTable y z v w x
 	
 	tableSubsect x z	=	SubsectTable z x
 	
@@ -220,11 +222,11 @@ transformTree x (Leaf y)		=	Leaf (x y)
 transformTree x (Branch y z)	=	Branch (transformTree x y) (transformTree x z)
 
 evaluate	::	(Cons a) => Tree a -> Maybe a
-evaluate (Branch (Leaf x) (Leaf y))
+evaluate exp@(Branch (Leaf x) (Leaf y))
 	|	x == notCon && y == falseCon		=	Just trueCon
 	|	x == notCon && y == trueCon		=	Just falseCon
-	|	otherwise								=	Nothing
-evaluate _	=	Nothing
+	|	otherwise								=	eval exp
+evaluate l	=	eval l
 
 -- Simplifies a table with the priority being to simplify the specified column.
 

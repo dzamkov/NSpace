@@ -1,0 +1,9 @@
+-- Define factorial function
+forall x
+	if x = 1 then
+		fact x = 1
+	else
+		fact x = x * (fact (x - 1))
+
+-- Test expression
+ans = fact 5

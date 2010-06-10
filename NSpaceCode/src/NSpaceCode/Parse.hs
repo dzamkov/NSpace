@@ -76,6 +76,18 @@ whiteSpaceParse (Just _, True) (Just (Character '\n'))	=	((Just 0, True), [])
 whiteSpaceParse (Just x, True) (Just (Character '\t'))	=	((Just (x + 1), True), [])
 whiteSpaceParse (Just x, True) (Just y)						=	((Nothing, False), [NewLine x, y])
 whiteSpaceParse (_, _) _											=	((Nothing, False), [])
+
+-- (Has Leading "-", In Comment)
+commentInitial	=	(False, False)
+
+commentParse (False, False) (Just (Character '-'))		=	((True, False), [])
+commentParse (False, False) (Just x)						=	((False, False), [x])
+commentParse (True, False) (Just (Character '-'))		=	((False, True), [])
+commentParse (True, False) (Just x)							=	((False, False), [Character '-', x])
+commentParse (False, True) (Just (NewLine x))			=	((False, False), [NewLine x])
+commentParse (False, True)	(Just _)							=	((False, True), [])
+commentParse (True, False) Nothing							=	((False, False), [Character '-'])
+commentParse _ Nothing											=	((False, False), [])
 			
 -- (Current Word)
 wordInitial		=	(Nothing) :: (Maybe String)
@@ -91,6 +103,7 @@ wordParse (Just s) Nothing						=	((Nothing), [Word s])
 				
 parse	::	String -> [Token]
 parse x	=	(streamParse wordInitial wordParse)
-				$ (streamParse whiteSpaceInitial whiteSpaceParse) 
+				$ (streamParse commentInitial commentParse)
+				$ (streamParse whiteSpaceInitial whiteSpaceParse)
 				$ (streamParse stringLiteralInitial stringLiteralParse) 
 				$ tokenize x
