@@ -22,6 +22,7 @@ data Token	=
 	Space |
 	NewLine Int |		-- Indents included
 	StringLiteral [Char] |
+	Bracket Int Bool |
 	Word [Char] deriving (Show)
 
 -- Converts a string to a set of character tokens
@@ -88,6 +89,22 @@ commentParse (False, True) (Just (NewLine x))			=	((False, False), [NewLine x])
 commentParse (False, True)	(Just _)							=	((False, True), [])
 commentParse (True, False) Nothing							=	((False, False), [Character '-'])
 commentParse _ Nothing											=	((False, False), [])
+
+--	0	=	()
+-- 1	=	{}
+--	2	=	[]
+
+bracketInitial	=	() 
+
+bracketParse () (Just (Character '('))	=	((), [Bracket 0 False])
+bracketParse () (Just (Character '{'))	=	((), [Bracket 1 False])
+bracketParse () (Just (Character '['))	=	((), [Bracket 2 False])
+bracketParse () (Just (Character ')'))	=	((), [Bracket 0 True])
+bracketParse () (Just (Character '}'))	=	((), [Bracket 1 True])
+bracketParse () (Just (Character ']'))	=	((), [Bracket 2 True])
+bracketParse () (Just x)					=	((), [x])
+bracketParse () Nothing						=	((), [])
+
 			
 -- (Current Word)
 wordInitial		=	(Nothing) :: (Maybe String)
@@ -103,6 +120,7 @@ wordParse (Just s) Nothing						=	((Nothing), [Word s])
 				
 parse	::	String -> [Token]
 parse x	=	(streamParse wordInitial wordParse)
+				$ (streamParse bracketInitial bracketParse)
 				$ (streamParse commentInitial commentParse)
 				$ (streamParse whiteSpaceInitial whiteSpaceParse)
 				$ (streamParse stringLiteralInitial stringLiteralParse) 
