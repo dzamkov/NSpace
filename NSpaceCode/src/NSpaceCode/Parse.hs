@@ -23,6 +23,8 @@ data Token	=
 	NewLine Int |		-- Indents included
 	StringLiteral [Char] |
 	Bracket Int Bool |
+	Seperator |
+	Forall (Set.Set [Char]) |
 	Word [Char] deriving (Show)
 
 -- Converts a string to a set of character tokens
@@ -41,6 +43,12 @@ streamParse i f t	=	(snd nls) ++ (snd (f (fst nls) Nothing))
 			where
 				nextState = f (curState) (Just t)
 		nls	=	(foldl (foldFunc f) (i, []) t)
+	
+-- Parse function that simply replaces tokens.
+	
+replaceParse	::	(Token -> Token) -> () -> Maybe Token -> ((), [Token])
+replaceParse f _ (Just x)	=	((), [f x])
+replaceParse _ _ (Nothing)	=	((), [])
 	
 -- (Current String, In Escape)
 stringLiteralInitial		=	(Nothing, False)
@@ -78,6 +86,11 @@ whiteSpaceParse (Just x, True) (Just (Character '\t'))	=	((Just (x + 1), True), 
 whiteSpaceParse (Just x, True) (Just y)						=	((Nothing, False), [NewLine x, y])
 whiteSpaceParse (_, _) _											=	((Nothing, False), [])
 
+isWhiteSpace	::	Token -> Bool
+isWhiteSpace (NewLine _)	=	True
+isWhiteSpace (Space)			=	True
+isWhiteSpace _					=	False
+
 -- (Has Leading "-", In Comment)
 commentInitial	=	(False, False)
 
@@ -96,15 +109,29 @@ commentParse _ Nothing											=	((False, False), [])
 
 bracketInitial	=	() 
 
-bracketParse () (Just (Character '('))	=	((), [Bracket 0 False])
-bracketParse () (Just (Character '{'))	=	((), [Bracket 1 False])
-bracketParse () (Just (Character '['))	=	((), [Bracket 2 False])
-bracketParse () (Just (Character ')'))	=	((), [Bracket 0 True])
-bracketParse () (Just (Character '}'))	=	((), [Bracket 1 True])
-bracketParse () (Just (Character ']'))	=	((), [Bracket 2 True])
-bracketParse () (Just x)					=	((), [x])
-bracketParse () Nothing						=	((), [])
+bracketParse	=	replaceParse (\x -> case x of
+	Character '('		->		Bracket 0 False
+	Character '{'		->		Bracket 1 False
+	Character '['		->		Bracket 2 False
+	Character ')'		->		Bracket 0 True
+	Character '}'		->		Bracket 1 True
+	Character ']'		->		Bracket 2 True
+	x						->		x)
 
+-- (Pre WhiteSpace, Seperator)
+
+seperatorInitial	=	(Nothing, False)
+
+seperatorParse (x, False) (Just (Character ','))	=	((x, True), [])
+seperatorParse (Nothing, False) (Just (x))			=	if		isWhiteSpace x
+																		then	((Just x, False), [])
+																		else	((Nothing, False), [x])
+seperatorParse (Nothing, False) Nothing				=	((Nothing, False), [])
+seperatorParse (Just y, False) Nothing					=	((Nothing, False), [y])
+seperatorParse (Just y, False) (Just x)				=	((Nothing, False), [y, x])
+seperatorParse (_, True) (Just (Space))				=	((Nothing, False), [Seperator])
+seperatorParse (_, True) (Just x)						=	((Nothing, False), [Seperator, x])
+seperatorParse (_, True) Nothing							=	((Nothing, False), [Seperator])
 			
 -- (Current Word)
 wordInitial		=	(Nothing) :: (Maybe String)
@@ -120,6 +147,7 @@ wordParse (Just s) Nothing						=	((Nothing), [Word s])
 				
 parse	::	String -> [Token]
 parse x	=	(streamParse wordInitial wordParse)
+				$ (streamParse seperatorInitial seperatorParse)
 				$ (streamParse bracketInitial bracketParse)
 				$ (streamParse commentInitial commentParse)
 				$ (streamParse whiteSpaceInitial whiteSpaceParse)
