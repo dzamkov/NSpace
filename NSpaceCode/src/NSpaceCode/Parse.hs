@@ -25,7 +25,7 @@ data Token	=
 	Bracket Int Bool |
 	Seperator |
 	Forall (Set.Set [Char]) |
-	Word [Char] deriving (Show)
+	Word [Char] deriving (Show, Eq)
 
 -- Converts a string to a set of character tokens
 	
@@ -116,22 +116,15 @@ bracketParse	=	replaceParse (\x -> case x of
 	Character ')'		->		Bracket 0 True
 	Character '}'		->		Bracket 1 True
 	Character ']'		->		Bracket 2 True
-	x						->		x)
+	y						->		y)
 
 -- (Pre WhiteSpace, Seperator)
 
-seperatorInitial	=	(Nothing, False)
+seperatorInitial	=	()
 
-seperatorParse (x, False) (Just (Character ','))	=	((x, True), [])
-seperatorParse (Nothing, False) (Just (x))			=	if		isWhiteSpace x
-																		then	((Just x, False), [])
-																		else	((Nothing, False), [x])
-seperatorParse (Nothing, False) Nothing				=	((Nothing, False), [])
-seperatorParse (Just y, False) Nothing					=	((Nothing, False), [y])
-seperatorParse (Just y, False) (Just x)				=	((Nothing, False), [y, x])
-seperatorParse (_, True) (Just (Space))				=	((Nothing, False), [Seperator])
-seperatorParse (_, True) (Just x)						=	((Nothing, False), [Seperator, x])
-seperatorParse (_, True) Nothing							=	((Nothing, False), [Seperator])
+seperatorParse =	replaceParse (\x -> case x of
+	Character ','		->		Seperator
+	y						->		y)
 			
 -- (Current Word)
 wordInitial		=	(Nothing) :: (Maybe String)
@@ -142,11 +135,25 @@ wordParse (Nothing) (Nothing)					=	((Nothing), [])
 wordParse (Just s) (Just (Character c))	=	((Just (s ++ [c])), [])
 wordParse (Just s) (Just x)					=	((Nothing), [Word s, x])
 wordParse (Just s) Nothing						=	((Nothing), [Word s])
+
+-- (Current Word Set, Accepting new)
+forallInitial	=	(Nothing, False)
+
+forallParse (Nothing, False) (Just (Word "forall"))	=	((Just (Set.empty), True), [])
+forallParse (Nothing, False) (Just x)						=	((Nothing, False), [x])
+forallParse (Nothing, False) (Nothing)						=	((Nothing, False), [])
+forallParse (Just y, True) (Just (Word x))				=	((Just (Set.insert x y), False), [])
+forallParse (Just y, a) (Just (Space))						=	((Just y, a), [])
+forallParse (Just y, False) (Just (Seperator))			=	((Just y, True), [])
+forallParse (Just y, False) (Just x)						=	((Nothing, False), [Forall y, x])
+forallParse (Just y, _) (Nothing)							=	((Nothing, False), [])
+																	
 			
 -- Parses a text to the highest-level tokens possible.
 				
 parse	::	String -> [Token]
-parse x	=	(streamParse wordInitial wordParse)
+parse x	=	(streamParse forallInitial forallParse)
+				$ (streamParse wordInitial wordParse)
 				$ (streamParse seperatorInitial seperatorParse)
 				$ (streamParse bracketInitial bracketParse)
 				$ (streamParse commentInitial commentParse)
