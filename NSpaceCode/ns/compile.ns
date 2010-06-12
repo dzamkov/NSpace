@@ -6,6 +6,10 @@ operatorlg	all	*		--	Define all to have
 								--	than *, and to be left-
 								-- associative
 
+product all [3, 5, 4]		=	60
+sum all {2, 3, 4, 5}			=	14
+union all [{5}, {6}, {}]	=	{5, 6}
+
 forall f, x, y
 	if f x y = f y x then
 		f all {x}				=	x

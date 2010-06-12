@@ -158,10 +158,23 @@ forallParse (Just y, False) (Just (Seperator))			=	((Just y, True), [])
 forallParse (Just y, False) (Just x)						=	((Nothing, False), [Forall y, x])
 forallParse (Just y, _) (Nothing)							=	((Nothing, False), [])
 
+-- Bracket parsing is complicated
+bracketedInitial	:: [(Int, [Token])]
+bracketedInitial	=	[]
+
+bracketedParse [] (Just (Bracket x False))					=	([(x, [])], [])
+bracketedParse [] (Just x)											=	([], [x])
+bracketedParse [] Nothing											=	([], [])
+bracketedParse ((y, toks):[]) (Just (Bracket _ True))		=	([], [Bracketed y toks]) 
+bracketedParse (x:y) z												=	case (bracketedParse y z) of
+																					(ninfo, toks)	->	case x of
+																						(i, l)	->	((i, l ++ toks):ninfo, [])
+
 -- Parses a text to the highest-level tokens possible.
 				
 parse	::	String -> [Token]
-parse x	=	(streamParse forallInitial forallParse)
+parse x	=	(streamParse bracketedInitial bracketedParse)
+				$ (streamParse forallInitial forallParse)
 				$ (streamParse wordInitial wordParse)
 				$ (streamParse seperatorInitial seperatorParse)
 				$ (streamParse bracketInitial bracketParse)
