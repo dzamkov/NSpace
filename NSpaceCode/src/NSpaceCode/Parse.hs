@@ -26,7 +26,7 @@ data Token	=
 	Seperator |
 	Forall (Set.Set [Char]) |
 	Word [Char] |
-	Block [[Token]] |
+	Block [Token] |
 	Bracketed Int [Token] deriving (Show, Eq)
 	
 defaultOperators	=	[
@@ -169,11 +169,26 @@ bracketedParse ((y, toks):[]) (Just (Bracket _ True))		=	([], [Bracketed y toks]
 bracketedParse (x:y) z												=	case (bracketedParse y z) of
 																					(ninfo, toks)	->	case x of
 																						(i, l)	->	((i, l ++ toks):ninfo, [])
+-- So is block parsing
+blockInitial	::	[[Token]]
+blockInitial	=	[]
 
+blockParse [] (Just (NewLine 0))			=	([], [NewLine 0])
+blockParse [] (Just (NewLine 1))			=	([[]], [])
+blockParse [] (Just x)						=	([], [x])
+blockParse (x:y) (Just (NewLine 0))		=	([], [Block (x ++ snd (blockParse y (Just (NewLine 0))))])
+blockParse (x:y) z							=	case (blockParse y (case z of
+															(Just (NewLine l))	->	(Just (NewLine (l - 1)))
+															l							->	l
+														)) of
+															(ninfo, toks)	->	((x ++ toks):ninfo, [])
+blockParse x _									=	(x, [])
+																						
 -- Parses a text to the highest-level tokens possible.
 				
 parse	::	String -> [Token]
-parse x	=	(streamParse bracketedInitial bracketedParse)
+parse x	=	(streamParse blockInitial blockParse)
+				$ (streamParse bracketedInitial bracketedParse)
 				$ (streamParse forallInitial forallParse)
 				$ (streamParse wordInitial wordParse)
 				$ (streamParse seperatorInitial seperatorParse)
