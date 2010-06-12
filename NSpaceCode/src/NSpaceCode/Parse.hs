@@ -25,7 +25,17 @@ data Token	=
 	Bracket Int Bool |
 	Seperator |
 	Forall (Set.Set [Char]) |
-	Word [Char] deriving (Show, Eq)
+	Word [Char] |
+	Block [[Token]] |
+	Bracketed Int [Token] deriving (Show, Eq)
+	
+defaultOperators	=	[
+	(True, Set.fromList (["*"])),
+	(True, Set.fromList (["+", "-"])),
+	(True, Set.fromList (["not"])),
+	(True, Set.fromList (["="])),
+	(True, Set.fromList (["or"])),
+	(True, Set.fromList (["and"]))]
 
 -- Converts a string to a set of character tokens
 	
@@ -147,8 +157,7 @@ forallParse (Just y, a) (Just (Space))						=	((Just y, a), [])
 forallParse (Just y, False) (Just (Seperator))			=	((Just y, True), [])
 forallParse (Just y, False) (Just x)						=	((Nothing, False), [Forall y, x])
 forallParse (Just y, _) (Nothing)							=	((Nothing, False), [])
-																	
-			
+
 -- Parses a text to the highest-level tokens possible.
 				
 parse	::	String -> [Token]

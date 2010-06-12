@@ -1,0 +1,34 @@
+--------------------------------------------------
+--	Helper Definitions									--
+--------------------------------------------------
+operatorlg	all	*		--	Define all to have
+								--	greater bind strength
+								--	than *, and to be left-
+								-- associative
+
+forall f, x, y
+	if f x y = f y x then
+		f all {x}				=	x
+		f all [x]				=	x
+		f all {x, y}			=	f x y
+		f all [x, y]			=	f x y
+		f all (union {x} y)	=	f x (f all y)
+		f all ([x] ++ y)		=	f x (f all y)
+
+--------------------------------------------------
+--	Text Parser												--
+--------------------------------------------------
+
+-- A pattern is a mapping of text to information
+-- about the text's formation. The basic pattern
+-- called atomPattern, has only one such text and
+-- gives no information relating to it. A pattern
+-- match returns a set information for all possible
+-- matches.
+
+forall pattern, text
+	if pattern = text then
+		match (atomPattern pattern) text = {[]}
+	else
+		match (atomPattern pattern) text = {}
+		
