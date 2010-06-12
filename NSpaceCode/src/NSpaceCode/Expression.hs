@@ -18,11 +18,12 @@ import qualified Data.Map as Map
 -- that produces a definite value.
 
 data Expression	=	
-	Variable |
+	Variable String |
 	Function Expression Expression |
-	ForAll (Set.Set Int) Expression |
-	Fold (Set.Set Int) Expression |
-	Scope (Set.Set Int) Expression deriving (Show, Ord, Eq)
+	ForAll (Set.Set String) Expression |
+	Scope (Set.Set String) Expression |
+	ListExp [Expression] | 
+	SetExp [Expression] deriving (Show, Ord, Eq)
 	
 -- Variable	: 	Declares a placeholder for a single value
 -- Function	:	Applies an expression to another as a function
@@ -30,12 +31,10 @@ data Expression	=
 -- Fold		:	Declares multiple vars to have the same value and act as a single variable
 -- Scope		:	Hides some variables in the nested expression
 
--- Gets the amount of bound variables in an expression. Bound variables can be accessed with an index between
--- 0 and this number
+-- Gets the names of the variables bound in an expression.
 
-getBoundVars						::	Expression -> Int
-getBoundVars (Variable)			=	1
-getBoundVars (Function x y)	=	(getBoundVars x) + (getBoundVars y)
-getBoundVars (ForAll x y)		=	(getBoundVars y) - (Set.size x)
-getBoundVars (Fold x y)			=	(getBoundVars y) - (Set.size x) + 1
-getBoundVars (Scope x y)		=	(getBoundVars y) - (Set.size x)
+getBoundVars						::	Expression -> Set.Set String
+getBoundVars (Variable s)		=	Set.singleton s
+getBoundVars (Function x y)	=	Set.union (getBoundVars x) (getBoundVars y)
+getBoundVars (ForAll v e)		=	Set.difference (getBoundVars e) v
+getBoundVars (Scope v e)		=	Set.difference (getBoundVars e) v

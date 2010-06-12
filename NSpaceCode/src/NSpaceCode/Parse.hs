@@ -14,6 +14,7 @@ module NSpaceCode.Parse (
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import NSpaceCode.Expression
 
 -- A portion of an input text given a representation
 
@@ -27,7 +28,8 @@ data Token	=
 	Forall (Set.Set [Char]) |
 	Word [Char] |
 	Block [Token] |
-	Bracketed Int [Token] deriving (Show, Eq)
+	Bracketed Int [Token] |
+	ExpToken Expression deriving (Show, Eq)
 	
 defaultOperators	=	[
 	(True, Set.fromList (["*"])),
@@ -163,6 +165,7 @@ bracketedInitial	:: [(Int, [Token])]
 bracketedInitial	=	[]
 
 bracketedParse [] (Just (Bracket x False))					=	([(x, [])], [])
+bracketedParse [] (Just (NewLine _))							=	([], [Space])
 bracketedParse [] (Just x)											=	([], [x])
 bracketedParse [] Nothing											=	([], [])
 bracketedParse ((y, toks):[]) (Just (Bracket _ True))		=	([], [Bracketed y toks]) 
@@ -183,11 +186,10 @@ blockParse (x:y) z							=	case (blockParse y (case z of
 														)) of
 															(ninfo, toks)	->	((x ++ toks):ninfo, [])
 blockParse x _									=	(x, [])
-																						
--- Parses a text to the highest-level tokens possible.
+
+-- Parses a text to an expression
 				
-parse	::	String -> [Token]
-parse x	=	(streamParse blockInitial blockParse)
+parse x	=  (streamParse blockInitial blockParse)
 				$ (streamParse bracketedInitial bracketedParse)
 				$ (streamParse forallInitial forallParse)
 				$ (streamParse wordInitial wordParse)

@@ -18,6 +18,8 @@ forall f, x, y
 		f all [x, y]			=	f x y
 		f all (union {x} y)	=	f x (f all y)
 		f all ([x] ++ y)		=	f x (f all y)
+		
+null		=	{}
 
 --------------------------------------------------
 --	Text Parser												--
@@ -32,7 +34,7 @@ forall f, x, y
 
 forall pattern, text
 	if pattern = text then
-		match (atomPattern pattern) text = {[]}
+		match (atomPattern pattern) text = {null}
 	else
 		match (atomPattern pattern) text = {}
 		
