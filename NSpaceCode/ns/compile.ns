@@ -1,19 +1,23 @@
 --------------------------------------------------
 --	Helper Definitions									--
 --------------------------------------------------
+------------------------------------------
 operatorlg	U		*
 U	=	union
 
+
+------------------------------------------
 operatore	D		U
 D	=	difference
 
+
+------------------------------------------
 operatore	I		D
 I	=	intersection
 
-operatorlg	all	*		--	Define all to have
-								--	greater bind strength
-								--	than *, and to be left-
-								-- associative
+
+------------------------------------------
+operatorlg	all	*		
 
 product all [3, 5, 4]		=	60
 sum all {2, 3, 4, 5}			=	14
@@ -27,13 +31,42 @@ forall f, x, y
 		f all [x, y]			=	f x y
 		f all (union {x} y)	=	f x (f all y)
 		f all ([x] .. y)		=	f x (f all y)
+
 		
+------------------------------------------
+operatorll	in		all
+
+5 in {1, 2, 3, 4, 5}		=	true
+3 in {true, false, 6}	=	false
+
+forall x, y, z
+	x in {}			=	false
+	x in ({x} U y)	=	true
+	x in (y U z)	=	(x in y) or (x in z)
+
+
+------------------------------------------
+size {1, 2, 3}		=	3
+size {14, 3}		=	2
+
+size {}	=	0
+forall x, y
+	size ({x} U y)	=	if (x in y) then (size y) else (size y + 1)
+	
+------------------------------------------
+len [1, 2, 3]		=	3
+len "hello"			=	5
+
+len []	=	0
+forall x, y
+	len [x]			=	1
+	len (x .. y)	=	len x + len y
 		
-		
+------------------------------------------	
 null		=	{}
 
 
-
+------------------------------------------
 first 3 [1, 2, 3, 4, 5]		=	[1, 2, 3]
 last 3 [1, 2, 3, 4, 5]		=	[3, 4, 5]
 first 2 [1, 2, 3]				=	[1, 2]
@@ -51,18 +84,40 @@ forall x, y, z
 	last z [x .. y]	=	last (z - len y) x .. last z y
 	
 	
-	
+------------------------------------------
 map not [true, true, false]	=	[false, false, true]
 map negate {1, 2, 3}				=	{-1, -2, -3}
 map square {2, -2}				=	{4}
 	
-forall f, x y
+forall f, x, y
 	map f []			=	[]
 	map f {}			=	{}
 	map f [x]		=	[f x]
 	map f {x}		=	{f x}
 	map f (x .. y)	=	(map f x) .. (map f y)
 	map f (x U y)	=	(map f x) U (map f y)
+	
+	
+------------------------------------------
+cross [{1, 2}, {3, 4}]			=	{[1, 3], [1, 4], [2, 3], [2, 4]}
+cross [{true, false}, {true}]	=	{[true, true], [false, true]}
+
+cross [{}]	=	{}
+forall x, y
+	cross [{x}]			=	{[x]}
+	cross	[{x} U y]	=	{[x]} U (cross [y])
+	cross [{x}] .. y	=	map ((..) x) (cross y)
+	
+	
+------------------------------------------
+key (kvp "hello" "world")		=	"hello"
+value (kvp "hello" "world")	=	"world"
+key (kvp 5 "lol")					=	5
+
+forall x, y
+	key (kvp x y)		=	x
+	value (kvp x y)	=	y
+	
 	
 --------------------------------------------------
 --	Text Parser												--
@@ -75,6 +130,7 @@ forall f, x y
 -- match returns a set information for all possible
 -- matches.
 
+------------------------------------------
 match (atom "hello") "hello"		=	{null}
 match (atom "goodbye") "hello"	=	{}
 
@@ -85,8 +141,27 @@ forall pattern, text
 		match (atom pattern) text	=	{}
 		
 		
+------------------------------------------
+match ([atom "hello", atom " ", atom "world"]) "hello world"		=	{[null, null, null]}
+match ([atom "meh", atom "lol"]) "hello world"							=	{}
+
+forall x, y, text
+	match [x] text		=	cross [match x text]
+	local lens
+		lens						=	range 0 (len text)	
+		match (x .. y) text	=	union all (
+			map (\z -> 
+				cross [
+					match x (first z text), 
+					match y (last (len text - z) text)])
+			lens)
 		
-match ((atom "hello") .. (atom " ") .. (atom "world")) "hello world"		=	{[null, null, null]}
-match ((atom "meh") .. (atom "lol")) "hello world"								=	{}
 		
-		
+------------------------------------------
+match {atom "hello", atom "goodbye"} "hello"							=	{kvp (atom "hello") null}
+match {atom "lol", [atom "hello", atom "world"]} "helloworld"	=	{kvp [atom "hello", atom "world"] [null, null]}
+
+forall x, y, text
+	iff (y in (match x text)) then
+		(kvp x y) in (match {x} text)
+	match (x U y) text	=	union (match x text) (match y text)
