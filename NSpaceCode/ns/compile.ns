@@ -1,7 +1,14 @@
 --------------------------------------------------
 --	Helper Definitions									--
 --------------------------------------------------
+operatorlg	U		*
+U	=	union
 
+operatore	D		U
+D	=	difference
+
+operatore	I		D
+I	=	intersection
 
 operatorlg	all	*		--	Define all to have
 								--	greater bind strength
@@ -33,7 +40,6 @@ first 2 [1, 2, 3]				=	[1, 2]
 
 first 0 []		=	[]
 last 0 []		=	[]
-
 forall x, y, z
 	if y > 0 then
 		first y []		=	[]
@@ -43,6 +49,20 @@ forall x, y, z
 		last y [x]		=	x
 	first z [x .. y]	=	first z x .. first (z - len x) y
 	last z [x .. y]	=	last (z - len y) x .. last z y
+	
+	
+	
+map not [true, true, false]	=	[false, false, true]
+map negate {1, 2, 3}				=	{-1, -2, -3}
+map square {2, -2}				=	{4}
+	
+forall f, x y
+	map f []			=	[]
+	map f {}			=	{}
+	map f [x]		=	[f x]
+	map f {x}		=	{f x}
+	map f (x .. y)	=	(map f x) .. (map f y)
+	map f (x U y)	=	(map f x) U (map f y)
 	
 --------------------------------------------------
 --	Text Parser												--
@@ -55,14 +75,18 @@ forall x, y, z
 -- match returns a set information for all possible
 -- matches.
 
+match (atom "hello") "hello"		=	{null}
+match (atom "goodbye") "hello"	=	{}
+
 forall pattern, text
 	if pattern = text then
-		match (atomPattern pattern) text	=	{null}
+		match (atom pattern) text	=	{null}
 	else
-		match (atomPattern pattern) text	=	{}
+		match (atom pattern) text	=	{}
 		
 		
-forall pattern, patternRemain, text
-	match ([pattern] .. patternRemain)	=	union all (
+		
+match ((atom "hello") .. (atom " ") .. (atom "world")) "hello world"		=	{[null, null, null]}
+match ((atom "meh") .. (atom "lol")) "hello world"								=	{}
 		
 		
