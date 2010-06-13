@@ -21,7 +21,6 @@ module NSpaceCode.Value (
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import NSpaceCode.Expression
 
 -- A type usable as a constant
 	
@@ -83,11 +82,15 @@ class (Value b c) => Table a b c | a -> b where
 -- A simple unoptimizied implemementation of a value
 
 data SimpleValue a =
-	ConstantValue a deriving(Show)
+	ConstantValue a |
+	ColumnValue (SimpleTable a) Int deriving(Show)
 
 instance (Cons a) => Value (SimpleValue a) a where
 	constantValue x					=	ConstantValue x
 	getConstant (ConstantValue x)	=	Just x
+	getConstant (ColumnValue x y)	=	case simplifyColumn (x, y) of
+		((ConstantTable (ConstantValue z)), 0)		->		Just z
+		_														->		Nothing
 
 -- A simple unoptimizied implemenentation of a table
 
@@ -122,6 +125,7 @@ instance (Cons a) => Table (SimpleTable a) (SimpleValue a) a where
 	tableValue (EmptyTable _) _		=	Nothing
 	tableValue (FreeTable) _			=	Nothing
 	tableValue (ConstantTable x) _	=	Just x
+	tableValue x y							=	Just (ColumnValue x y)
 	
 	tableFilter x y z			=	FilterTable z x y
 	

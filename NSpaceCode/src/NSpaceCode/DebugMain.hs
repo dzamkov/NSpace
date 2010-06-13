@@ -11,7 +11,6 @@ import qualified Data.Set as Set
 import Data.Maybe
 import NSpaceCode.Expression
 import NSpaceCode.Value
-import NSpaceCode.Parse
 
 -- Happy operator
 infixl 9 <^-^>
@@ -19,7 +18,7 @@ infixl 9 <^-^>
 (<^-^>) x y		=	y x
 
 -- Constant type
-data Constant	=
+data MyConstant	=
 	ConsInteger Integer |
 	ConsString String |
 	ConsEqual |
@@ -34,7 +33,7 @@ data Constant	=
 	ConsMinus |
 	ConsMult deriving (Show, Ord, Eq)
 	
-instance Cons Constant where
+instance Cons MyConstant where
 	equalCon 	= 	ConsEqual
 	iteCon		=	ConsITE
 	andCon		=	ConsAnd
@@ -49,7 +48,7 @@ instance Cons Constant where
 	eval (Branch (Branch (Leaf ConsMult) (Leaf (ConsInteger x))) (Leaf (ConsInteger y)))	=	Just (ConsInteger (x * y))
 	eval _																											=	Nothing
 	
--- Parsinate some test text
-parsinate	=	do
-	contents		<-		readFile "../ns/test.ns"
-	return (parse contents)
+myexp		=	Function (Function (Constant ConsEqual) (Variable "x")) (Constant $ ConsInteger 5)
+mytab		=	(expToTable myexp) :: ExpressionTable (SimpleTable MyConstant)
+mysol		=	solve myexp "x"
+myntab	=	case mysol of (Just (ColumnValue x _)) -> x
