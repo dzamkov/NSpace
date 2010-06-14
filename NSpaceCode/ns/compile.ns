@@ -234,9 +234,32 @@ forall x, y, z
 	value (table {x}) z		=	index z x
 	value (table (x U y)) z	=	(value (table x) z) U (value (table y) z)
 	
+
+	
+------------------------------------------
+len (table {["hello"]})								=	1
+len (table {["abc", "def"], ["efg", "hij"]})	=	2
+	
+forall x, y
+	len (table ({x} U y))	=	len x
+	
 	
 	
 ------------------------------------------
 value bigtable 0	=	bigset
 "OMG, LOL!?!, EVERYTHING IS IN THE TABLE!" in (value bigtable 0)
+size bigtable		=	1
 
+
+
+------------------------------------------
+-- Note: merging tables combines every row
+-- in one table with every row in the other
+
+forall x, y, z
+	len (merge x y)	=	len x + len y
+	if z < len x then
+		value (merge x y) z		=	value x z
+	else
+		value (merge x y) z		=	value y (z - len x)
+	merge (table x) (table y)	=	map (\x -> (index 0 x) .. (index 1 x)) (cross [x, y])
