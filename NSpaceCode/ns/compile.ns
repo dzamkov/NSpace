@@ -53,6 +53,16 @@ size {}	=	0
 forall x, y
 	size ({x} U y)	=	if (x in y) then (size y) else (size y + 1)
 	
+	
+------------------------------------------
+5 in bigset			=	true
+true in bigset		=	true
+bigset in bigset	=	true
+
+forall x
+	x in bigset
+	
+	
 ------------------------------------------
 len [1, 2, 3]		=	3
 len "hello"			=	5
@@ -104,9 +114,9 @@ cross [{true, false}, {true}]	=	{[true, true], [false, true]}
 
 cross [{}]	=	{}
 forall x, y
-	cross [{x}]			=	{[x]}
-	cross	[{x} U y]	=	{[x]} U (cross [y])
-	cross [{x}] .. y	=	map ((..) x) (cross y)
+	cross [{x}]				=	{[x]}
+	cross	[{x} U y]		=	{[x]} U (cross [y])
+	cross ([{x}] .. y)	=	map ((..) x) (cross y)
 	
 	
 ------------------------------------------
@@ -117,12 +127,26 @@ key (kvp 5 "lol")					=	5
 forall x, y
 	key (kvp x y)		=	x
 	value (kvp x y)	=	y
+
 	
+------------------------------------------
+operatore	where	all
+
+[1, 2, 3] where (\x -> x > 2)				=	[3]
+[1, 4, 2] where (\x -> x * x = x + x)	=	[1, 2]
+{5, 6, 7} where (\x -> x = 6)				=	{6}
+
+forall f, x, y
+	[] where f			=	[]
+	{}	where f			=	{}
+	[x] where f			=	if (f x) then [x] else []
+	{x} where f 		=	if (f x) then {x} else {}
+	(x .. y) where f	=	(x where f) .. (y where f)
+	(x U y) where f	=	(x where f) U (y where f)
 	
 --------------------------------------------------
 --	Text Parser												--
 --------------------------------------------------
-
 -- A pattern is a mapping of text to information
 -- about the text's formation. The basic pattern
 -- called atomPattern, has only one such text and
@@ -165,3 +189,54 @@ forall x, y, text
 	iff (y in (match x text)) then
 		(kvp x y) in (match {x} text)
 	match (x U y) text	=	union (match x text) (match y text)
+
+	
+------------------------------------------
+match any "w"	=	{"w"}
+match any "x"	=	{"x"}
+match any "wx"	=	{}
+
+forall text
+	if (len text) = 1 then
+		match any text		=	{text}
+	else
+		match any text		=	{}
+		
+
+------------------------------------------
+match string "\"hello\""	=	{"hello"}
+match string "'goodbye'"	=	{"goodbye"}
+match string "lol"			=	{}
+
+forall text
+	local instring, quotes
+		quotes					=	{atom "\"", atom "'"}
+		match string text		=	(
+			map
+				((match [quotes, instring, quotes] text) 
+				where 	
+				(\x -> index 0 x = index 2 x))
+			(\x -> index 1 x))
+		-- TODO: define instring
+		
+--------------------------------------------------
+--	Solver													--
+--------------------------------------------------
+-- Use tables of values to solve stuff. The value 
+-- command gets the values at a particular column
+-- of the table.
+
+------------------------------------------
+value (table {["hello"]}) 0								=	{"hello"}
+value (table {["abc", "def"], ["efg", "hij"]}) 1	=	{"def", "hij"}
+
+forall x, y, z
+	value (table {x}) z		=	index z x
+	value (table (x U y)) z	=	(value (table x) z) U (value (table y) z)
+	
+	
+	
+------------------------------------------
+value bigtable 0	=	bigset
+"OMG, LOL!?!, EVERYTHING IS IN THE TABLE!" in (value bigtable 0)
+
