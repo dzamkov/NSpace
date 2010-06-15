@@ -22,6 +22,7 @@ import qualified Data.Map as Map
 	
 class (Eq a, Ord a) => Cons a where
 	valueEqual	::	Value a -> Value a -> Bool
+	reduce		::	Value a -> Value a
 	
 -- Logic and numerical constant
 data SimpleCons	=
@@ -38,6 +39,13 @@ data SimpleCons	=
 	
 instance Cons SimpleCons where
 	valueEqual (ConsValue x) (ConsValue y)	=	True
+	
+	reduce 
+		(FuncValue 
+			(FuncValue 
+				(ConsValue (PlusCons)) 
+				(ConsValue (IntegerCons x))) 
+			(ConsValue (IntegerCons y)))			=	ConsValue $ IntegerCons $ x + y
 	
 -- A value made from a constant or the application
 -- of values onto each other as functions.
@@ -103,3 +111,10 @@ tableValue (JoinTable w x y) z
 	|	z /= x && z /= y									=	tableValue w z
 	|	z == x && ColumnTable w x == FreeTable		=	tableValue w y
 	|	z == y && ColumnTable w y == FreeTable		=	tableValue w x
+	
+tableValue (ApplyTable w x y) z
+	|	z == tableSize w && 
+		tableValue w x /= Nothing && 
+		tableValue w y /= Nothing						=	case (tableValue w x, tableValue w y) of
+																		(Just l, Just m) -> Just (FuncValue l m)
+	|	otherwise											=	tableValue w z

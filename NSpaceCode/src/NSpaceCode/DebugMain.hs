@@ -11,10 +11,14 @@ import qualified Data.Set as Set
 import NSpaceCode.Value
 
 testtab	=	(
-	(JoinTable
-		(MergeTable 
-			(FreeTable)
-			(MiniTable $ ConsValue $ IntegerCons 6))
-		0 1))
+	(ApplyTable
+		(ApplyTable
+			(MergeTable
+				(MergeTable
+					(MiniTable $ ConsValue $ PlusCons)
+					(MiniTable $ ConsValue $ IntegerCons 17))
+				(MiniTable $ ConsValue $ IntegerCons 24))
+			0 1)
+		3 2))
 		
-testval	=	tableValue testtab 0
+testval	=	tableValue testtab 4
