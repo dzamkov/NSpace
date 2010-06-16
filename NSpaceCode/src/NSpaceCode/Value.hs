@@ -23,6 +23,11 @@ import qualified Data.Map as Map
 class (Eq a, Ord a) => Cons a where
 	valueEqual	::	Value a -> Value a -> Bool
 	reduce		::	Value a -> Value a
+	split			::	Value a -> Table a
+	
+--	reduce	:	Optionally reduces a value to a simpiler form
+-- split		:	Creates a two column table showing all ways a value can 
+--					be represented by the function application of two other values.	
 	
 -- Logic and numerical constant
 data SimpleCons	=
@@ -46,6 +51,10 @@ instance Cons SimpleCons where
 				(ConsValue (PlusCons)) 
 				(ConsValue (IntegerCons x))) 
 			(ConsValue (IntegerCons y)))			=	ConsValue $ IntegerCons $ x + y
+			
+	split (ConsValue (LogicCons True))			=	MergeTable 
+																(MiniTable $ FuncValue (ConsValue AndCons) (ConsValue $ LogicCons True))
+																(MiniTable $ ConsValue $ LogicCons True)
 	
 -- A value made from a constant or the application
 -- of values onto each other as functions.
@@ -96,7 +105,7 @@ tableSize (ApplyTable x _ _)	=	tableSize x + 1
 	
 -- Gets the value of a column in a table, if the table has exactly
 -- one unique value in that column.
-tableValue	::	(Cons a) => (Table a) -> Int -> Maybe (Value a)
+tableValue	::	forall a. (Cons a) => (Table a) -> Int -> Maybe (Value a)
 
 
 tableValue (MiniTable x) _			=	Just x
@@ -106,12 +115,36 @@ tableValue (MergeTable x y) z		=	if		z < tableSize x
 tableValue (FreeTable) _			=	Nothing
 tableValue (ColumnTable x y) _	=	tableValue x y
 
-
 tableValue (JoinTable w x y) z
-	|	z /= x && z /= y									=	tableValue w z
+	|	x == y												=	tableValue w z
 	|	z == x && ColumnTable w x == FreeTable		=	tableValue w y
 	|	z == y && ColumnTable w y == FreeTable		=	tableValue w x
-	
+tableValue tab@(JoinTable (ApplyTable t l m) x y) z
+	|	x < tableSize t && y < tableSize t			=	tableValue (ApplyTable (JoinTable t x y) l m) z
+	|	x == tableSize t && (hasres $ getres y)	=	case getres y of (Just h) -> h
+	|	y == tableSize t && (hasres $ getres x)	=	case getres x of (Just h) -> h
+	where
+		hasres				::	Maybe x -> Bool
+		hasres (Just _)	=	True
+		hasres (Nothing)	=	False
+		
+		-- If one joined var is the result of the apply table, this will try to get the result of
+		-- the tableValue, given the other joined var
+		getres		::	Int -> Maybe (Maybe (Value a))
+		getres x		=	case (tableValue tab x) of
+								Just n	->	Just (tableValue 
+									(ApplyTable
+										(JoinTable
+											(JoinTable
+												(MergeTable t (split n))
+												l (tableSize t))
+											m (tableSize t + 1))
+										l m) 	(if	z == tableSize t
+												then 	z + 2
+												else	z))
+								Nothing	->	Nothing
+				
+
 tableValue (ApplyTable w x y) z
 	|	z == tableSize w && 
 		tableValue w x /= Nothing && 
