@@ -76,15 +76,6 @@ data Table a	=
 	ColumnTable (Table a) Int |
 	JoinTable (Table a) Int Int |
 	ApplyTable (Table a) Int Int deriving (Show)
-
-instance (Cons a) => Eq (Table a) where
-	MiniTable x == MiniTable y							=	x == y
-	FreeTable == FreeTable								=	True
-	ColumnTable (MergeTable x y) z == l				=	if		z < tableSize x
-																	then	ColumnTable x z == l
-																	else	ColumnTable y (z - tableSize x) == l
-	ColumnTable FreeTable 0 == FreeTable			=	True
-	ColumnTable (MiniTable x) 0 == MiniTable y	=	x == y
 	
 	
 -- MiniTable 	:	Contains ONE expressible value in one column
@@ -108,17 +99,23 @@ tableSize (ApplyTable x _ _)	=	tableSize x + 1
 tableValue	::	forall a. (Cons a) => (Table a) -> Int -> Maybe (Value a)
 
 
-tableValue (MiniTable x) _			=	Just x
+tableValue (MiniTable x) 0			=	Just x
 tableValue (MergeTable x y) z		=	if		z < tableSize x
 												then	tableValue x z
 												else 	tableValue y (z - tableSize x)
-tableValue (FreeTable) _			=	Nothing
-tableValue (ColumnTable x y) _	=	tableValue x y
+tableValue (FreeTable) 0			=	Nothing
+tableValue (ColumnTable x y) 0	=	tableValue x y
 
 tableValue (JoinTable w x y) z
-	|	x == y												=	tableValue w z
-	|	z == x && ColumnTable w x == FreeTable		=	tableValue w y
-	|	z == y && ColumnTable w y == FreeTable		=	tableValue w x
+	|	x == y													=	tableValue w z
+	|	z == x && (
+		case (tableValue w x) of
+			(Just n)	->	tableHasValue w y n
+			Nothing	->	False)								=	tableValue w x
+	|	z == y && (
+		case (tableValue w y) of
+			(Just n)	->	tableHasValue w x n
+			Nothing	->	False)								=	tableValue w y
 tableValue tab@(JoinTable (ApplyTable t l m) x y) z
 	|	x < tableSize t && y < tableSize t			=	tableValue (ApplyTable (JoinTable t x y) l m) z
 	|	x == tableSize t && (hasres $ getres y)	=	case getres y of (Just h) -> h
@@ -151,3 +148,17 @@ tableValue (ApplyTable w x y) z
 		tableValue w y /= Nothing						=	case (tableValue w x, tableValue w y) of
 																		(Just l, Just m) -> Just (FuncValue l m)
 	|	otherwise											=	tableValue w z
+	
+	
+-- Gets if the value exists in the specified column of a table.
+	
+tableHasValue	::	forall a. (Cons a) => (Table a) -> Int -> Value a -> Bool
+
+tableHasValue (MiniTable x) 0 y			=	x == y
+tableHasValue (FreeTable) 0 y				=	True
+tableHasValue (MergeTable w x) y z		=	if		y < tableSize w
+														then 	tableHasValue w y z
+														else 	tableHasValue x (y - tableSize w) z
+tableHasValue (ColumnTable x y) 0 z		=	tableHasValue x y z
+tableHasValue (ApplyTable t l m) x y
+	|	x	< tableSize t						=	tableHasValue t x y
