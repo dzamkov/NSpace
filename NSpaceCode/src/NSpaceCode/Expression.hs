@@ -8,8 +8,7 @@
 
 module NSpaceCode.Expression (
 	Expression(..),
-	Program(..),
-	createProgram
+	implies
 ) where 
 
 import qualified Data.Set as Set
@@ -19,18 +18,24 @@ import NSpaceCode.Value
 -- A relation between variables, and functions
 -- that produces a definite value.
 
+-- Variables are given in terms of their current
+-- expression context. The context is the same
+-- in both parts of a function, however, the ForAll
+-- expression appends one variable to its inner context
+-- and the Scope expression adds the specified amount
+-- of variables to its inner context.
+
 data Expression a	=	
-	Variable |
+	Variable Int |
 	Constant a |
-	Function (Expression a) (Expression a) (Map.Map Int Int) |
-	ForAll (Set.Set Int) (Expression a) |
-	Scope (Set.Set Int) (Expression a) deriving (Show, Ord, Eq)
+	Function (Expression a) (Expression a) |
+	ForAll (Expression a) |
+	Scope Int (Expression a) deriving (Show, Eq, Ord)
 	
--- A list of expressions known to be true based on previous expressions.
-	
-data Program a	= Program {
-	statements 	::	[(Int -> Maybe Int, Expression a)] }
-	
--- Creates a program, given a true expression.
-createProgram		::	Expression a -> Program a
-createProgram y	=	Program [((\x -> x), y)]
+-- Given a true expression and a context size, this will find possible representations
+-- for the specified expression.
+implies	::	(Cons a) => Expression a -> Int -> Expression a -> (Set.Set (Expression a))
+
+implies (Function (Function (Constant x) y) z) c s
+	|	x == equalCons && y == s		=	(Set.union (Set.singleton s) (Set.singleton z))
+	|	x == equalCons && z == s		=	(Set.union (Set.singleton s) (Set.singleton y))

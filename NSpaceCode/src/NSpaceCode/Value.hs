@@ -7,7 +7,8 @@
 -----------------------------------------------------------------------------
 
 module NSpaceCode.Value (
-	Cons(..)
+	Cons(..),
+	SimpleCons(..)
 ) where 
 
 import qualified Data.Set as Set
@@ -18,12 +19,12 @@ import qualified Data.Map as Map
 class (Eq a, Ord a) => Cons a where
 	equalCons 	::	a
 	andCons		::	a
-	orCons		::	a
-	xorCons		::	a
-	xandCons		::	a
 	iteCons		::	a
 	trueCons		::	a
 	falseCons	::	a
+	notCons		::	a
+	apply			::	a -> a -> a
+	reduce		::	a -> a
 
 -- Logic and numerical constant
 data SimpleCons	=
@@ -37,14 +38,19 @@ data SimpleCons	=
 	OrCons |
 	XorCons |
 	XandCons |
-	ITECons deriving (Show, Ord, Eq)
+	ITECons |
+	NotCons |
+	ApplyCons (SimpleCons) (SimpleCons) deriving (Show, Ord, Eq)
 	
 instance Cons SimpleCons where
 	equalCons	=	EqualCons
 	andCons		=	AndCons
-	orCons		=	OrCons
-	xorCons		=	XorCons
-	xandCons		=	XandCons
 	iteCons		=	ITECons
 	trueCons		=	LogicCons True
 	falseCons	=	LogicCons False
+	notCons		=	NotCons
+	apply x y	=	ApplyCons x y
+	
+	reduce (ApplyCons (ApplyCons (EqualCons) x) y)									=	LogicCons (x == y)
+	reduce (ApplyCons (ApplyCons (AndCons) (LogicCons x)) (LogicCons y))		=	LogicCons (x && y)
+	reduce x																						=	x
