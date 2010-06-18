@@ -16,8 +16,21 @@ import NSpaceCode.Value
 testexp 	=	(
 	(Function
 		(Function
-			(Constant EqualCons)
-			(Variable 0))
-		(Constant (IntegerCons 5))))
+			(Constant AndCons)
+			(Function
+				(Function
+					(Constant EqualCons)
+					(Variable 0))
+				(Constant (IntegerCons 5))))
+		(Function
+			(Function
+				(Constant EqualCons)
+				(Constant (IntegerCons 5)))
+			(Function
+				(Function 
+					(Constant PlusCons)
+					(Constant (IntegerCons 3)))
+				(Constant (IntegerCons 2))))))
 		
-testval	=	implies testexp 1 (Variable 0)
+myimplies	=	implies testexp 1
+testval		=	myimplies $ myimplies (Set.singleton $ Variable 0)

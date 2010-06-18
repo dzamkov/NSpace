@@ -31,11 +31,13 @@ data Expression a	=
 	Function (Expression a) (Expression a) |
 	ForAll (Expression a) |
 	Scope Int (Expression a) deriving (Show, Eq, Ord)
-	
+
 -- Given a true expression and a context size, this will find possible representations
--- for the specified expression.
-implies	::	(Cons a) => Expression a -> Int -> Expression a -> (Set.Set (Expression a))
+-- for the specified expression. This may be chained multiple times to increase set descriptiveness.
+implies	::	(Cons a) => Expression a -> Int -> (Set.Set (Expression a)) -> (Set.Set (Expression a))
 
 implies (Function (Function (Constant x) y) z) c s
-	|	x == equalCons && y == s		=	(Set.union (Set.singleton s) (Set.singleton z))
-	|	x == equalCons && z == s		=	(Set.union (Set.singleton s) (Set.singleton y))
+	|	x == equalCons			=	Set.fold (\r t ->	if		r == y || r == z
+																then	(Set.insert z (Set.insert y t))
+																else	(Set.insert r t)) Set.empty s
+	|	x == andCons			=	implies y c (implies z c s)
