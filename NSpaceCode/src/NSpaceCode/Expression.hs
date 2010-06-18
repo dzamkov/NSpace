@@ -8,7 +8,7 @@
 
 module NSpaceCode.Expression (
 	Expression(..),
-	implies
+	process
 ) where 
 
 import qualified Data.Set as Set
@@ -31,13 +31,30 @@ data Expression a	=
 	Function (Expression a) (Expression a) |
 	ForAll (Expression a) |
 	Scope Int (Expression a) deriving (Show, Eq, Ord)
+	
+-- Given a context size, search expression, pattern and substitute, this will replace
+-- all occurences of the pattern with the substitute.
+	
+substitute	::	(Cons a) => Int -> Expression a -> Expression a -> Expression a -> Expression a
 
--- Given a true expression and a context size, this will find possible representations
--- for the specified expression. This may be chained multiple times to increase set descriptiveness.
-implies	::	(Cons a) => Expression a -> Int -> (Set.Set (Expression a)) -> (Set.Set (Expression a))
+substitute c x y z
+	|	x == y			=	z
+	|	otherwise		=	case x of
+		(Function n m)	->	(Function (substitute c n y z) (substitute c m y z))
+		x					->	x
 
-implies (Function (Function (Constant x) y) z) c s
-	|	x == equalCons			=	Set.fold (\r t ->	if		r == y || r == z
-																then	(Set.insert z (Set.insert y t))
-																else	(Set.insert r t)) Set.empty s
-	|	x == andCons			=	implies y c (implies z c s)
+-- Given a set of true expressions and the size of the context relating them. This will, fairly aimlessly figure
+-- out some more expressions to put in the set. This will also attempt to remove unneeded expressions from the sets.
+	
+process	::	forall a. (Cons a) => (Set.Set (Expression a)) -> Int -> (Set.Set (Expression a))
+
+process s c	=	Set.fold (processRule c) s s
+	where
+		processRule	::	Int -> Expression a -> (Set.Set (Expression a)) -> (Set.Set (Expression a))
+		
+		processRule c r@(Function (Function (Constant l) m) n) e
+			|	l == andCons					=	(Set.delete r (Set.insert m (Set.insert n e)))
+			|	l == equalCons					=	Set.fold (\x y -> 
+															Set.insert x $
+															Set.insert (substitute c x m n) $
+															Set.insert (substitute c x n m) y) Set.empty e
