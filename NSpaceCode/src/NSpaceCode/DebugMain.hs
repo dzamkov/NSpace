@@ -40,14 +40,16 @@ while test action = do
 			action
 			while test action)
 		else return ()
+		
+setImplies c t s	=	Set.fold (\x y -> Set.union y (implies c x s)) Set.empty t
 	
-runProcess	::	(Cons a) => Expression a -> Int -> IO ()
-runProcess s c	=	do
-	curset	<-	newIORef (Set.singleton $ testexp)
+runImplies	::	(Cons a) => Int -> Expression a -> Expression a -> IO ()
+runImplies c t s	=	do
+	curset	<-	newIORef (Set.singleton $ t)
 	while (return True) (do
 		val	<-	readIORef curset
-		nval	<- return (process val c)
+		nval	<- return (setImplies c val s)
 		writeIORef curset nval
 		putStrLn ("Current statements processing: " ++ (show (Set.size nval))))
 		
-main	=	runProcess testexp 1
+main	=	runImplies 1 (Variable 0) testexp

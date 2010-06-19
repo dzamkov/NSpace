@@ -84,12 +84,14 @@ first 2 [1, 2, 3]				=	[1, 2]
 first 0 []		=	[]
 last 0 []		=	[]
 forall x, y, z
-	if y > 0 then
-		first y []		=	[]
-		last y []		=	[]
+	first y []		=	[]
+	last y []		=	[]
 	if y >= 1 then
 		first y [x]		=	x
 		last y [x]		=	x
+	else
+		first y x		=	[]
+		last y x			=	[]
 	first z [x .. y]	=	first z x .. first (z - len x) y
 	last z [x .. y]	=	last (z - len y) x .. last z y
 	
@@ -222,44 +224,3 @@ forall text
 --------------------------------------------------
 --	Solver													--
 --------------------------------------------------
--- Use tables of values to solve stuff. The value 
--- command gets the values at a particular column
--- of the table.
-
-------------------------------------------
-value (table {["hello"]}) 0								=	{"hello"}
-value (table {["abc", "def"], ["efg", "hij"]}) 1	=	{"def", "hij"}
-
-forall x, y, z
-	value (table {x}) z		=	index z x
-	value (table (x U y)) z	=	(value (table x) z) U (value (table y) z)
-	
-
-	
-------------------------------------------
-len (table {["hello"]})								=	1
-len (table {["abc", "def"], ["efg", "hij"]})	=	2
-	
-forall x, y
-	len (table ({x} U y))	=	len x
-	
-	
-	
-------------------------------------------
-value bigtable 0	=	bigset
-"OMG, LOL!?!, EVERYTHING IS IN THE TABLE!" in (value bigtable 0)
-size bigtable		=	1
-
-
-
-------------------------------------------
--- Note: merging tables combines every row
--- in one table with every row in the other
-
-forall x, y, z
-	len (merge x y)	=	len x + len y
-	if z < len x then
-		value (merge x y) z		=	value x z
-	else
-		value (merge x y) z		=	value y (z - len x)
-	merge (table x) (table y)	=	map (\x -> (index 0 x) .. (index 1 x)) (cross [x, y])
