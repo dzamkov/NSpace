@@ -33,23 +33,11 @@ testexp 	=	(
 					(Constant (IntegerCons 3)))
 				(Constant (IntegerCons 2))))))
 				
-while test action = do
-	val <- test
-	if 	val 
-		then 	(do 
-			action
-			while test action)
-		else return ()
-		
-setImplies c t s	=	Set.fold (\x y -> Set.union y (implies c x s)) Set.empty t
-	
-runImplies	::	(Cons a) => Int -> Expression a -> Expression a -> IO ()
-runImplies c t s	=	do
-	curset	<-	newIORef (Set.singleton $ t)
-	while (return True) (do
-		val	<-	readIORef curset
-		nval	<- return (setImplies c val s)
-		writeIORef curset nval
-		putStrLn ("Current statements processing: " ++ (show (Set.size nval))))
-		
-main	=	runImplies 1 (Variable 0) testexp
+main	=	solve (initSolver 1 (Variable 0) testexp) (\s -> do
+	putStrLn "--------"
+	putStrLn ("Current Targets: " ++ (show $ Set.size $ targetExps s))
+	putStrLn (show (targetExps s))
+	putStrLn ("Current Statements: " ++ (show $ Set.size $ statementExps s))
+	putStrLn (show (statementExps s))
+	getLine
+	return True)
