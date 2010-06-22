@@ -28,6 +28,32 @@ data Expression a	=
 	Function (Expression a) (Expression a) |
 	ForAll Int (Expression a) deriving (Show, Eq, Ord)
 	
+-- Reduces an expression to simplier form, usually involving more
+-- constants. This does not change any of the relationships between
+-- variables.
+	
+reduceExp	::	(Cons a) => Expression a -> Expression a
+
+reduceExp (Function (Constant x) (Constant y))	=	Constant (reduce $ apply x y)
+reduceExp (Function x y)								=	case Function (reduceExp x) (reduceExp y) of
+																		f@(Function (Constant l) (Constant m))	->	reduceExp f
+																		f													->	f
+reduceExp (ForAll x y)									=	ForAll x (reduceExp y)
+reduceExp (Constant x)									=	Constant (reduce x)
+reduceExp x													=	x
+
+-- Forces partial functions that include logical constants to be expanded
+-- into expressions.
+
+expandExp	::	(Cons a) => Expression a -> Expression a
+
+expandExp (Constant x)		=	case expand x of
+											(Just (y, z))	->	expandExp (Function (Constant y) (Constant z))
+											Nothing			->	Constant x
+expandExp (Function x y)	=	Function (expandExp x) (expandExp y)
+expandExp (ForAll x y)		=	ForAll x (expandExp y)
+expandExp x						=	x
+											
 -- Expression that is ordered by its simplicity, with simplest expression greater
 -- than complex one. OCCAMS RAZOR FTW!
 	
@@ -56,10 +82,10 @@ data SolverState a	=	SolverState {
 	} deriving (Show)
 	
 addTarget			::	(Cons a) => Expression a -> SolverState a -> SolverState a
-addTarget m l	=	if 	(Set.member m (closedTargetExps l))
+addTarget m l	=	if 	(Set.member (reduceExp m) (closedTargetExps l))
 						then	l
 						else	(SolverState 
-	(Set.insert (ScoredExpression m) (openTargetExps l))
+	(Set.insert (ScoredExpression (reduceExp m)) (openTargetExps l))
 	(closedTargetExps l)
 	(statementExps l)
 	(subStates l))
@@ -75,7 +101,7 @@ addStatement		::	(Cons a) => Expression a -> SolverState a -> SolverState a
 addStatement m l	=	(SolverState 
 	(Set.union (openTargetExps l) (Set.map (\x -> ScoredExpression x) (closedTargetExps l))) 
 	(Set.empty)
-	(Set.insert m (statementExps l)) 
+	(Set.insert (reduceExp m) (statementExps l)) 
 	(subStates l))
 
 removeStatement	::	(Cons a) => Expression a -> SolverState a -> SolverState a
@@ -96,7 +122,7 @@ addSubState m l	=	(SolverState
 -- a true statement about the context.
 	
 initSolver	::	(Cons a) => Expression a -> Expression a -> SolverState a
-initSolver t s	=	SolverState (Set.singleton (ScoredExpression t)) (Set.empty) (Set.singleton s) []
+initSolver t s	=	SolverState (Set.singleton (ScoredExpression t)) (Set.empty) (Set.fromList [s, Constant (trueCons)]) []
 
 -- Continously processes a solver state until the callback returns true.
 
@@ -115,7 +141,7 @@ process		::	(Cons a) => SolverState a -> SolverState a
 process s	=	res
 	where
 		topexp		=	case Set.findMax (openTargetExps s) of (ScoredExpression x) -> x
-		mainsolve	= (Set.fold (\y z -> processRule topexp y z) 
+		mainsolve	= (Set.fold (\y z -> processRule (expandExp topexp) (expandExp y) z) 
 				(closeTarget topexp s) (statementExps s))
 		res			=	mainsolve
 
@@ -123,6 +149,10 @@ process s	=	res
 -- Processes a single target statement pair of expressions in a solver state.
 
 processRule	::	(Cons a) =>	Expression a -> Expression a -> SolverState a -> SolverState a
+
+processRule t (Constant l) state
+	|	l == trueCons	=	state
+	|	l == falseCons	=	error "WTF, this aint valid"
 
 processRule t s@(Function (Function (Constant l) m) n) state
 	|	l == andCons	=	removeStatement s $ addStatement m $ addStatement n state

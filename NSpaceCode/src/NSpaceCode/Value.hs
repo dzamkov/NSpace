@@ -25,6 +25,7 @@ class (Eq a, Ord a) => Cons a where
 	notCons		::	a
 	apply			::	a -> a -> a
 	reduce		::	a -> a
+	expand		::	a -> Maybe (a, a)
 
 -- Logic and numerical constant
 data SimpleCons	=
@@ -51,6 +52,12 @@ instance Cons SimpleCons where
 	notCons		=	NotCons
 	apply x y	=	ApplyCons x y
 	
-	reduce (ApplyCons (ApplyCons (EqualCons) x) y)									=	LogicCons (x == y)
-	reduce (ApplyCons (ApplyCons (AndCons) (LogicCons x)) (LogicCons y))		=	LogicCons (x && y)
-	reduce x																						=	x
+	expand (ApplyCons x y)	=	Just (x, y)
+	expand x						=	Nothing
+	
+	reduce (ApplyCons (ApplyCons (EqualCons) x) y)										=	LogicCons (x == y)
+	reduce (ApplyCons (ApplyCons (AndCons) (LogicCons x)) (LogicCons y))			=	LogicCons (x && y)
+	reduce (ApplyCons (ApplyCons (PlusCons) (IntegerCons x)) (IntegerCons y))	=	IntegerCons (x + y)
+	reduce (ApplyCons (ApplyCons (MinusCons) (IntegerCons x)) (IntegerCons y))	=	IntegerCons (x - y)
+	reduce (ApplyCons (ApplyCons (TimesCons) (IntegerCons x)) (IntegerCons y))	=	IntegerCons (x * y)
+	reduce x																							=	x
