@@ -33,10 +33,12 @@ testexp 	=	(
 					(Constant (IntegerCons 3)))
 				(Constant (IntegerCons 2))))))
 				
-main	=	solve (initSolver 1 (Variable 0) testexp) (\s -> do
+main	=	solve (initSolver (Variable 0) testexp) (\s -> do
 	putStrLn "--------"
-	putStrLn ("Current Targets: " ++ (show $ Set.size $ targetExps s))
-	putStrLn (show (targetExps s))
+	putStrLn ("Current Open Targets: " ++ (show $ Set.size $ openTargetExps s))
+	putStrLn (show (openTargetExps s))
+	putStrLn ("Current Closed Targets: " ++ (show $ Set.size $ closedTargetExps s))
+	putStrLn (show (closedTargetExps s))
 	putStrLn ("Current Statements: " ++ (show $ Set.size $ statementExps s))
 	putStrLn (show (statementExps s))
 	getLine

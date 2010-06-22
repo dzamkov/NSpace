@@ -26,51 +26,77 @@ data Expression a	=
 	Variable Int |
 	Constant a |
 	Function (Expression a) (Expression a) |
-	ForAll Int (Expression a) |
-	Scope (Set.Set Int) (Expression a) deriving (Show, Eq, Ord)
+	ForAll Int (Expression a) deriving (Show, Eq, Ord)
+	
+-- Expression that is ordered by its simplicity, with simplest expression greater
+-- than complex one. OCCAMS RAZOR FTW!
+	
+newtype ScoredExpression a =	ScoredExpression (Expression a) deriving (Show, Eq)
+
+instance (Cons a) => Ord (ScoredExpression a) where
+	compare (ScoredExpression x) (ScoredExpression y)		=	if		scorecomp == EQ
+																				then	compare x y
+																				else	scorecomp
+		where
+			-- This is an approximation, don't yell at me
+			score (Variable _)	=	1
+			score (Constant _)	=	1
+			score (Function m n)	=	score m + score n
+			score (ForAll _ m)	=	(score m) * 2
+			
+			scorecomp	=	compare (score y) (score x)
 	
 -- State of a solver at any give time.
 
 data SolverState a	=	SolverState {
-		context			::	Int,
-		targetExps		::	(Set.Set (Expression a)),
-		statementExps	::	(Set.Set (Expression a)),
-		subStates		::	[SolverState a]
+		openTargetExps		::	(Set.Set (ScoredExpression a)),
+		closedTargetExps	::	(Set.Set (Expression a)),
+		statementExps		::	(Set.Set (Expression a)),
+		subStates			::	[SolverState a]
 	} deriving (Show)
 	
 addTarget			::	(Cons a) => Expression a -> SolverState a -> SolverState a
-addTarget m l	=	(SolverState 
-	(context l) 
-	(Set.insert m (targetExps l))
+addTarget m l	=	if 	(Set.member m (closedTargetExps l))
+						then	l
+						else	(SolverState 
+	(Set.insert (ScoredExpression m) (openTargetExps l))
+	(closedTargetExps l)
 	(statementExps l)
 	(subStates l))
 	
+closeTarget			::	(Cons a) => Expression a -> SolverState a -> SolverState a
+closeTarget m l	=	(SolverState 
+	(Set.delete (ScoredExpression m) (openTargetExps l))
+	(Set.insert m (closedTargetExps l))
+	(statementExps l)
+	(subStates l))
+
 addStatement		::	(Cons a) => Expression a -> SolverState a -> SolverState a
 addStatement m l	=	(SolverState 
-	(context l) 
-	(targetExps l) 
+	(Set.union (openTargetExps l) (Set.map (\x -> ScoredExpression x) (closedTargetExps l))) 
+	(Set.empty)
 	(Set.insert m (statementExps l)) 
 	(subStates l))
-	
+
 removeStatement	::	(Cons a) => Expression a -> SolverState a -> SolverState a
 removeStatement m l	=	(SolverState 
-	(context l) 
-	(targetExps l) 
+	(openTargetExps l)
+	(closedTargetExps l)
 	(Set.delete m (statementExps l)) 
 	(subStates l))
 	
 addSubState			::	(Cons a) => SolverState a -> SolverState a -> SolverState a
 addSubState m l	=	(SolverState 
-	(context l) 
-	(targetExps l) 
+	(openTargetExps l)
+	(closedTargetExps l)
 	(statementExps l) 
 	(m:(subStates l)))
 	
 -- Creates a solver state given a context size, expression to solve for and
 -- a true statement about the context.
 	
-initSolver	::	(Cons a) => Int -> Expression a -> Expression a -> SolverState a
-initSolver c t s	=	SolverState c (Set.singleton t) (Set.singleton s) []
+initSolver	::	(Cons a) => Expression a -> Expression a -> SolverState a
+initSolver t s	=	SolverState (Set.singleton (ScoredExpression t)) (Set.empty) (Set.singleton s) []
 
 -- Continously processes a solver state until the callback returns true.
 
@@ -88,31 +114,27 @@ solve s c	=	do
 process		::	(Cons a) => SolverState a -> SolverState a
 process s	=	res
 	where
-		mainsolve	=	
-			(Set.fold (\w x ->
-				(Set.fold (\y z ->
-						processRule (context s) w y z
-					)
-				) x (statementExps s)
-			) s (targetExps s))
+		topexp		=	case Set.findMax (openTargetExps s) of (ScoredExpression x) -> x
+		mainsolve	= (Set.fold (\y z -> processRule topexp y z) 
+				(closeTarget topexp s) (statementExps s))
 		res			=	mainsolve
 
 
 -- Processes a single target statement pair of expressions in a solver state.
 
-processRule	::	(Cons a) => Int -> Expression a -> Expression a -> SolverState a -> SolverState a
+processRule	::	(Cons a) =>	Expression a -> Expression a -> SolverState a -> SolverState a
 
-processRule c t s@(Function (Function (Constant l) m) n) state
+processRule t s@(Function (Function (Constant l) m) n) state
 	|	l == andCons	=	removeStatement s $ addStatement m $ addStatement n state
-	|	l == equalCons	=	addTarget (substitute c t m n) $ addTarget (substitute c t n m) state
+	|	l == equalCons	=	addTarget (substitute t m n) $ addTarget (substitute t n m) state
 	
 -- Given a context size, search expression, pattern and substitute, this will replace
 -- all occurences of the pattern with the substitute.
 	
-substitute	::	(Cons a) => Int -> Expression a -> Expression a -> Expression a -> Expression a
+substitute	::	(Cons a) => Expression a -> Expression a -> Expression a -> Expression a
 
-substitute c x y z
+substitute x y z
 	|	x == y			=	z
 	|	otherwise		=	case x of
-		(Function n m)	->	(Function (substitute c n y z) (substitute c m y z))
+		(Function n m)	->	(Function (substitute n y z) (substitute m y z))
 		x					->	x 
