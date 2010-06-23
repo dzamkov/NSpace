@@ -10,6 +10,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import NSpaceCode.Expression
 import NSpaceCode.Value
+import NSpaceCode.Parse
 import Data.IORef
 
 -- x = 5
