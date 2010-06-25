@@ -16,47 +16,74 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import NSpaceCode.Expression
 
+-- Everything here works as long as you don't question it.
+
 -- A description of a set of valid strings.
 
 data Pattern	=
 	Atom String |
-	Concat Pattern Pattern deriving (Show, Eq, Ord)
+	Concat Pattern Pattern | 
+	Union Pattern Pattern |
+	Repeat Pattern |
+	StringExp deriving (Show, Eq, Ord)
 	
 -- Possible results given from a match.
 	
 data MatchResult	=
-	NoMatch |
 	AtomMatch |
-	ConcatMatch (Set.Set (MatchResult, MatchResult)) deriving (Show, Eq, Ord)
+	ConcatMatch MatchResult MatchResult |
+	UnionMatch Pattern MatchResult |
+	RepeatMatch [MatchResult] |
+	StringExpMatch String deriving (Show, Eq, Ord)
 	
 -- Matches a pattern to a string and gives a result.
 	
-match	::	Pattern -> String -> MatchResult
+match	::	Pattern -> String -> (Set.Set MatchResult)
 
 match (Atom x) y
-	|	x == y		=	AtomMatch
-	|	otherwise	=	NoMatch
-	
-match (Concat (Atom x) y) z	=	case (match (Atom x) (take (length x) z), match y (drop (length x) z)) of
-												(NoMatch, _)	->	NoMatch
-												(_, NoMatch)	->	NoMatch
-												(x, y)			->	ConcatMatch (Set.singleton (x, y))
-												
-match (Concat x (Atom y)) z	=	case (match x (take (length z - length y) z), match (Atom y) (drop (length z - length y) z)) of
-												(NoMatch, _)	->	NoMatch
-												(_, NoMatch)	->	NoMatch
-												(x, y)			->	ConcatMatch (Set.singleton (x, y))
+	|	x == y		=	Set.singleton AtomMatch
+	|	otherwise	=	Set.empty
+
+match (Concat (Atom x) y) z
+	|	length x <= length z		=	res
+	|	otherwise					=	Set.empty
+		where
+			atomstr		=	take (length x) z
+			otherstr		=	drop (length x) z
+			atommatch	=	match (Atom x) atomstr
+			othermatch	=	match y otherstr
+			res			=	Set.fold (\l a -> 
+									Set.fold (\m b -> 
+										(Set.insert (ConcatMatch m l) b)) 
+									a atommatch) 
+								(Set.empty) othermatch
+								
+match (Concat x (Atom y)) z	=	(Set.map (\l -> case l of
+												(ConcatMatch j k)	->	(ConcatMatch k j)) 
+											(match (Concat (Atom y) x) z))
+			
 	
 match (Concat x y) z	=	res
 	where
-		matchOne :: Pattern -> Pattern -> String -> String -> Int -> Maybe (MatchResult, MatchResult)
+		matchOne :: Pattern -> Pattern -> String -> String -> Int -> Set.Set (MatchResult)
 		matchOne x y st ns z
-			|	length st == z			=	case (match x st, match y ns) of
-													(NoMatch, _)	->	Nothing
-													(_, NoMatch)	->	Nothing
-													(x, y)			->	Just (x, y)
+			|	length st == z			=	(Set.fold (\l a -> (
+													Set.fold (\m b -> (
+															Set.insert (ConcatMatch l m) b
+														)) a (match y ns)
+													)) (Set.empty) (match x st))
 		matchOne x y st (n:ns) z	=	matchOne x y (st ++ [n]) ns z		
-		res	=	ConcatMatch $ foldr (\l a -> case (matchOne x y [] z l) of
-								Just m	->	Set.insert m a
-								Nothing	->	a) (Set.empty) [0..(length z)]
-								
+		res	=	foldr (\l a -> Set.union (matchOne x y [] z l) a) (Set.empty) [0..(length z)]
+		
+match (Union x y) z	= (Set.union
+	(Set.fold (\l a -> Set.insert (UnionMatch y l) a) (Set.empty) (match y z))
+	(Set.fold (\l a -> Set.insert (UnionMatch x l) a) (Set.empty) (match x z)))
+	
+match (Repeat x) z	=	res
+	where
+		mypat		= 	Union (Atom "") (Concat x (Repeat x))
+		mymatch	=	match mypat z
+		res		=	Set.map (\l -> case l of
+							(UnionMatch _ (ConcatMatch j (RepeatMatch k)))	->	RepeatMatch (j:k)
+							(UnionMatch _ _)											->	RepeatMatch []) mymatch
+		
