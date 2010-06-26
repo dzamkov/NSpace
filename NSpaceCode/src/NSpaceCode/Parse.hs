@@ -25,6 +25,7 @@ data Pattern	=
 	Concat Pattern Pattern | 
 	Union Pattern Pattern |
 	Repeat Pattern |
+	AnyChar |
 	StringExp deriving (Show, Eq, Ord)
 	
 -- Possible results given from a match.
@@ -34,6 +35,7 @@ data MatchResult	=
 	ConcatMatch MatchResult MatchResult |
 	UnionMatch Pattern MatchResult |
 	RepeatMatch [MatchResult] |
+	AnyCharMatch Char |
 	StringExpMatch String deriving (Show, Eq, Ord)
 	
 -- Matches a pattern to a string and gives a result.
@@ -44,6 +46,8 @@ match (Atom x) y
 	|	x == y		=	Set.singleton AtomMatch
 	|	otherwise	=	Set.empty
 
+	
+	
 match (Concat (Atom x) y) z
 	|	length x <= length z		=	res
 	|	otherwise					=	Set.empty
@@ -75,9 +79,13 @@ match (Concat x y) z	=	res
 		matchOne x y st (n:ns) z	=	matchOne x y (st ++ [n]) ns z		
 		res	=	foldr (\l a -> Set.union (matchOne x y [] z l) a) (Set.empty) [0..(length z)]
 		
+		
+		
 match (Union x y) z	= (Set.union
 	(Set.fold (\l a -> Set.insert (UnionMatch y l) a) (Set.empty) (match y z))
 	(Set.fold (\l a -> Set.insert (UnionMatch x l) a) (Set.empty) (match x z)))
+	
+	
 	
 match (Repeat x) z	=	res
 	where
@@ -86,4 +94,40 @@ match (Repeat x) z	=	res
 		res		=	Set.map (\l -> case l of
 							(UnionMatch _ (ConcatMatch j (RepeatMatch k)))	->	RepeatMatch (j:k)
 							(UnionMatch _ _)											->	RepeatMatch []) mymatch
+							
+							
+							
+match (AnyChar) (z:[])	=	Set.singleton (AnyCharMatch z)
+match (AnyChar) _			=	Set.empty
+
 		
+	
+match (StringExp) z	=	res
+	where
+		unescape			::	Char -> Char
+		unescape 'n'	=	'\n'
+		unescape 't'	=	'\t'
+		unescape 'r'	=	'\r'
+		unescape	'"'	=	'"'
+		unescape '\''	=	'\''
+	
+		quotechar	=	Union (Atom "\"") (Atom "'")
+		instring		=	Repeat (Union AnyChar (Concat (Atom "\\") AnyChar))
+		string		=	Concat quotechar (Concat instring quotechar)
+		
+		instringparse		::	String -> MatchResult -> Maybe String
+		instringparse q (RepeatMatch r)	=	sequence (map (\l -> case l of
+			(UnionMatch AnyChar (AnyCharMatch c))
+				|	[c] == q												->	Nothing
+				|	otherwise											->	Just c
+			(UnionMatch _ (ConcatMatch _ (AnyCharMatch c)))	->	Just (unescape c)) r)
+		
+		stringmatch	=	match string z
+		res			=	Set.map (\l -> case l of (Just m) -> m) $
+				Set.filter (\l -> l /= Nothing) $
+				Set.map (\l -> case l of
+					(ConcatMatch (UnionMatch (Atom sqoute) _) (ConcatMatch i (UnionMatch (Atom eqoute) _)))
+						|	sqoute == eqoute		->		(case (instringparse sqoute i) of
+																	(Just s)	->	Just (StringExpMatch s)
+																	Nothing	->	Nothing)
+					_									->		Nothing) stringmatch
