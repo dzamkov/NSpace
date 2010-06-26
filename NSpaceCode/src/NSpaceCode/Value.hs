@@ -31,6 +31,9 @@ class (Eq a, Ord a) => Cons a where
 data SimpleCons	=
 	IntegerCons (Integer) |
 	LogicCons (Bool) |
+	CharCons (Char) |
+	ListCons |
+	SetCons |
 	EqualCons |
 	PlusCons |
 	MinusCons |

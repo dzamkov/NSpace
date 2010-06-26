@@ -15,6 +15,7 @@ module NSpaceCode.Parse (
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import NSpaceCode.Expression
+import NSpaceCode.Value
 
 -- Everything here works as long as you don't question it.
 
@@ -26,7 +27,9 @@ data Pattern	=
 	Union Pattern Pattern |
 	Repeat Pattern |
 	AnyChar |
-	StringExp deriving (Show, Eq, Ord)
+	StringExp |
+	WordExp |
+	Exp deriving (Show, Eq, Ord)
 	
 -- Possible results given from a match.
 	
@@ -36,7 +39,9 @@ data MatchResult	=
 	UnionMatch Pattern MatchResult |
 	RepeatMatch [MatchResult] |
 	AnyCharMatch Char |
-	StringExpMatch String deriving (Show, Eq, Ord)
+	StringExpMatch String |
+	WordExpMatch String |
+	ExpMatch (Expression SimpleCons) (Map.Map String Int) (Set.Set Int) deriving (Show, Eq, Ord)
 	
 -- Matches a pattern to a string and gives a result.
 	
@@ -62,9 +67,19 @@ match (Concat (Atom x) y) z
 									a atommatch) 
 								(Set.empty) othermatch
 								
-match (Concat x (Atom y)) z	=	(Set.map (\l -> case l of
-												(ConcatMatch j k)	->	(ConcatMatch k j)) 
-											(match (Concat (Atom y) x) z))
+match (Concat x (Atom y)) z
+	|	length y <= length z		=	res
+	|	otherwise					=	Set.empty
+		where
+			atomstr		=	drop (length z - length y) z
+			otherstr		=	take (length z - length y) z
+			atommatch	=	match (Atom y) atomstr
+			othermatch	=	match x otherstr
+			res			=	Set.fold (\l a -> 
+									Set.fold (\m b -> 
+										(Set.insert (ConcatMatch l m) b)) 
+									a atommatch) 
+								(Set.empty) othermatch
 			
 	
 match (Concat x y) z	=	res
@@ -131,3 +146,25 @@ match (StringExp) z	=	res
 																	(Just s)	->	Just (StringExpMatch s)
 																	Nothing	->	Nothing)
 					_									->		Nothing) stringmatch
+
+match (WordExp) z		=	res
+	where
+		wordchars	=	Set.fromList (['a'..'z'] ++ ['A' .. 'Z'] ++ "+-*&^%$#@!~<>|:/'")
+		wordmatch	=	Repeat AnyChar
+		charlist		=	case Set.findMax (match wordmatch z) of
+								(RepeatMatch cl)	->	map (\l -> case l of (AnyCharMatch c) -> c) cl
+		res			=	case (sequence $ map (\l -> 	if		Set.member l wordchars
+																	then	Just l
+																	else	Nothing) charlist) of
+								(Just w)		->		Set.singleton $ WordExpMatch w
+								Nothing		->		Set.empty
+								
+match (Exp) z			=	res
+	where
+	
+		res	=	Set.union
+						(Set.map (\l -> case l of
+							(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) (Set.singleton 0)) (match WordExp z)) $
+						(Set.map (\l -> case l of
+							(ConcatMatch _ (ConcatMatch exp _))	->	exp) 
+								(match (Concat (Atom "(") (Concat Exp (Atom ")"))) z))
