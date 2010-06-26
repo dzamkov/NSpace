@@ -29,7 +29,7 @@ data Pattern	=
 	AnyChar |
 	StringExp |
 	WordExp |
-	Exp deriving (Show, Eq, Ord)
+	Exp Operators deriving (Show, Eq, Ord)
 	
 -- Possible results given from a match.
 	
@@ -41,7 +41,20 @@ data MatchResult	=
 	AnyCharMatch Char |
 	StringExpMatch String |
 	WordExpMatch String |
-	ExpMatch (Expression SimpleCons) (Map.Map String Int) (Set.Set Int) deriving (Show, Eq, Ord)
+	ExpMatch (Expression SimpleCons) (Map.Map String Int) Operator deriving (Show, Eq, Ord)
+	-- ExpMatch provides expression, var map and the operator that binds it.
+	
+-- Operator information
+	
+data Associativity	=
+	LeftAssociative |
+	RightAssociative deriving (Show, Eq, Ord)
+	
+type Operators			=	[(Associativity, [String])]
+
+data Operator	=
+	Operator Operators String |
+	StrongOperator deriving (Show, Eq, Ord)
 	
 -- Matches a pattern to a string and gives a result.
 	
@@ -50,7 +63,6 @@ match	::	Pattern -> String -> (Set.Set MatchResult)
 match (Atom x) y
 	|	x == y		=	Set.singleton AtomMatch
 	|	otherwise	=	Set.empty
-
 	
 	
 match (Concat (Atom x) y) z
@@ -159,12 +171,12 @@ match (WordExp) z		=	res
 								(Just w)		->		Set.singleton $ WordExpMatch w
 								Nothing		->		Set.empty
 								
-match (Exp) z			=	res
+match (Exp ops) z	=	res
 	where
 	
 		res	=	Set.union
 						(Set.map (\l -> case l of
-							(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) (Set.singleton 0)) (match WordExp z)) $
+							(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) StrongOperator) (match WordExp z)) $
 						(Set.map (\l -> case l of
 							(ConcatMatch _ (ConcatMatch exp _))	->	exp) 
-								(match (Concat (Atom "(") (Concat Exp (Atom ")"))) z))
+								(match (Concat (Atom "(") (Concat (Exp ops) (Atom ")"))) z))

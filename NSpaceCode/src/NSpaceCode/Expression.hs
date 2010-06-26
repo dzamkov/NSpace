@@ -28,6 +28,15 @@ data Expression a	=
 	Function (Expression a) (Expression a) |
 	ForAll Int (Expression a) deriving (Show, Eq, Ord)
 	
+-- Gets the variables bound in an expression.
+
+getBound	::	Expression a -> (Set.Set Int)
+
+getBound (Variable x)	=	Set.singleton x
+getBound (Constant _)	=	Set.empty
+getBound (Function x y)	=	Set.union (getBound x) (getBound y)
+getBound (ForAll x y)	=	Set.delete x (getBound y)
+	
 -- Reduces an expression to simplier form, usually involving more
 -- constants. This does not change any of the relationships between
 -- variables.
