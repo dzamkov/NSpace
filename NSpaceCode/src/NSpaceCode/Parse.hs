@@ -64,14 +64,23 @@ defaultOperators		=	[
 	(LeftAssociative, 	["*"]),
 	(LeftAssociative, 	["+", "-"]),
 	(LeftAssociative, 	[".."]),
+	(LeftAssociative,		["="]),
 	(LeftAssociative,		["or", "xor"]),
 	(LeftAssociative,		["and", "xand"])]
 
 data Binding	=	--	Identifies a binding type in the context of an operator set
-	OperatorBinding (Int, Associativity) |
+	OperatorBinding Int Associativity |
 	WordBinding |
 	FunctionBinding |
 	BracketBinding deriving (Show, Eq, Ord)
+	
+-- Gets if it is possible to create a function out of two adjacent terms of
+-- the specified bindings.
+canFunctionBind	::	Binding -> Binding -> Bool
+
+canFunctionBind _ (OperatorBinding _ _)	=	False
+canFunctionBind _ FunctionBinding			=	False
+canFunctionBind _ _								=	True
 
 -- Operator binding 		-	binding created by an operator
 -- Word binding			-	default binding to a single word
@@ -207,11 +216,28 @@ match (Exp ops) z	=	res
 	where
 		startbracket	=	(Concat (Atom "(") (Possible WhiteSpace))
 		endbracket		=	(Concat (Possible WhiteSpace) (Atom ")"))
+		
+		funcCombine			::	MatchResult -> MatchResult -> Maybe MatchResult	
+		funcCombine _ _	=	Nothing
 	
-		res	=	Set.union
-						(Set.map (\l -> case l of
-							(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) WordBinding) (match WordExp z)) $
-						(Set.map (\l -> case l of
-							(ConcatMatch _ (ConcatMatch (ExpMatch e m _) _))	-> (ExpMatch e m BracketBinding)) 
+		wordexps			=	(Set.map (\l -> case l of
+									(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) WordBinding) 
+								(match WordExp z))
+		
+		bracketexps		=	(Set.map (\l -> case l of
+									(ConcatMatch _ (ConcatMatch (ExpMatch e m _) _))	-> (ExpMatch e m BracketBinding)) 
 								(match (Concat startbracket (Concat (Exp ops) endbracket)) z))
+								
+		functionexps	=	(Set.map (\l -> case l of (Just l) -> l)) $
+								(Set.filter (\l -> case l of
+											(Just l)		->	True
+											Nothing		->	False)) $
+								(Set.map (\l -> case l of
+										(ConcatMatch func (ConcatMatch _ arg))		->	funcCombine func arg)) $
+								(match (Concat (Exp ops) $ Concat WhiteSpace (Exp ops)) z)
+	
+		res	=	Set.union wordexps $
+					Set.union bracketexps $
+					Set.union functionexps $
+					Set.empty
 						
