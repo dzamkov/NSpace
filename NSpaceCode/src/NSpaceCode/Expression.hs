@@ -10,6 +10,8 @@ module NSpaceCode.Expression (
 	Expression(..),
 	SolverState(..),
 	initSolver,
+	rebind,
+	getBound,
 	solve,
 	process,
 	substitute
@@ -36,6 +38,16 @@ getBound (Variable x)	=	Set.singleton x
 getBound (Constant _)	=	Set.empty
 getBound (Function x y)	=	Set.union (getBound x) (getBound y)
 getBound (ForAll x y)	=	Set.delete x (getBound y)
+
+-- Rebinds all variables in a expression based on a mapping function
+
+rebind	::	Expression a -> (Int -> Int) -> Expression a
+rebind (Variable x) y	=	Variable (y x)
+rebind (Constant x) y	=	Constant x
+rebind (Function x y) z	=	Function (rebind x z) (rebind y z)
+rebind (ForAll x y) z	=	ForAll x (rebind y (\l ->	if		l == x
+																		then	x
+																		else	z l))
 	
 -- Reduces an expression to simplier form, usually involving more
 -- constants. This does not change any of the relationships between

@@ -67,6 +67,10 @@ defaultOperators		=	[
 	(LeftAssociative,		["="]),
 	(LeftAssociative,		["or", "xor"]),
 	(LeftAssociative,		["and", "xand"])]
+	
+isOperator ::	String -> Operators -> Bool
+isOperator op ops	=	or $ map (\l -> case l of
+								(_, m)	->	or (map (\e -> e == op) m)) ops
 
 data Binding	=	--	Identifies a binding type in the context of an operator set
 	OperatorBinding Int Associativity |
@@ -85,6 +89,15 @@ canFunctionBind _ _								=	True
 -- Operator binding 		-	binding created by an operator
 -- Word binding			-	default binding to a single word
 -- Bracket binding		-	binding caused by ( ), strongest
+	
+
+
+maybeMap	::	(Ord a, Ord b) => (a -> Maybe b) -> Set.Set a -> Set.Set b
+maybeMap y x	=	Set.map (\l -> case l of (Just m) -> m) $ 
+						Set.filter (\l -> case l of 
+							(Just _) -> True
+							Nothing	->	False) $ 
+						Set.map y x
 	
 	
 -- Matches a pattern to a string and gives a result.
@@ -247,21 +260,29 @@ match (Exp ops) z	=	res
 		endbracket		=	(Concat (Possible WhiteSpace) (Atom ")"))
 		
 		funcCombine			::	MatchResult -> MatchResult -> Maybe MatchResult	
-		funcCombine _ _	=	Nothing
+		funcCombine (ExpMatch fe fm fb) (ExpMatch ae am ab)
+			|	canFunctionBind fb ab	=	Just res
+			|	otherwise					=	Nothing
+				where
+						intsect			=	Map.fromList $ Map.elems $ Map.intersectionWith (\l m -> (m, l)) fm am
+						startunbound	=	(Set.findMax (getBound fe)) + 1
+						newexp			=	Function fe $ rebind ae (\l ->	case Map.lookup l intsect of
+													(Just m) -> m
+													Nothing	-> l + startunbound)
+						newmap			=	Map.unionWith (\l m -> l) fm $ (Map.map (\l -> l + startunbound) am)
+						res				=	ExpMatch newexp newmap FunctionBinding
 	
-		wordexps			=	(Set.map (\l -> case l of
-									(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) WordBinding) 
+		wordexps			=	(maybeMap (\l -> case l of
+									(WordExpMatch w)	
+										|	isOperator w ops	-> Nothing
+										|	otherwise			->	Just $ ExpMatch (Variable 0) (Map.singleton w 0) WordBinding) 
 								(match WordExp z))
 		
 		bracketexps		=	(Set.map (\l -> case l of
 									(ConcatMatch _ (ConcatMatch (ExpMatch e m _) _))	-> (ExpMatch e m BracketBinding)) 
 								(match (Concat startbracket (Concat (Exp ops) endbracket)) z))
 								
-		functionexps	=	(Set.map (\l -> case l of (Just l) -> l)) $
-								(Set.filter (\l -> case l of
-											(Just l)		->	True
-											Nothing		->	False)) $
-								(Set.map (\l -> case l of
+		functionexps	=	(maybeMap (\l -> case l of
 										(ConcatMatch func (ConcatMatch _ arg))		->	funcCombine func arg)) $
 								(match (Concat (Exp ops) $ Concat WhiteSpace (Exp ops)) z)
 	
