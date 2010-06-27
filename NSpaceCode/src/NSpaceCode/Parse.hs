@@ -9,6 +9,10 @@
 module NSpaceCode.Parse (
 	Pattern(..),
 	MatchResult(..),
+	Associativity(..),
+	Operators(..),
+	Binding(..),
+	defaultOperators,
 	match
 ) where 
 
@@ -22,13 +26,15 @@ import NSpaceCode.Value
 -- A description of a set of valid strings.
 
 data Pattern	=
-	Atom String |
-	Concat Pattern Pattern | 
-	Union Pattern Pattern |
-	Repeat Pattern |
-	AnyChar |
-	StringExp |
-	WordExp |
+	Atom String |					-- Matches single string
+	Concat Pattern Pattern | 	-- Matches both patterns together
+	Union Pattern Pattern |		--	Matches either pattern
+	Repeat Pattern |				--	Matches any amount of the specified pattern
+	Possible Pattern |			-- Matches "" or the specified pattern
+	AnyChar |						--	Matches any one character
+	WhiteSpace |					--	Matches one or more whitespace char
+	StringExp |						--	Matches program string
+	WordExp |						--	Matches program word
 	Exp Operators deriving (Show, Eq, Ord)
 	
 -- Possible results given from a match.
@@ -37,11 +43,13 @@ data MatchResult	=
 	AtomMatch |
 	ConcatMatch MatchResult MatchResult |
 	UnionMatch Pattern MatchResult |
+	PossibleMatch (Maybe MatchResult) |
 	RepeatMatch [MatchResult] |
 	AnyCharMatch Char |
+	WhiteSpaceMatch |
 	StringExpMatch String |
 	WordExpMatch String |
-	ExpMatch (Expression SimpleCons) (Map.Map String Int) Operator deriving (Show, Eq, Ord)
+	ExpMatch (Expression SimpleCons) (Map.Map String Int) Binding deriving (Show, Eq, Ord)
 	-- ExpMatch provides expression, var map and the operator that binds it.
 	
 -- Operator information
@@ -52,9 +60,23 @@ data Associativity	=
 	
 type Operators			=	[(Associativity, [String])]
 
-data Operator	=
-	Operator Operators String |
-	StrongOperator deriving (Show, Eq, Ord)
+defaultOperators		=	[
+	(LeftAssociative, 	["*"]),
+	(LeftAssociative, 	["+", "-"]),
+	(LeftAssociative, 	[".."]),
+	(LeftAssociative,		["or", "xor"]),
+	(LeftAssociative,		["and", "xand"])]
+
+data Binding	=	--	Identifies a binding type in the context of an operator set
+	OperatorBinding (Int, Associativity) |
+	WordBinding |
+	FunctionBinding |
+	BracketBinding deriving (Show, Eq, Ord)
+
+-- Operator binding 		-	binding created by an operator
+-- Word binding			-	default binding to a single word
+-- Bracket binding		-	binding caused by ( ), strongest
+	
 	
 -- Matches a pattern to a string and gives a result.
 	
@@ -113,6 +135,12 @@ match (Union x y) z	= (Set.union
 	(Set.fold (\l a -> Set.insert (UnionMatch x l) a) (Set.empty) (match x z)))
 	
 	
+match (Possible x) z	=	Set.union
+	(Set.map (\l -> PossibleMatch (Just l)) (match x z)) $
+	(	if		z == ""
+		then	Set.singleton (PossibleMatch Nothing)
+		else	Set.empty)
+	
 	
 match (Repeat x) z	=	res
 	where
@@ -127,6 +155,10 @@ match (Repeat x) z	=	res
 match (AnyChar) (z:[])	=	Set.singleton (AnyCharMatch z)
 match (AnyChar) _			=	Set.empty
 
+		
+match (WhiteSpace) z		=	Set.map (\l -> WhiteSpaceMatch) $
+	Set.filter (\l -> case l of (RepeatMatch m) -> length m > 0) $
+	match (Repeat $ Union (Atom " ") $ Union (Atom "\t") (Atom "\n")) z
 		
 	
 match (StringExp) z	=	res
@@ -173,10 +205,13 @@ match (WordExp) z		=	res
 								
 match (Exp ops) z	=	res
 	where
+		startbracket	=	(Concat (Atom "(") (Possible WhiteSpace))
+		endbracket		=	(Concat (Possible WhiteSpace) (Atom ")"))
 	
 		res	=	Set.union
 						(Set.map (\l -> case l of
-							(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) StrongOperator) (match WordExp z)) $
+							(WordExpMatch w)	->	ExpMatch (Variable 0) (Map.singleton w 0) WordBinding) (match WordExp z)) $
 						(Set.map (\l -> case l of
-							(ConcatMatch _ (ConcatMatch exp _))	->	exp) 
-								(match (Concat (Atom "(") (Concat (Exp ops) (Atom ")"))) z))
+							(ConcatMatch _ (ConcatMatch (ExpMatch e m _) _))	-> (ExpMatch e m BracketBinding)) 
+								(match (Concat startbracket (Concat (Exp ops) endbracket)) z))
+						
