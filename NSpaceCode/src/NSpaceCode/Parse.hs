@@ -123,6 +123,35 @@ match (Concat x (Atom y)) z
 										(Set.insert (ConcatMatch l m) b)) 
 									a atommatch) 
 								(Set.empty) othermatch
+								
+match (Concat x (Concat WhiteSpace y)) z	=	res
+	where
+		whiteSpace			=	Set.fromList [' ', '\t', '\n']
+		groupWhiteSpace	::	String -> [(Int, Int)]
+		groupWhiteSpace s	=	case (foldl foldfunc (0, Nothing, []) s) of 
+										(m, Just s, l) -> (s, m):l
+										(_, Nothing, l) -> l
+			where
+				foldfunc	::	(Int, Maybe Int, [(Int, Int)]) -> Char -> (Int, Maybe Int, [(Int, Int)])
+				foldfunc (cur, Nothing, grps) c
+					|	Set.member c whiteSpace	=	(cur + 1, Just cur, grps)
+					|	otherwise					=	(cur + 1, Nothing, grps)
+				foldfunc (cur, Just start, grps) c
+					|	Set.member c whiteSpace	=	(cur + 1, Just start, grps)
+					|	otherwise					=	(cur + 1, Nothing, (start, cur):grps)
+		
+		res	=	foldl (\cur grp -> case grp of
+						(start, end) -> 
+							foldl (\cur pivs ->
+								foldl (\cur pive ->
+									Set.fold (\l cur ->
+										Set.fold (\m cur ->
+											Set.insert (ConcatMatch l (ConcatMatch WhiteSpaceMatch m)) cur
+										) cur (match y (drop pive z))
+									) cur (match x (take pivs z))
+								) cur [(pivs + 1)..end]
+							) cur [start..(end - 1)]
+					) Set.empty (groupWhiteSpace z)
 			
 	
 match (Concat x y) z	=	res
