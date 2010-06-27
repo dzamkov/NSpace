@@ -2,22 +2,22 @@
 --	Helper Definitions									--
 --------------------------------------------------
 ------------------------------------------
-operatorlg	U		*
+#operatorlg	U		*
 U	=	union
 
 
 ------------------------------------------
-operatore	D		U
+#operatore	D		U
 D	=	difference
 
 
 ------------------------------------------
-operatore	I		D
+#operatore	I		D
 I	=	intersection
 
 
 ------------------------------------------
-operatorlg	all	*		
+#operatorlg	all	*		
 
 product all [3, 5, 4]		=	60
 sum all {2, 3, 4, 5}			=	14
@@ -34,7 +34,7 @@ forall f, x, y
 
 		
 ------------------------------------------
-operatorll	in		all
+#operatorll	in		all
 
 5 in {1, 2, 3, 4, 5}		=	true
 3 in {true, false, 6}	=	false
@@ -132,7 +132,7 @@ forall x, y
 
 	
 ------------------------------------------
-operatore	where	all
+#operatore	where	all
 
 [1, 2, 3] where (\x -> x > 2)				=	[3]
 [1, 4, 2] where (\x -> x * x = x + x)	=	[1, 2]
