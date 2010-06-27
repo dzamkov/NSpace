@@ -13,6 +13,8 @@ module NSpaceCode.Parse (
 	Operators(..),
 	Binding(..),
 	defaultOperators,
+	operatorInfo,
+	isOperator,
 	match
 ) where 
 
@@ -58,20 +60,27 @@ data Associativity	=
 	LeftAssociative |
 	RightAssociative deriving (Show, Eq, Ord)
 	
-type Operators			=	[(Associativity, [String])]
+type Operators			=	[(Associativity, Set.Set String)]
 
 defaultOperators		=	[
-	(LeftAssociative, 	["*"]),
-	(LeftAssociative, 	["+", "-"]),
-	(LeftAssociative, 	[".."]),
-	(LeftAssociative,		["="]),
-	(LeftAssociative,		["or", "xor"]),
-	(LeftAssociative,		["and", "xand"])]
+	(LeftAssociative, 	Set.fromList ["*"]),
+	(LeftAssociative, 	Set.fromList ["+", "-"]),
+	(LeftAssociative, 	Set.fromList [".."]),
+	(LeftAssociative,		Set.fromList ["="]),
+	(LeftAssociative,		Set.fromList ["or", "xor"]),
+	(LeftAssociative,		Set.fromList ["and", "xand"])]
 	
 isOperator ::	String -> Operators -> Bool
 isOperator op ops	=	or $ map (\l -> case l of
-								(_, m)	->	or (map (\e -> e == op) m)) ops
+								(_, m)	->	Set.member op m) ops
 
+operatorInfo	::	String -> Operators -> Maybe (Int, Associativity)
+operatorInfo s ops	=	snd (foldl (\l m -> case (l, m) of
+									((str, Nothing), (asc, oplist))
+										|	Set.member s oplist	->	(str, Just (str, asc))
+										|	otherwise				->	(str + 1, Nothing)
+									(state, _)						->	state) (0, Nothing) ops)
+								
 data Binding	=	--	Identifies a binding type in the context of an operator set
 	OperatorBinding Int Associativity |
 	WordBinding |
@@ -83,8 +92,27 @@ data Binding	=	--	Identifies a binding type in the context of an operator set
 canFunctionBind	::	Binding -> Binding -> Bool
 
 canFunctionBind _ (OperatorBinding _ _)	=	False
+canFunctionBind (OperatorBinding _ _) _	=	False
 canFunctionBind _ FunctionBinding			=	False
 canFunctionBind _ _								=	True
+
+canOperatorBind	::	Binding -> (Int, Associativity) -> Binding -> Bool
+
+canOperatorBind (OperatorBinding ls la) (ms, ma) (OperatorBinding rs ra)
+	|	ms < ls && ms < rs	=	False
+	|	ms > ls && ms > rs	=	True
+	
+canOperatorBind (OperatorBinding ls la) (ms, ma) _
+	|	ms > ls										=	True
+	|	ms == ls && ma == LeftAssociative	=	True
+	|	otherwise									=	False
+	
+canOperatorBind _ (ms, ma) (OperatorBinding rs ra)
+	|	ms > rs										=	True
+	|	ms == rs && ma == RightAssociative	=	True
+	|	otherwise									=	False
+	
+canOperatorBind _ _ _		=	True
 
 -- Operator binding 		-	binding created by an operator
 -- Word binding			-	default binding to a single word
@@ -283,11 +311,27 @@ match (Exp ops) z	=	res
 								(match (Concat startbracket (Concat (Exp ops) endbracket)) z))
 								
 		functionexps	=	(maybeMap (\l -> case l of
-										(ConcatMatch func (ConcatMatch _ arg))		->	funcCombine func arg)) $
+									(ConcatMatch func (ConcatMatch _ arg))		->	funcCombine func arg)) $
 								(match (Concat (Exp ops) $ Concat WhiteSpace (Exp ops)) z)
+								
+		operatorexps	=	(maybeMap (\l -> case l of
+									(ConcatMatch arg1 (ConcatMatch _ (ConcatMatch (WordExpMatch op) (ConcatMatch _ arg2))))
+										|	isOperator op ops	->		case (operatorInfo op ops, arg1, arg2) of
+												(Just opinfo, ExpMatch a1e a1m arg1b, ExpMatch a2e a2m arg2b)
+													|	canOperatorBind arg1b opinfo arg2b	-> (
+															case (funcCombine (case (funcCombine
+															(ExpMatch (Variable 0) (Map.singleton op 0) BracketBinding)
+															(ExpMatch a1e a1m BracketBinding)) of (Just l) -> l) 
+															(ExpMatch a2e a2m BracketBinding)) of 
+																Just (ExpMatch e m _) -> (
+																	Just $ ExpMatch e m (OperatorBinding (fst opinfo) (snd opinfo))))
+												_														->	Nothing
+										|	otherwise			->		Nothing
+								) (match (Concat (Exp ops) $ Concat WhiteSpace $ Concat (WordExp) $ Concat WhiteSpace (Exp ops)) z))
 	
 		res	=	Set.union wordexps $
 					Set.union bracketexps $
 					Set.union functionexps $
+					Set.union operatorexps $
 					Set.empty
 						
