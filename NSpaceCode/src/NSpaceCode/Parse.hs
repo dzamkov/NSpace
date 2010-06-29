@@ -9,16 +9,23 @@
 module NSpaceCode.Parse (
 	Parser(..),
 	Operators(..),
+	ParsedExpr(..),
 	Associativity(..),
 	defaultOperators,
+	operatorInfo,
+	isOperator,
 	parse,
 	item,
 	sat,
 	char,
 	string,
 	possible,
+	union,
 	multiple,
-	whiteSpace
+	whiteSpace,
+	word,
+	end,
+	expr
 ) where 
 
 import qualified Data.Set as Set
@@ -39,7 +46,7 @@ instance Monad Parser where
 						
 -- The result of an expression parse
 						
-data ParsedExp	=	ParsedExp (Expression SimpleCons) (Map.Map String Int) Binding
+data ParsedExpr	=	ParsedExpr (Expression SimpleCons) (Map.Map String Int) deriving (Show, Eq)
 						
 -- Operator information
 	
@@ -68,39 +75,6 @@ operatorInfo s ops	=	snd (foldl (\l m -> case (l, m) of
 										|	Set.member s oplist	->	(str, Just (str, asc))
 										|	otherwise				->	(str + 1, Nothing)
 									(state, _)						->	state) (0, Nothing) ops)
-								
-data Binding	=	--	Identifies a binding type in the context of an operator set
-	OperatorBinding Int Associativity |
-	WordBinding |
-	FunctionBinding |
-	BracketBinding deriving (Show, Eq, Ord)
-	
--- Gets if it is possible to create a function out of two adjacent terms of
--- the specified bindings.
-canFunctionBind	::	Binding -> Binding -> Bool
-					
- 
-canFunctionBind _ (OperatorBinding _ _)	=	False
-canFunctionBind (OperatorBinding _ _) _	=	False
-canFunctionBind _ FunctionBinding			=	False
-canFunctionBind _ _								=	True
-
-canOperatorBind	::	Binding -> (Int, Associativity) -> Binding -> Bool
-canOperatorBind (OperatorBinding ls la) (ms, ma) (OperatorBinding rs ra)
-	|	ms < ls && ms < rs	=	False
-	|	ms > ls && ms > rs	=	True
-	
-canOperatorBind (OperatorBinding ls la) (ms, ma) _
-	|	ms > ls										=	True
-	|	ms == ls && ma == LeftAssociative	=	True
-	|	otherwise									=	False
-	
-canOperatorBind _ (ms, ma) (OperatorBinding rs ra)
-	|	ms > rs										=	True
-	|	ms == rs && ma == RightAssociative	=	True
-	|	otherwise									=	False
-	
-canOperatorBind _ _ _		=	True
 
 
 --- Operator binding 	-	binding created by an operator
@@ -144,25 +118,115 @@ string (c:cs)	=	do
 
 possible		::	Parser a -> Parser (Maybe a)
 possible x	=	Parser (\l -> (Nothing, l):(map (\m -> (Just $ fst m, snd m)) (parse x l))) 
+
+-- Parses any of the specified patterns
+
+union				::	[Parser a] ->  Parser a
+union []			=	none
+union (p:ps)	=	Parser (\l -> (parse p l) ++ (parse (union ps) l))
 							
--- Parses zero or more of the specified pattern
+-- Parses one or more of the specified pattern
 
 multiple		::	Parser a -> Parser [a]
 multiple x	=	do
-						r	<-	possible x
-						case r of
-							(Just l)	->	do
-												rs	<-	multiple x
-												return (l:rs)
-							Nothing	->	return []
+						r	<- x
+						rs	<-	possible (multiple x)
+						case rs of
+							(Just l)	->	return (r:l)
+							Nothing	->	return [r]
 							
 -- Parses some amount of whitespace
 
 whiteSpace	::	Parser ()
 whiteSpace	=	do
-						r	<-	multiple (sat (\l ->	case l of
+						multiple (sat (\l ->	case l of
 									' '	->	True
 									'\t'	->	True
 									'\n'	->	True
 									_		->	False))
-						if	length r > 0 then return () else none
+						return ()
+						
+-- Only matches the end of a string
+
+end	::	Parser ()
+end	=	Parser (\l ->	if		l == ""
+								then	[((), "")]
+								else	[])
+						
+-- Parses a string made up of word characters
+
+word	::	Parser String
+word	=	do
+				multiple $ sat (\l -> Set.member l wordChars)
+		where
+			wordChars	=	Set.fromList (['a'..'z'] ++ ['A'..'Z'] ++ "+_-=*&^%$@!~':|<>")
+
+-- Parses an expression	
+
+type Term	=	Either ParsedExpr String
+	
+expr		::	Operators -> Parser ParsedExpr
+expr ops	=	do
+					possible whiteSpace
+					terms	<-	termParse
+					possible whiteSpace
+					case (termReduce terms) of
+						(Just x)	->	return x
+						Nothing	->	none
+			where
+				functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
+				functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
+					where
+						intsect			=	Map.fromList $ Map.elems $ Map.intersectionWith (\l m -> (m, l)) fm am
+						startunbound	=	(Set.findMax (getBound fe)) + 1
+						newexp			=	Function fe $ rebind ae (\l ->	case Map.lookup l intsect of
+													(Just m) -> m
+													Nothing	-> l + startunbound)
+						newmap			=	Map.unionWith (\l m -> l) fm $ (Map.map (\l -> l + startunbound) am)
+						
+						res				=	ParsedExpr newexp newmap
+				termParse	::	Parser [Term]
+				termParse	=	do
+										union [
+											(do
+												r	<-	word
+												rs	<-	conParse
+												case operatorInfo r ops of
+													Just (str, asc)	->	return ((Right r):rs)
+													Nothing				->	return ((Left $ ParsedExpr (Variable 0) (Map.singleton r 0)):rs)),
+											(do
+												char '('
+												e	<-	expr ops
+												char ')'
+												rs	<-	conParse
+												case e of
+													(ParsedExpr exp map)	->	return ((Left $ ParsedExpr exp map):rs))]
+				conParse		::	Parser [Term]
+				conParse		=	do
+										w	<-	possible whiteSpace
+										case w of
+											(Just _)	->	termParse
+											Nothing	->	return []
+				termReduce		::	[Term] -> Maybe ParsedExpr
+				termReduce x	=	case operatorReduce $ functionReduce x of
+											[Left l]				->	Just l
+											_						->	Nothing
+					where
+						functionReduce	((Left x):(Left y):cs)	=	functionReduce $ (Left $ functionCombine x y):cs	
+						functionReduce (x:rs)						=	x:(functionReduce rs)
+						functionReduce []								=	[]
+						
+						operatorReduce		::	[Term] -> [Term]
+						operatorReduce x	=	foldl (\cur op -> case op of
+														(LeftAssociative, opset)	->	laOpReduce cur opset) x ops
+							where
+								laOpReduce	::	[Term] -> Set.Set String -> [Term]
+								laOpReduce ((Left f):(Right op):(Left a):rs) opset
+									|	Set.member op opset	=	laOpReduce ((Left 
+																			(functionCombine 
+																				(functionCombine
+																					(ParsedExpr (Variable 0) (Map.singleton op 0))
+																					f)
+																				a)):rs) opset
+								laOpReduce (x:rs) opset	=	x:(laOpReduce rs opset)
+								laOpReduce [] _			=	[]
