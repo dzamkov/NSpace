@@ -26,6 +26,9 @@ module NSpaceCode.Parse (
 	word,
 	end,
 	expr,
+	stringLiteral,
+	intLiteral,
+	listLiteral,
 	amount
 ) where 
 
@@ -53,7 +56,10 @@ functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
 functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
 	where
 		intsect			=	Map.fromList $ Map.elems $ Map.intersectionWith (\l m -> (m, l)) fm am
-		startunbound	=	(Set.findMax (getBound fe)) + 1
+		fbound			=	getBound fe
+		startunbound	=	if		Set.size fbound > 0
+								then	(Set.findMax fbound) + 1
+								else	0
 		newexp			=	Function fe $ rebind ae (\l ->	case Map.lookup l intsect of
 									(Just m) -> m
 									Nothing	-> l + startunbound)
@@ -180,7 +186,63 @@ word	=	do
 				multiple $ sat (\l -> Set.member l wordChars)
 		where
 			wordChars	=	Set.fromList (['a'..'z'] ++ ['A'..'Z'] ++ "+_-=*&^%$@!~':|<>?")
+			
+--	Parses a string literal
 
+stringLiteral	::	Parser String
+stringLiteral	=	do
+							sqoute	<-	quotechar
+							res		<-	instring sqoute
+							eqoute	<-	quotechar
+							if		sqoute == eqoute
+								then	return res
+								else	none
+					where
+						unescape '"'	=	'"'
+						unescape '\''	=	'\''
+						unescape 'n'	=	'\n'
+						unescape 't'	=	'\t'
+						unescape 'r'	=	'\r'
+						quotechar	=	sat (\l -> case l of
+							'"'	->	True
+							'\''	->	True
+							_		->	False)
+						instring x	=	amount $ union [sat (\l -> l /= x),
+							(do
+								char '\\'
+								ec	<-	item
+								return $ unescape ec)]
+								
+--	Parses an integer literal
+
+intLiteral	::	Parser Integer
+intLiteral	=	do
+						numchars	<-	multiple $ sat (\l -> Set.member l $ Set.fromList ['0'..'9'])
+						return (read numchars)
+
+-- Parses a list literal defined by the start and end chacters ('[' and ']')
+						
+listLiteral				::	Char -> Char -> Operators -> Parser [ParsedExpr]
+listLiteral	s e ops	=	do
+									char s
+									possible whiteSpace
+									listItems
+							where
+								listItems	=	do
+														e	<-	expr ops
+														rs	<-	conItems
+														return (e:rs)
+								conItems		=	union [
+									(do
+										possible whiteSpace
+										char ','
+										possible	whiteSpace
+										listItems),
+									(do
+										possible whiteSpace
+										char e
+										return [])]
+						
 -- Parses an expression	
 
 type Term	=	Either ParsedExpr String
@@ -194,22 +256,37 @@ expr ops	=	do
 			where
 				termParse	::	Parser [Term]
 				termParse	=	do
-										union [
+										term	<-	union [
 											(do
 												r	<-	word
-												rs	<-	conParse
 												case operatorInfo r ops of
-													Just (str, asc)	->	return ((Right r):rs)
-													Nothing				->	return ((Left $ ParsedExpr (Variable 0) (Map.singleton r 0)):rs)),
+													Just (str, asc)	->	return (Right r)
+													Nothing				->	return (Left $ ParsedExpr (Variable 0) (Map.singleton r 0))),
 											(do
 												char '('
 												possible whiteSpace
 												e	<-	expr ops
 												possible whiteSpace
 												char ')'
-												rs	<-	conParse
 												case e of
-													(ParsedExpr exp map)	->	return ((Left $ ParsedExpr exp map):rs))]
+													(ParsedExpr exp map)	->	return (Left $ ParsedExpr exp map)),
+											(do
+												str	<-	stringLiteral
+												return (Left $ ParsedExpr (Constant $
+													foldl (\c l -> apply c (CharCons l)) ListCons str) Map.empty)),
+											(do
+												int	<-	intLiteral
+												return (Left $ ParsedExpr (Constant $ IntegerCons int) Map.empty)),
+											(do
+												li		<-	listLiteral '[' ']' ops
+												return (Left $ foldl (\c l -> functionCombine c l) 
+													(ParsedExpr (Constant ListCons) Map.empty) li)),
+											(do
+												li		<-	listLiteral '{' '}' ops
+												return (Left $ foldl (\c l -> functionCombine c l) 
+													(ParsedExpr (Constant SetCons) Map.empty) li))]
+										rs	<-	conParse
+										return (term:rs)
 				conParse		::	Parser [Term]
 				conParse		=	do
 										w	<-	possible whiteSpace
