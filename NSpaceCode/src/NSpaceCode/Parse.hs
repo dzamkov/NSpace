@@ -25,7 +25,8 @@ module NSpaceCode.Parse (
 	whiteSpace,
 	word,
 	end,
-	expr
+	expr,
+	amount
 ) where 
 
 import qualified Data.Set as Set
@@ -47,6 +48,17 @@ instance Monad Parser where
 -- The result of an expression parse
 						
 data ParsedExpr	=	ParsedExpr (Expression SimpleCons) (Map.Map String Int) deriving (Show, Eq)
+
+functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
+functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
+	where
+		intsect			=	Map.fromList $ Map.elems $ Map.intersectionWith (\l m -> (m, l)) fm am
+		startunbound	=	(Set.findMax (getBound fe)) + 1
+		newexp			=	Function fe $ rebind ae (\l ->	case Map.lookup l intsect of
+									(Just m) -> m
+									Nothing	-> l + startunbound)
+		newmap			=	Map.unionWith (\l m -> l) fm $ (Map.map (\l -> l + startunbound) am)
+		res				=	ParsedExpr newexp newmap
 						
 -- Operator information
 	
@@ -75,11 +87,6 @@ operatorInfo s ops	=	snd (foldl (\l m -> case (l, m) of
 										|	Set.member s oplist	->	(str, Just (str, asc))
 										|	otherwise				->	(str + 1, Nothing)
 									(state, _)						->	state) (0, Nothing) ops)
-
-
---- Operator binding 	-	binding created by an operator
---- Word binding			-	default binding to a single word
---- Bracket binding		-	binding caused by ( ), strongest
 						
 -- Never matches anything
 
@@ -134,7 +141,19 @@ multiple x	=	do
 						case rs of
 							(Just l)	->	return (r:l)
 							Nothing	->	return [r]
-							
+
+-- Parses zero or more of the specified pattern							
+		
+amount	::	Parser a -> Parser [a]
+amount x	=	do
+					r	<-	possible x
+					case r of
+						(Just l)	->	do
+											rs	<-	amount x
+											return (l:rs)
+						Nothing	->	return []
+					
+
 -- Parses some amount of whitespace
 
 whiteSpace	::	Parser ()
@@ -143,6 +162,7 @@ whiteSpace	=	do
 									' '	->	True
 									'\t'	->	True
 									'\n'	->	True
+									'\r'	->	True
 									_		->	False))
 						return ()
 						
@@ -159,7 +179,7 @@ word	::	Parser String
 word	=	do
 				multiple $ sat (\l -> Set.member l wordChars)
 		where
-			wordChars	=	Set.fromList (['a'..'z'] ++ ['A'..'Z'] ++ "+_-=*&^%$@!~':|<>")
+			wordChars	=	Set.fromList (['a'..'z'] ++ ['A'..'Z'] ++ "+_-=*&^%$@!~':|<>?")
 
 -- Parses an expression	
 
@@ -167,24 +187,11 @@ type Term	=	Either ParsedExpr String
 	
 expr		::	Operators -> Parser ParsedExpr
 expr ops	=	do
-					possible whiteSpace
 					terms	<-	termParse
-					possible whiteSpace
 					case (termReduce terms) of
 						(Just x)	->	return x
 						Nothing	->	none
 			where
-				functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
-				functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
-					where
-						intsect			=	Map.fromList $ Map.elems $ Map.intersectionWith (\l m -> (m, l)) fm am
-						startunbound	=	(Set.findMax (getBound fe)) + 1
-						newexp			=	Function fe $ rebind ae (\l ->	case Map.lookup l intsect of
-													(Just m) -> m
-													Nothing	-> l + startunbound)
-						newmap			=	Map.unionWith (\l m -> l) fm $ (Map.map (\l -> l + startunbound) am)
-						
-						res				=	ParsedExpr newexp newmap
 				termParse	::	Parser [Term]
 				termParse	=	do
 										union [
@@ -196,7 +203,9 @@ expr ops	=	do
 													Nothing				->	return ((Left $ ParsedExpr (Variable 0) (Map.singleton r 0)):rs)),
 											(do
 												char '('
+												possible whiteSpace
 												e	<-	expr ops
+												possible whiteSpace
 												char ')'
 												rs	<-	conParse
 												case e of
