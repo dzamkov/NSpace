@@ -26,10 +26,12 @@ module NSpaceCode.Parse (
 	word,
 	end,
 	expr,
+	modifier,
 	stringLiteral,
 	intLiteral,
 	listLiteral,
-	amount
+	amount,
+	ignoreSpace
 ) where 
 
 import qualified Data.Set as Set
@@ -171,6 +173,18 @@ whiteSpace	=	do
 									'\r'	->	True
 									_		->	False))
 						return ()
+				
+-- Ignored whitespace, including comments.				
+ignoreSpace	::	Parser ()
+ignoreSpace	=	union [whiteSpace,
+						(do
+							possible whiteSpace
+							string "/*"
+							amount item
+							string "*/"
+							possible ignoreSpace
+							return ())]
+						
 						
 -- Only matches the end of a string
 
@@ -179,11 +193,18 @@ end	=	Parser (\l ->	if		l == ""
 								then	[((), "")]
 								else	[])
 						
--- Parses a string made up of word characters
+-- Parses a string made up of word characters that can be used as a variable.
+-- Modifiers are excluded.
 
 word	::	Parser String
 word	=	do
-				multiple $ sat (\l -> Set.member l wordChars)
+				w	<-	multiple $ sat (\l -> Set.member l wordChars)
+				case w of
+					"forall"	->	none
+					"exists"	->	none
+					"lambda"	->	none
+					"solve"	->	none
+					x			->	return x
 		where
 			wordChars	=	Set.fromList (['a'..'z'] ++ ['A'..'Z'] ++ "+_-=*&^%$@!~':|<>?")
 			
@@ -242,18 +263,57 @@ listLiteral	s e ops	=	do
 										possible whiteSpace
 										char e
 										return [])]
+										
+-- Parses a modifier (forall, lambda, exists, possible)
+modifier		::	String -> Parser [String]
+modifier x	=	do
+						string x
+						whiteSpace
+						r	<-	word
+						rs	<-	possible conModifier
+						case rs of
+							(Just l)	->	return (r:l)
+							Nothing	->	return [r]
+				where
+					conModifier	=	do
+											possible whiteSpace
+											char ','
+											possible whiteSpace
+											r	<-	word
+											rs	<-	possible conModifier
+											case rs of
+												(Just l)	->	return (r:l)
+												Nothing	->	return [r]
+						
 						
 -- Parses an expression	
 
 type Term	=	Either ParsedExpr String
 	
-expr		::	Operators -> Parser ParsedExpr
-expr ops	=	do
-					terms	<-	termParse
-					case (termReduce terms) of
-						(Just x)	->	return x
-						Nothing	->	none
+expr	::	Operators  -> Parser ParsedExpr
+expr ops  =	union [
+					(do
+						terms	<-	termParse
+						case (termReduce terms) of
+							(Just x)	->	return x
+							Nothing	->	none),
+					modifierTest "forall" (\l m -> ForAll m l),
+					modifierTest "exists" (\l m -> Exists m l),
+					modifierTest "lambda" (\l m -> Lambda m l),
+					modifierTest "solve" (\l m -> Solve m l)]
 			where
+				modifierTest		::	String -> (Expression SimpleCons -> Int -> Expression SimpleCons) -> Parser ParsedExpr
+				modifierTest s f	=	do
+												vars	<-	modifier s
+												possible whiteSpace
+												e		<-	expr ops
+												case e of
+													(ParsedExpr p m)	->	return $ ParsedExpr (foldl (\cur n ->
+															case Map.lookup n m of
+																(Just v)	->	f cur v
+														) p vars) (foldl (\cur n -> Map.delete n cur) m vars)
+												
+			
 				termParse	::	Parser [Term]
 				termParse	=	do
 										term	<-	union [
@@ -264,9 +324,9 @@ expr ops	=	do
 													Nothing				->	return (Left $ ParsedExpr (Variable 0) (Map.singleton r 0))),
 											(do
 												char '('
-												possible whiteSpace
+												possible ignoreSpace
 												e	<-	expr ops
-												possible whiteSpace
+												possible ignoreSpace
 												char ')'
 												case e of
 													(ParsedExpr exp map)	->	return (Left $ ParsedExpr exp map)),
@@ -289,7 +349,7 @@ expr ops	=	do
 										return (term:rs)
 				conParse		::	Parser [Term]
 				conParse		=	do
-										w	<-	possible whiteSpace
+										w	<-	possible ignoreSpace
 										case w of
 											(Just _)	->	termParse
 											Nothing	->	return []

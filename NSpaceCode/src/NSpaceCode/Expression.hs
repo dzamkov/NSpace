@@ -28,7 +28,10 @@ data Expression a	=
 	Variable Int |
 	Constant a |
 	Function (Expression a) (Expression a) |
-	ForAll Int (Expression a) deriving (Show, Eq, Ord)
+	ForAll Int (Expression a) |
+	Exists Int (Expression a) |
+	Lambda Int (Expression a) | 
+	Solve Int (Expression a) deriving (Show, Eq, Ord)
 	
 -- Gets the variables bound in an expression.
 
@@ -38,6 +41,9 @@ getBound (Variable x)	=	Set.singleton x
 getBound (Constant _)	=	Set.empty
 getBound (Function x y)	=	Set.union (getBound x) (getBound y)
 getBound (ForAll x y)	=	Set.delete x (getBound y)
+getBound (Exists x y)	=	Set.delete x (getBound y)
+getBound (Lambda x y)	=	Set.delete x (getBound y)
+getBound (Solve x y)		=	Set.delete x (getBound y)
 
 -- Rebinds all variables in a expression based on a mapping function
 
