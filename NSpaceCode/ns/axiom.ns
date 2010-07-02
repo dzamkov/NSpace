@@ -1,59 +1,10 @@
---------------------------------------------------
---	These things are always true						--
---------------------------------------------------
--- Mathy relations
-forall a, b, c
-	(a + b = c)	= (a = c - b)
-	a * (b + c)	=	a * b + a * c
-	a + 0			=	a
-	a - 0			=	a
-	
-	
---	Sety relations
-forall y
-	iff
-		forall x
-			x in y
-	then
-		y = V		--	V is the universal set
-
-forall s, c
-	iff
-		forall x
-			c x	=	x in s
-	then
-		s	=	V where c
-		
-		
---	Identity function
-forall x
-	(lambda y (y)) x	=	x
-
-	
---	Complex function composition, allows most operations
---	on one variable to be recognized
-forall fa, fb, x, r
-	if
-		fa x (fb x)	=	r
-	then
-		(lambda y (fa y (fb y))) x	=	r
-		
-		
--- If something is true and false at the same time, something
--- is screwed up
-forall x
-	if
-		x
-		not x
-	then
-		false
-		
-		
--- One variable can't have two values
-forall y, z
-	iff
-		exists x
-			x	=	y
-			x	=	z
-	then
-		y = z
+/***************************************
+*	These things are always true			*
+****************************************/
+/* Math identities */
+T
+&	(forall a, b, c	T
+	&	(a + b = c)	=	(a = b - c)
+	&	a * (b + c)	=	a * b + a * c
+	&	a + 0			=	a
+	&	a - 0			=	a)	

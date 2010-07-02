@@ -14,7 +14,8 @@ module NSpaceCode.Expression (
 	getBound,
 	solve,
 	process,
-	substitute
+	substitute,
+	replace
 ) where 
 
 import qualified Data.Set as Set
@@ -54,6 +55,31 @@ rebind (Function x y) z	=	Function (rebind x z) (rebind y z)
 rebind (ForAll x y) z	=	ForAll x (rebind y (\l ->	if		l == x
 																		then	x
 																		else	z l))
+rebind (Exists x y) z	=	Exists x (rebind y (\l ->	if		l == x
+																		then	x
+																		else	z l))
+rebind (Lambda x y) z	=	Lambda x (rebind y (\l ->	if		l == x
+																		then	x
+																		else	z l))
+rebind (Solve x y) z		=	Solve x (rebind y (\l ->	if		l == x
+																		then	x
+																		else	z l))
+																		
+-- Replaces a variable in an expression with another expression.
+
+replace	::	Int -> Expression a -> Expression a -> Expression a
+replace var to (Variable x)
+	|	x == var		=	to
+replace var to (Function x y)	=	Function (replace var to x) (replace var to y)
+replace var to (ForAll x y)
+	|	var /= x		=	ForAll x (replace var to y)
+replace var to (Exists x y)
+	|	var /= x		=	ForAll x (replace var to y)
+replace var to (Lambda x y)
+	|	var /= x		=	ForAll x (replace var to y)
+replace var to (Solve x y)
+	|	var /= x		=	ForAll x (replace var to y)
+replace _ _ x		=	x
 	
 -- Reduces an expression to simplier form, usually involving more
 -- constants. This does not change any of the relationships between

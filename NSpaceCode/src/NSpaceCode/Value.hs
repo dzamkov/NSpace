@@ -34,6 +34,7 @@ data SimpleCons	=
 	CharCons (Char) |
 	ListCons |
 	SetCons |
+	UniversalCons |
 	EqualCons |
 	PlusCons |
 	MinusCons |

@@ -44,3 +44,6 @@ main	=	solve (initSolver (Variable 0) testexp) (\s -> do
 	putStrLn (show (statementExps s))
 	getLine
 	return True)
+	
+parseAxioms	::	IO (Expression SimpleCons)
+parseAxioms	=	fileParse "../ns/axiom.ns"

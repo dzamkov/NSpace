@@ -30,8 +30,10 @@ module NSpaceCode.Parse (
 	stringLiteral,
 	intLiteral,
 	listLiteral,
+	replaceVar,
 	amount,
-	ignoreSpace
+	ignoreSpace,
+	fileParse
 ) where 
 
 import qualified Data.Set as Set
@@ -80,9 +82,13 @@ type Operators			=	[(Associativity, Set.Set String)]
 defaultOperators		=	[
 	(LeftAssociative, 	Set.fromList ["*"]),
 	(LeftAssociative, 	Set.fromList ["+", "-"]),
+	(LeftAssociative,		Set.fromList ["where"]),
+	(LeftAssociative,		Set.fromList ["in"]),
 	(LeftAssociative, 	Set.fromList [".."]),
 	(LeftAssociative,		Set.fromList ["="]),
+	(LeftAssociative,		Set.fromList ["|"]),
 	(LeftAssociative,		Set.fromList ["or", "xor"]),
+	(LeftAssociative,		Set.fromList ["&"]),
 	(LeftAssociative,		Set.fromList ["and", "xand"])]
 	
 isOperator ::	String -> Operators -> Bool
@@ -302,16 +308,16 @@ expr ops  =	union [
 							Nothing	->	none),
 					(do
 						string "if"
-						possible whiteSpace
+						possible ignoreSpace
 						cond	<-	expr ops
-						possible whiteSpace
+						possible ignoreSpace
 						string "then"
-						possible whiteSpace
+						possible ignoreSpace
 						act	<-	expr ops
 						nact	<-	possible $ (do
-										possible whiteSpace
+										possible ignoreSpace
 										string "else"
-										possible whiteSpace
+										possible ignoreSpace
 										expr ops)
 						case nact of
 							(Just l)	->	return $ functionCombine (functionCombine
@@ -327,7 +333,7 @@ expr ops  =	union [
 				modifierTest		::	String -> (Expression SimpleCons -> Int -> Expression SimpleCons) -> Parser ParsedExpr
 				modifierTest s f	=	do
 												vars	<-	modifier s
-												possible whiteSpace
+												possible ignoreSpace
 												e		<-	expr ops
 												case e of
 													(ParsedExpr p m)	->	return $ ParsedExpr (foldl (\cur n ->
@@ -398,3 +404,42 @@ expr ops  =	union [
 																				a)):rs) opset
 								laOpReduce (x:rs) opset	=	x:(laOpReduce rs opset)
 								laOpReduce [] _			=	[]
+								
+-- Replaces a variable in an expression with a constant
+replaceVar	::	String -> SimpleCons -> ParsedExpr -> ParsedExpr
+replaceVar v t (ParsedExpr e m)	=	case Map.lookup v m of
+	(Just l)		->	ParsedExpr (replace l (Constant t) e) (Map.delete v m)
+	Nothing		->	ParsedExpr e m
+	
+--	Replaces all constants that look like variables.
+replaceConsts		::	ParsedExpr -> ParsedExpr
+replaceConsts x	=	
+	replaceVar "V" (UniversalCons) $
+	replaceVar "=" (EqualCons) $
+	replaceVar "+" (PlusCons) $
+	replaceVar "-" (MinusCons) $
+	replaceVar "*" (TimesCons) $
+	replaceVar "&" (AndCons) $
+	replaceVar "and" (AndCons) $
+	replaceVar "or" (OrCons) $
+	replaceVar "xand" (XandCons) $
+	replaceVar "xor" (XorCons) $
+	replaceVar "true" (LogicCons True) $
+	replaceVar "false" (LogicCons False) $
+	replaceVar "T" (LogicCons True) $
+	replaceVar "F" (LogicCons False) $
+	replaceVar "not" (NotCons) $ x
+	
+								
+-- Completely parses a file
+fileParse	::	String -> IO (Expression SimpleCons)
+fileParse s	=	do
+						str	<-	readFile s
+						return $ case head (parse (
+							do
+								possible ignoreSpace
+								e	<-	expr defaultOperators
+								possible ignoreSpace
+								end
+								return (replaceConsts e)) str) of
+							(ParsedExpr x _, _)	->	x
