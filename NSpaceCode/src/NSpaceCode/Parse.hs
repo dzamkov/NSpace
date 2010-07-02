@@ -204,6 +204,9 @@ word	=	do
 					"exists"	->	none
 					"lambda"	->	none
 					"solve"	->	none
+					"if"		->	none
+					"then"	->	none
+					"else"	->	none
 					x			->	return x
 		where
 			wordChars	=	Set.fromList (['a'..'z'] ++ ['A'..'Z'] ++ "+_-=*&^%$@!~':|<>?")
@@ -297,6 +300,25 @@ expr ops  =	union [
 						case (termReduce terms) of
 							(Just x)	->	return x
 							Nothing	->	none),
+					(do
+						string "if"
+						possible whiteSpace
+						cond	<-	expr ops
+						possible whiteSpace
+						string "then"
+						possible whiteSpace
+						act	<-	expr ops
+						nact	<-	possible $ (do
+										possible whiteSpace
+										string "else"
+										possible whiteSpace
+										expr ops)
+						case nact of
+							(Just l)	->	return $ functionCombine (functionCombine
+								(functionCombine (ParsedExpr (Constant $ ITECons) Map.empty) cond) act) l 
+							Nothing	->	return $ functionCombine (functionCombine
+								(functionCombine (ParsedExpr (Constant $ ITECons) Map.empty) cond) act) 
+								(ParsedExpr (Constant $ LogicCons $ True) Map.empty)),
 					modifierTest "forall" (\l m -> ForAll m l),
 					modifierTest "exists" (\l m -> Exists m l),
 					modifierTest "lambda" (\l m -> Lambda m l),
