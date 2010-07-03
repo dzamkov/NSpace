@@ -39,7 +39,6 @@ module NSpaceCode.Parse (
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import NSpaceCode.Expression
-import NSpaceCode.Value
 
 -- Parses a string and returns valid matches paired with a suffix string
 
@@ -360,8 +359,10 @@ expr ops  =	union [
 													(ParsedExpr exp map)	->	return (Left $ ParsedExpr exp map)),
 											(do
 												str	<-	stringLiteral
-												return (Left $ ParsedExpr (Constant $
-													foldl (\c l -> apply c (CharCons l)) ListCons str) Map.empty)),
+												return (Left $ ParsedExpr (
+													foldl (\c l -> 
+														Function c (Constant $ CharCons l)) 
+															(Constant $ ListCons) str) Map.empty)),
 											(do
 												int	<-	intLiteral
 												return (Left $ ParsedExpr (Constant $ IntegerCons int) Map.empty)),
