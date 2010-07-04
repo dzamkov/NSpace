@@ -10,9 +10,12 @@ module NSpaceCode.Expression (
 	Expression(..),
 	Cons(..),
 	SimpleCons(..),
+	Value(..),
 	rebind,
 	getBound,
-	replace
+	replace,
+	score,
+	process
 ) where 
 
 import qualified Data.Set as Set
@@ -68,6 +71,25 @@ data Expression a	=
 	Lambda Int (Expression a) | 
 	Solve Int (Expression a) deriving (Show, Eq, Ord)
 	
+-- Expression scored and ordered by simplicity.
+	
+data ScoredExpression a	=	ScoredExpression (Expression a)	deriving(Show, Eq)
+
+score	::	Expression a -> Int
+score (Variable _)	=	0
+score (Constant _)	=	1
+score (Function x y)	=	(score x) + (score y)
+score (ForAll _ x)	=	2 * (score x)
+score (Exists _ x)	=	2 * (score x)
+score (Lambda _ x)	=	2 * (score x)
+score (Solve _ x)		=	4 * (score x)
+
+instance (Eq a, Ord a) => Ord (ScoredExpression a) where
+	compare (ScoredExpression x) (ScoredExpression y)
+		|	score x > score y		=	GT
+		|	score x < score y		=	LT
+		|	otherwise				=	compare x y
+	
 -- Gets the variables bound in an expression.
 
 getBound	::	Expression a -> (Set.Set Int)
@@ -115,3 +137,36 @@ replace var to (Solve x y)
 	|	var /= x		=	ForAll x (replace var to y)
 replace _ _ x		=	x
 
+-- Uniquely represents a value as a set of expressions that are equivalent when
+-- the given axioms are true. The expressions are given without a context, and
+-- therfore, should not contain any variables.
+
+data Value a = Value {
+	expression	::	Expression a,		--	An expression
+	axiom			::	Expression a }	deriving(Show)
+	
+-- Finds expressions equivalent to a value in the value's context. Note that not
+-- all possible expressions may be found in one iteration (in fact, its impossible)
+-- and simpiler expressions are more likely to be found (so a better name for this
+-- function would be reduce, but I'm not calling it that because it sounds so
+-- definite and confident, with a clear purpose, which is certainly not this function,
+-- which aimlessly guesses new expressions given old ones). Also, the reason this 
+-- comment is so long is because I'm on a plane right now, and am trying
+-- desperately to procastinate. There appears to be inflight wifi, but it costs
+-- $12.99 per flight, and thats just stupid and I'm not having that. When I land, i'll
+-- probably make a program that downloads wikipedia articles and provides a local
+-- server to view them on. At least that way, i'd have some way to procastinate. I think
+-- im over it now though, time to write the actual function...
+
+-- here I go...
+
+-- now?
+
+-- NOW
+	
+process	::	(Cons a) => Value a -> Set.Set (Expression a)
+
+process (Value e (Constant l))
+	|	l == trueCons		=	Set.empty
+	|	l == falseCons		=	error	$	"WTF, The definition of axiom is that it has"
+											++	"to be true. NOOB"
