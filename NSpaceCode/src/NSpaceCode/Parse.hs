@@ -60,11 +60,11 @@ functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
 functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
 	where
 		intsect			=	Map.fromList $ Map.elems $ Map.intersectionWith (\l m -> (m, l)) fm am
-		fbound			=	getBound fe
+		fbound			=	getUsed fe
 		startunbound	=	if		Set.size fbound > 0
 								then	(Set.findMax fbound) + 1
 								else	0
-		newexp			=	Function fe $ rebind ae (\l ->	case Map.lookup l intsect of
+		newexp			=	Function fe $ rebind ae (\l -> case Map.lookup l intsect of
 									(Just m) -> m
 									Nothing	-> l + startunbound)
 		newmap			=	Map.unionWith (\l m -> l) fm $ (Map.map (\l -> l + startunbound) am)

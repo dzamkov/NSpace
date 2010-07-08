@@ -14,6 +14,7 @@ module NSpaceCode.Expression (
 	SimpleCons(..),
 	rebind,
 	getBound,
+	getUsed,
 	replace,
 	score,
 	substitute
@@ -103,24 +104,27 @@ getBound (Exists x y)	=	Set.delete x (getBound y)
 getBound (Lambda x y)	=	Set.delete x (getBound y)
 getBound (Solve x y)		=	Set.delete x (getBound y)
 
+-- Gets the variables used in an expression.
+
+getUsed	::	Expression a -> (Set.Set Int)
+getUsed (Variable x)		=	Set.singleton x
+getUsed (Constant _)		=	Set.empty
+getUsed (Function x y)	=	Set.union (getUsed x) (getUsed y)
+getUsed (ForAll x y)		=	Set.insert x (getUsed y)
+getUsed (Exists x y)		=	Set.insert x (getUsed y)
+getUsed (Lambda x y)		=	Set.insert x (getUsed y)
+getUsed (Solve x y)		=	Set.insert x (getUsed y)
+
 -- Rebinds all variables in a expression based on a mapping function
 
 rebind	::	Expression a -> (Int -> Int) -> Expression a
 rebind (Variable x) y	=	Variable (y x)
 rebind (Constant x) y	=	Constant x
 rebind (Function x y) z	=	Function (rebind x z) (rebind y z)
-rebind (ForAll x y) z	=	ForAll x (rebind y (\l ->	if		l == x
-																		then	x
-																		else	z l))
-rebind (Exists x y) z	=	Exists x (rebind y (\l ->	if		l == x
-																		then	x
-																		else	z l))
-rebind (Lambda x y) z	=	Lambda x (rebind y (\l ->	if		l == x
-																		then	x
-																		else	z l))
-rebind (Solve x y) z		=	Solve x (rebind y (\l ->	if		l == x
-																		then	x
-																		else	z l))
+rebind (ForAll x y) z	=	ForAll (z x) (rebind y z)
+rebind (Exists x y) z	=	Exists (z x) (rebind y z)
+rebind (Lambda x y) z	=	Lambda (z x) (rebind y z)
+rebind (Solve x y) z		=	Solve (z x) (rebind y z)
 																		
 -- Replaces a variable in an expression with another expression.
 
@@ -131,11 +135,11 @@ replace var to (Function x y)	=	Function (replace var to x) (replace var to y)
 replace var to (ForAll x y)
 	|	var /= x		=	ForAll x (replace var to y)
 replace var to (Exists x y)
-	|	var /= x		=	ForAll x (replace var to y)
+	|	var /= x		=	Exists x (replace var to y)
 replace var to (Lambda x y)
-	|	var /= x		=	ForAll x (replace var to y)
+	|	var /= x		=	Lambda x (replace var to y)
 replace var to (Solve x y)
-	|	var /= x		=	ForAll x (replace var to y)
+	|	var /= x		=	Solve x (replace var to y)
 replace _ _ x		=	x
 
 -- A pattern is an expression with some terms missing, being instead replaced
