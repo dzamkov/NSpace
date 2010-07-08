@@ -8,3 +8,22 @@ T
 	&	a * (b + c)	=	a * b + a * c
 	&	a + 0			=	a
 	&	a - 0			=	a)	
+	
+/* Function identites */
+&	(forall x
+		x	=	(lambda y y) x
+	)
+&	(forall x, f
+		(lambda y (f y)) x	=	f x
+	)
+&	(forall x, f, g
+		(lambda y (f y (g y))) x	=	(f x (g x))
+	)
+	
+/*	Modifier identites */
+&	(forall f
+		(forall x (f x)) = (forall x
+			if true then (f x))
+	)
+	
+&	(lambda y y) 5 = 5

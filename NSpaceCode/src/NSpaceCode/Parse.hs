@@ -33,7 +33,8 @@ module NSpaceCode.Parse (
 	replaceVar,
 	amount,
 	ignoreSpace,
-	fileParse
+	fileParse,
+	quickParse
 ) where 
 
 import qualified Data.Set as Set
@@ -431,12 +432,8 @@ replaceConsts x	=
 	replaceVar "F" (LogicCons False) $
 	replaceVar "not" (NotCons) $ x
 	
-								
--- Completely parses a file
-fileParse	::	String -> IO (Expression SimpleCons)
-fileParse s	=	do
-						str	<-	readFile s
-						return $ case head (parse (
+quickParse		::	String -> Expression SimpleCons
+quickParse str	=	case head (parse (
 							do
 								possible ignoreSpace
 								e	<-	expr defaultOperators
@@ -444,3 +441,9 @@ fileParse s	=	do
 								end
 								return (replaceConsts e)) str) of
 							(ParsedExpr x _, _)	->	x
+								
+-- Completely parses a file
+fileParse	::	String -> IO (Expression SimpleCons)
+fileParse s	=	do
+						str	<-	readFile s
+						return $ quickParse str

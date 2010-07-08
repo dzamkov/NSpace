@@ -8,14 +8,15 @@
 
 module NSpaceCode.Expression (
 	Expression(..),
+	Pattern(..),
+	Instance(..),
 	Cons(..),
 	SimpleCons(..),
-	Value(..),
 	rebind,
 	getBound,
 	replace,
 	score,
-	process
+	substitute
 ) where 
 
 import qualified Data.Set as Set
@@ -137,36 +138,19 @@ replace var to (Solve x y)
 	|	var /= x		=	ForAll x (replace var to y)
 replace _ _ x		=	x
 
--- Uniquely represents a value as a set of expressions that are equivalent when
--- the given axioms are true. The expressions are given without a context, and
--- therfore, should not contain any variables.
+-- A pattern is an expression with some terms missing, being instead replaced
+-- by a free variable.
+type Pattern a = Expression a
 
-data Value a = Value {
-	expression	::	Expression a,		--	An expression
-	axiom			::	Expression a }	deriving(Show)
-	
--- Finds expressions equivalent to a value in the value's context. Note that not
--- all possible expressions may be found in one iteration (in fact, its impossible)
--- and simpiler expressions are more likely to be found (so a better name for this
--- function would be reduce, but I'm not calling it that because it sounds so
--- definite and confident, with a clear purpose, which is certainly not this function,
--- which aimlessly guesses new expressions given old ones). Also, the reason this 
--- comment is so long is because I'm on a plane right now, and am trying
--- desperately to procastinate. There appears to be inflight wifi, but it costs
--- $12.99 per flight, and thats just stupid and I'm not having that. When I land, i'll
--- probably make a program that downloads wikipedia articles and provides a local
--- server to view them on. At least that way, i'd have some way to procastinate. I think
--- im over it now though, time to write the actual function...
+-- Information about what "fits" into the free variables of a pattern. A pattern
+-- combined with an instance can be used to generate an expression.
 
--- here I go...
+type Instance a = Map.Map Int (Expression a)
 
--- now?
+-- Substitutes expressions in for the free variables of a pattern based on
+-- an instance.
 
--- NOW
-	
-process	::	(Cons a) => Value a -> Set.Set (Expression a)
-
-process (Value e (Constant l))
-	|	l == trueCons		=	Set.empty
-	|	l == falseCons		=	error	$	"WTF, The definition of axiom is that it has"
-											++	"to be true. NOOB"
+substitute	::	(Cons a) => Pattern a -> Instance a -> Expression a
+substitute p i	=	res
+	where
+		res	=	Map.foldWithKey (\k v b -> replace k v b) p i

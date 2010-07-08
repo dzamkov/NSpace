@@ -14,3 +14,4 @@ import Data.IORef
 
 parseAxioms	::	IO (Expression SimpleCons)
 parseAxioms	=	fileParse "../ns/axiom.ns"
+
