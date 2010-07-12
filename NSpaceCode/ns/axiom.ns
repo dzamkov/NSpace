@@ -9,6 +9,7 @@ T
 	&	a + 0			=	a
 	&	a - 0			=	a)	
 	
+	
 /* Function identites */
 &	(forall x
 		x	=	(lambda y y) x
@@ -20,10 +21,27 @@ T
 		(lambda y (f y (g y))) x	=	(f x (g x))
 	)
 	
+	
 /*	Modifier identites */
 &	(forall f
 		(forall x (f x)) = (forall x
 			if true then (f x))
 	)
 	
-&	(lambda y y) 5 = 5
+	
+/*	Solve identities */
+&	(forall x
+		(solve y (y = x))	=	{x}
+	)
+	
+	
+/* Associative/Commulative identities */
+&	(forall x, y, z	T
+		&	x and y				=	y and x
+		&	x and (y and z)	=	(x and y) and z
+		&	x or y				=	y or x
+		&	x or (y or z)		=	(x or y) or z
+		&	x + y					=	y + x
+		&	x + (y +  z)		=	(x + y) + z
+		&	x * y					=	y * x
+		&	x * (y +  z)		=	(x * y) * z)

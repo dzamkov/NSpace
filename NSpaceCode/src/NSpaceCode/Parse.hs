@@ -34,7 +34,8 @@ module NSpaceCode.Parse (
 	amount,
 	ignoreSpace,
 	fileParse,
-	quickParse
+	quickParse,
+	interpret
 ) where 
 
 import qualified Data.Set as Set
@@ -447,3 +448,26 @@ fileParse	::	String -> IO (Expression SimpleCons)
 fileParse s	=	do
 						str	<-	readFile s
 						return $ quickParse str
+					
+-- Interpreter mode					
+interpret	::	String -> IO ()
+interpret s	=	do
+						putStrLn	"Parsing axiom file..."
+						a	<-	id $! fileParse s
+						putStrLn "Producing rule set..."
+						rs	<-	return $! (produceRules a)
+						putStrLn	"Contemplating the existance of a higher power.."
+						putStrLn "Starting interpreter..."
+						conInterpret
+						return ()
+				where
+					conInterpret	=	do
+												interpretCommand
+												conInterpret
+						
+-- Interprets a single given command
+interpretCommand	:: IO ()
+interpretCommand	=	do
+								 putStr ">>> "
+								 l	<-	getLine
+								 return ()
