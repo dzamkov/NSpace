@@ -35,7 +35,8 @@ module NSpaceCode.Parse (
 	ignoreSpace,
 	fileParse,
 	quickParse,
-	interpret
+	interpret,
+	unparse
 ) where 
 
 import qualified Data.Set as Set
@@ -422,24 +423,41 @@ replaceVarC v t (ParsedExpr e m)	=	case Map.lookup v m of
 																									else	q) $ Map.delete v m)
 	Nothing		->	ParsedExpr e m
 	
+-- Mapping of constants and stringhs
+consts	=	Map.fromList [
+	("V", UniversalL),
+	("=", EqualL),
+	("+", PlusL),
+	("-", MinusL),
+	("*", TimesL),
+	("&", AndL),
+	("and", AndL),
+	("or", OrL),
+	("xand", XandL),
+	("xor", XorL),
+	("true", LogicL True),
+	("false", LogicL False),
+	("T", LogicL True),
+	("F", LogicL False),
+	("not", NotL)]
+	
+rconsts	=	Map.fromList [
+	(UniversalL, "V"),
+	(EqualL, "="),
+	(PlusL, "+"),
+	(MinusL, "-"),
+	(TimesL, "*"),
+	(AndL, "and"),
+	(OrL, "or"),
+	(XandL, "xand"),
+	(XorL, "xor"),
+	(LogicL True, "true"),
+	(LogicL False, "false"),
+	(NotL, "not")]
+	
 --	Replaces all constants that look like variables.
 replaceConsts		::	ParsedExpr -> ParsedExpr
-replaceConsts x	=	
-	replaceVarC "V" (UniversalL) $
-	replaceVarC "=" (EqualL) $
-	replaceVarC "+" (PlusL) $
-	replaceVarC "-" (MinusL) $
-	replaceVarC "*" (TimesL) $
-	replaceVarC "&" (AndL) $
-	replaceVarC "and" (AndL) $
-	replaceVarC "or" (OrL) $
-	replaceVarC "xand" (XandL) $
-	replaceVarC "xor" (XorL) $
-	replaceVarC "true" (LogicL True) $
-	replaceVarC "false" (LogicL False) $
-	replaceVarC "T" (LogicL True) $
-	replaceVarC "F" (LogicL False) $
-	replaceVarC "not" (NotL) $ x
+replaceConsts x	=	Map.foldWithKey (\k v a -> replaceVarC k v a) x consts
 	
 quickParse		::	String -> Expression
 quickParse str	=	case head (parse (
@@ -450,6 +468,63 @@ quickParse str	=	case head (parse (
 								end
 								return (replaceConsts e)) str) of
 							(ParsedExpr x _, _)	->	x
+							
+-- Converts an expression to a string for human readability
+
+data UnparseTerm	=
+	FunctionTerm	[UnparseTerm]				|
+	VariableTerm	String						|
+	ModifierTerm	ModifierType	[String]	|
+	ConstantTerm	Literal						deriving(Show, Eq)
+
+unparse			::	Operators -> Expression -> String
+unparse ops e	=	res
+	where
+		varList	=	[[x] | x <- ['a'..'z']] ++ [x:y | y <- varList, x <- ['a'..'z']]
+		
+		-- Converts an expression to a term. The function is given a list of variables to
+		-- use as needed and returns the list of unused variables. It is also given a mapping
+		-- of variables assigned to it.
+		toTerm	::	[String] -> Map.Map Int String -> Expression -> (UnparseTerm, [String])
+		toTerm vars _ (Constant l)			=	(ConstantTerm l, vars)
+		toTerm vars m (Variable)			=	(VariableTerm (case Map.lookup 0 m of (Just x) -> x), vars)
+		toTerm vars m (Function a b s)	=	res
+			where
+				asize	=	boundVars a
+				bsize	=	boundVars b
+				am		=	m
+				bm		=	snd $ foldl (\ac it -> case (ac, Set.fold (\l m -> case l of
+															(x, y)	->	if		y == it
+																			then	Just x
+																			else	m) Nothing s) of
+									((ap, mp), Nothing)	->	(ap + 1, Map.insert it (case Map.lookup ap m of (Just x) -> x) mp)
+									((ap, mp), Just x)	->	(ap, Map.insert it (case Map.lookup x m of (Just x) -> x) mp)
+							) (asize, Map.empty) [0..(bsize - 1)]
+				ar		=	toTerm vars am a
+				br		=	toTerm (snd ar) bm b
+				res	=	case ar of
+					(FunctionTerm ft, _)	->	(FunctionTerm (ft ++ [fst br]), snd br)
+					(l, _)					->	(FunctionTerm [l, fst br], snd br)
+		
+		esize		=	boundVars e
+		emap		=	Map.fromList [(x, varList !! x) | x <- [0..(esize - 1)]]
+		eterm		=	fst $ toTerm (drop esize varList) emap e 
+		
+		litToString		::	Literal -> String
+		litToString (IntegerL x)	=	show x
+		litToString x					=	case (Map.lookup x rconsts) of (Just x) -> x
+		
+		termToString	::	UnparseTerm -> String
+		termToString (FunctionTerm ((ConstantTerm op):l:m:[]))
+			|	isOperator (litToString op) ops	=	"(" ++ (termToString l) ++ ") " ++ (litToString op) ++ " (" ++ (termToString m) ++ ")"
+		termToString (FunctionTerm (l:[]))						=	termToString l
+		termToString (FunctionTerm ((VariableTerm v):l))	=	v ++ " " ++ (termToString $ FunctionTerm l)
+		termToString (FunctionTerm (l:m))						=	"(" ++ (termToString l) ++ ") " ++ (termToString $ FunctionTerm m)
+		termToString (VariableTerm v)								=	v
+		termToString (ConstantTerm l)								=	litToString l
+		
+		res	=	termToString eterm
+		
 								
 -- Completely parses a file
 fileParse	::	String -> IO Expression

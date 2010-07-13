@@ -68,8 +68,8 @@ boundVars (Modifier _ a _)	=	(boundVars a) - 1
 -- Replaces a single indexed variable in an expression with another expression
 
 replaceVar	::	Int -> Expression -> Expression -> Expression
-replaceVar	_ r (Variable)			=	r
-replaceVar	i r (Function a b m)	=	res
+replaceVar _ r (Variable)			=	r
+replaceVar i r (Function a b m)	=	res
 	where
 		-- Finds the index of a variable in the "b" of a function
 		bIndex	::	Int -> Set.Set (Int, Int) -> Int
@@ -130,6 +130,9 @@ replaceVar	i r (Function a b m)	=	res
 		res	=	if		i < asize
 					then	replaceInA
 					else	replaceInB
+replaceVar i r (Modifier t e a)
+	|	i < a								=	Modifier t (replaceVar i r e) (a + (boundVars r) - 1)
+	|	otherwise						=	Modifier t (replaceVar (i - 1) r e) a
 		
 -- Sets two indexed variables to equal the same. The last specified variable is removed.
 		
