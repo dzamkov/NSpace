@@ -30,7 +30,7 @@ module NSpaceCode.Parse (
 	stringLiteral,
 	intLiteral,
 	listLiteral,
-	replaceVar,
+	replaceVarC,
 	amount,
 	ignoreSpace,
 	fileParse,
@@ -55,21 +55,24 @@ instance Monad Parser where
 						
 -- The result of an expression parse
 						
-data ParsedExpr	=	ParsedExpr (Expression SimpleCons) (Map.Map String Int) deriving (Show, Eq)
+data ParsedExpr	=	ParsedExpr Expression (Map.Map String Int) deriving (Show, Eq)
 
 functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
 functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
 	where
-		intsect			=	Map.fromList $ Map.elems $ Map.intersectionWith (\l m -> (m, l)) fm am
-		fbound			=	getUsed fe
-		startunbound	=	if		Set.size fbound > 0
-								then	(Set.findMax fbound) + 1
-								else	0
-		newexp			=	Function fe $ rebind ae (\l -> case Map.lookup l intsect of
-									(Just m) -> m
-									Nothing	-> l + startunbound)
-		newmap			=	Map.unionWith (\l m -> l) fm $ (Map.map (\l -> l + startunbound) am)
-		res				=	ParsedExpr newexp newmap
+		fsize			=	boundVars fe
+		iam			=	Map.fromList $ map (\l -> case l of (a, b) -> (b, a)) $ Map.toList am
+		
+		fres			=	Map.foldWithKey (\k v a -> case a of
+								(p, m, s)	->	case Map.lookup v fm of
+									(Just l)		->	(p, m, Set.insert (k, l) s)
+									Nothing		->	(p + 1, Map.insert v p m, s)
+							) (0, Map.empty, Set.empty) iam
+		
+		nam			=	case fres of (_, l, _) -> l
+		nm				=	case fres of (_, _, l) -> l
+		res			=	ParsedExpr (Function fe ae nm) (Map.union fm $ Map.map (\l -> l + fsize) nam)
+		
 						
 -- Operator information
 	
@@ -322,25 +325,28 @@ expr ops  =	union [
 										expr ops)
 						case nact of
 							(Just l)	->	return $ functionCombine (functionCombine
-								(functionCombine (ParsedExpr (Constant $ ITECons) Map.empty) cond) act) l 
+								(functionCombine (ParsedExpr (Constant $ ITEL) Map.empty) cond) act) l 
 							Nothing	->	return $ functionCombine (functionCombine
-								(functionCombine (ParsedExpr (Constant $ ITECons) Map.empty) cond) act) 
-								(ParsedExpr (Constant $ LogicCons $ True) Map.empty)),
-					modifierTest "forall" (\l m -> ForAll m l),
-					modifierTest "exists" (\l m -> Exists m l),
-					modifierTest "lambda" (\l m -> Lambda m l),
-					modifierTest "solve" (\l m -> Solve m l)]
+								(functionCombine (ParsedExpr (Constant $ ITEL) Map.empty) cond) act) 
+								(ParsedExpr (Constant $ LogicL $ True) Map.empty)),
+					modifierTest "forall" Forall,
+					modifierTest "exists" Exists,
+					modifierTest "lambda" Lambda,
+					modifierTest "solve" Solve]
 			where
-				modifierTest		::	String -> (Expression SimpleCons -> Int -> Expression SimpleCons) -> Parser ParsedExpr
-				modifierTest s f	=	do
+				modifierTest			::	String -> ModifierType -> Parser ParsedExpr
+				modifierTest s mod	=	do
 												vars	<-	modifier s
 												possible ignoreSpace
 												e		<-	expr ops
-												case e of
-													(ParsedExpr p m)	->	return $ ParsedExpr (foldl (\cur n ->
-															case Map.lookup n m of
-																(Just v)	->	f cur v
-														) p vars) (foldl (\cur n -> Map.delete n cur) m vars)
+												return $ foldl (\ac var -> case ac of
+														(ParsedExpr pe pm)	->	case Map.lookup var pm of
+															(Just l)			->	(ParsedExpr (Modifier mod pe l)
+																(Map.map (\m ->	if		m > l
+																						then	m - 1
+																						else	m) $
+																Map.delete var pm))
+													) e vars
 												
 			
 				termParse	::	Parser [Term]
@@ -350,7 +356,7 @@ expr ops  =	union [
 												r	<-	word
 												case operatorInfo r ops of
 													Just (str, asc)	->	return (Right r)
-													Nothing				->	return (Left $ ParsedExpr (Variable 0) (Map.singleton r 0))),
+													Nothing				->	return (Left $ ParsedExpr (Variable) (Map.singleton r 0))),
 											(do
 												char '('
 												possible ignoreSpace
@@ -363,19 +369,19 @@ expr ops  =	union [
 												str	<-	stringLiteral
 												return (Left $ ParsedExpr (
 													foldl (\c l -> 
-														Function c (Constant $ CharCons l)) 
-															(Constant $ ListCons) str) Map.empty)),
+														Function c (Constant $ CharL l) Set.empty) 
+															(Constant $ ListL) str) Map.empty)),
 											(do
 												int	<-	intLiteral
-												return (Left $ ParsedExpr (Constant $ IntegerCons int) Map.empty)),
+												return (Left $ ParsedExpr (Constant $ IntegerL int) Map.empty)),
 											(do
 												li		<-	listLiteral '[' ']' ops
 												return (Left $ foldl (\c l -> functionCombine c l) 
-													(ParsedExpr (Constant ListCons) Map.empty) li)),
+													(ParsedExpr (Constant ListL) Map.empty) li)),
 											(do
 												li		<-	listLiteral '{' '}' ops
 												return (Left $ foldl (\c l -> functionCombine c l) 
-													(ParsedExpr (Constant SetCons) Map.empty) li))]
+													(ParsedExpr (Constant SetL) Map.empty) li))]
 										rs	<-	conParse
 										return (term:rs)
 				conParse		::	Parser [Term]
@@ -402,38 +408,40 @@ expr ops  =	union [
 									|	Set.member op opset	=	laOpReduce ((Left 
 																			(functionCombine 
 																				(functionCombine
-																					(ParsedExpr (Variable 0) (Map.singleton op 0))
+																					(ParsedExpr (Variable) (Map.singleton op 0))
 																					f)
 																				a)):rs) opset
 								laOpReduce (x:rs) opset	=	x:(laOpReduce rs opset)
 								laOpReduce [] _			=	[]
 								
 -- Replaces a variable in an expression with a constant
-replaceVar	::	String -> SimpleCons -> ParsedExpr -> ParsedExpr
-replaceVar v t (ParsedExpr e m)	=	case Map.lookup v m of
-	(Just l)		->	ParsedExpr (replace l (Constant t) e) (Map.delete v m)
+replaceVarC	::	String -> Literal -> ParsedExpr -> ParsedExpr
+replaceVarC v t (ParsedExpr e m)	=	case Map.lookup v m of
+	(Just l)		->	ParsedExpr (replaceVar l (Constant t) e) (Map.map (\q -> if		q > l
+																									then	q - 1
+																									else	q) $ Map.delete v m)
 	Nothing		->	ParsedExpr e m
 	
 --	Replaces all constants that look like variables.
 replaceConsts		::	ParsedExpr -> ParsedExpr
 replaceConsts x	=	
-	replaceVar "V" (UniversalCons) $
-	replaceVar "=" (EqualCons) $
-	replaceVar "+" (PlusCons) $
-	replaceVar "-" (MinusCons) $
-	replaceVar "*" (TimesCons) $
-	replaceVar "&" (AndCons) $
-	replaceVar "and" (AndCons) $
-	replaceVar "or" (OrCons) $
-	replaceVar "xand" (XandCons) $
-	replaceVar "xor" (XorCons) $
-	replaceVar "true" (LogicCons True) $
-	replaceVar "false" (LogicCons False) $
-	replaceVar "T" (LogicCons True) $
-	replaceVar "F" (LogicCons False) $
-	replaceVar "not" (NotCons) $ x
+	replaceVarC "V" (UniversalL) $
+	replaceVarC "=" (EqualL) $
+	replaceVarC "+" (PlusL) $
+	replaceVarC "-" (MinusL) $
+	replaceVarC "*" (TimesL) $
+	replaceVarC "&" (AndL) $
+	replaceVarC "and" (AndL) $
+	replaceVarC "or" (OrL) $
+	replaceVarC "xand" (XandL) $
+	replaceVarC "xor" (XorL) $
+	replaceVarC "true" (LogicL True) $
+	replaceVarC "false" (LogicL False) $
+	replaceVarC "T" (LogicL True) $
+	replaceVarC "F" (LogicL False) $
+	replaceVarC "not" (NotL) $ x
 	
-quickParse		::	String -> Expression SimpleCons
+quickParse		::	String -> Expression
 quickParse str	=	case head (parse (
 							do
 								possible ignoreSpace
@@ -444,7 +452,7 @@ quickParse str	=	case head (parse (
 							(ParsedExpr x _, _)	->	x
 								
 -- Completely parses a file
-fileParse	::	String -> IO (Expression SimpleCons)
+fileParse	::	String -> IO Expression
 fileParse s	=	do
 						str	<-	readFile s
 						return $ quickParse str
@@ -455,8 +463,8 @@ interpret s	=	do
 						putStrLn	"Parsing axiom file..."
 						a	<-	id $! fileParse s
 						putStrLn "Producing rule set..."
-						rs	<-	return $! (produceRules a)
-						putStrLn	"Contemplating the existance of a higher power.."
+						--rs	<-	return $! (produceRules a)
+						putStrLn	"Contemplating the existance of a higher power..."
 						putStrLn "Starting interpreter..."
 						conInterpret
 						return ()

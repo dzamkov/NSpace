@@ -8,6 +8,7 @@
 
 module NSpaceCode.Expression (
 	Literal(..),
+	ModifierType(..),
 	Expression(..),
 	Pattern(..),
 	Instance(..),
