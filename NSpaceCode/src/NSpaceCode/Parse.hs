@@ -65,7 +65,7 @@ functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
 		
 		fres			=	Map.foldWithKey (\k v a -> case a of
 								(p, m, s)	->	case Map.lookup v fm of
-									(Just l)		->	(p, m, Set.insert (k, l) s)
+									(Just l)		->	(p, m, Set.insert (l, k) s)
 									Nothing		->	(p + 1, Map.insert v p m, s)
 							) (0, Map.empty, Set.empty) iam
 		
