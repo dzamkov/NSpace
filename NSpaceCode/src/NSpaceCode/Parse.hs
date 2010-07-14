@@ -62,13 +62,13 @@ functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
 functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
 	where
 		fsize			=	boundVars fe
-		iam			=	Map.fromList $ map (\l -> case l of (a, b) -> (b, a)) $ Map.toList am
 		
-		fres			=	Map.foldWithKey (\k v a -> case a of
-								(p, m, s)	->	case Map.lookup v fm of
-									(Just l)		->	(p, m, Set.insert (l, k) s)
-									Nothing		->	(p + 1, Map.insert v p m, s)
-							) (0, Map.empty, Set.empty) iam
+		fres			=	foldl (\a kv -> case kv of
+								(k, v)	->	case a of
+									(p, m, s)	->	case Map.lookup k fm of
+										(Just l)		->	(p, m, Set.insert (l, v) s)
+										Nothing		->	(p + 1, Map.insert k p m, s)
+							) (0, Map.empty, Set.empty) (Map.toAscList am)
 		
 		nam			=	case fres of (_, l, _) -> l
 		nm				=	case fres of (_, _, l) -> l
