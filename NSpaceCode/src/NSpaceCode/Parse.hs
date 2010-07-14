@@ -472,7 +472,7 @@ quickParse str	=	case head (parse (
 -- Converts an expression to a string for human readability
 
 data UnparseTerm	=
-	FunctionTerm	[UnparseTerm]				|
+	FunctionTerm	UnparseTerm UnparseTerm	|
 	VariableTerm	String						|
 	ModifierTerm	ModifierType	[String]	|
 	ConstantTerm	Literal						deriving(Show, Eq)
@@ -502,9 +502,7 @@ unparse ops e	=	res
 							) (asize, Map.empty) [0..(bsize - 1)]
 				ar		=	toTerm vars am a
 				br		=	toTerm (snd ar) bm b
-				res	=	case ar of
-					(FunctionTerm ft, _)	->	(FunctionTerm (ft ++ [fst br]), snd br)
-					(l, _)					->	(FunctionTerm [l, fst br], snd br)
+				res	=	(FunctionTerm (fst ar) (fst br), snd br)
 		
 		esize		=	boundVars e
 		emap		=	Map.fromList [(x, varList !! x) | x <- [0..(esize - 1)]]
@@ -515,11 +513,11 @@ unparse ops e	=	res
 		litToString x					=	case (Map.lookup x rconsts) of (Just x) -> x
 		
 		termToString	::	UnparseTerm -> String
-		termToString (FunctionTerm ((ConstantTerm op):l:m:[]))
+		termToString (FunctionTerm (FunctionTerm (ConstantTerm op) l) m)
 			|	isOperator (litToString op) ops	=	"(" ++ (termToString l) ++ ") " ++ (litToString op) ++ " (" ++ (termToString m) ++ ")"
-		termToString (FunctionTerm (l:[]))						=	termToString l
-		termToString (FunctionTerm ((VariableTerm v):l))	=	v ++ " " ++ (termToString $ FunctionTerm l)
-		termToString (FunctionTerm (l:m))						=	"(" ++ (termToString l) ++ ") " ++ (termToString $ FunctionTerm m)
+		termToString (FunctionTerm l (VariableTerm v))		=	termToString l ++ " " ++ v
+		termToString (FunctionTerm l c@(ConstantTerm _))	=	termToString l ++ " " ++ termToString c
+		termToString (FunctionTerm l m)							=	(termToString l) ++ " (" ++ (termToString m) ++ ")" 
 		termToString (VariableTerm v)								=	v
 		termToString (ConstantTerm l)								=	litToString l
 		
