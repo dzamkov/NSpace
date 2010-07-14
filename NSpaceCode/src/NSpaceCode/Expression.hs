@@ -132,7 +132,7 @@ replaceVar i r (Function a b m)	=	res
 					else	replaceInB
 replaceVar i r (Modifier t e a)
 	|	i < a								=	Modifier t (replaceVar i r e) (a + (boundVars r) - 1)
-	|	otherwise						=	Modifier t (replaceVar (i - 1) r e) a
+	|	otherwise						=	Modifier t (replaceVar (i + 1) r e) a
 		
 -- Sets two indexed variables to equal the same. The last specified variable is removed.
 		

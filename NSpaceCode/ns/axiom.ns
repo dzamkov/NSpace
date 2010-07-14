@@ -4,11 +4,10 @@
 /* Math identities */
 T
 &	(forall a, b, c	T
-	&	(a + b = c)	=	(a = b - c)
+	&	(a + b = c)	=	(a = c - b)
 	&	a * (b + c)	=	a * b + a * c
 	&	a + 0			=	a
 	&	a - 0			=	a)	
-	
 	
 /* Function identites */
 &	(forall x

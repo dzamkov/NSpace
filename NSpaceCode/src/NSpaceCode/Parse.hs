@@ -41,6 +41,7 @@ module NSpaceCode.Parse (
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import qualified List as List
 import NSpaceCode.Expression
 
 -- Parses a string and returns valid matches paired with a suffix string
@@ -63,12 +64,14 @@ functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
 	where
 		fsize			=	boundVars fe
 		
+		iam			=	Map.fromList $ map (uncurry (\l m -> (m, l))) $ Map.toList am
+		
 		fres			=	foldl (\a kv -> case kv of
 								(k, v)	->	case a of
-									(p, m, s)	->	case Map.lookup k fm of
-										(Just l)		->	(p, m, Set.insert (l, v) s)
-										Nothing		->	(p + 1, Map.insert k p m, s)
-							) (0, Map.empty, Set.empty) (Map.toAscList am)
+									(p, m, s)	->	case Map.lookup v fm of
+										(Just l)		->	(p, m, Set.insert (l, k) s)
+										Nothing		->	(p + 1, Map.insert v p m, s)
+							) (0, Map.empty, Set.empty) (Map.toAscList iam)
 		
 		nam			=	case fres of (_, l, _) -> l
 		nm				=	case fres of (_, _, l) -> l
@@ -340,7 +343,7 @@ expr ops  =	union [
 												vars	<-	modifier s
 												possible ignoreSpace
 												e		<-	expr ops
-												return $ foldl (\ac var -> case ac of
+												return $ foldr (\var ac -> case ac of
 														(ParsedExpr pe pm)	->	case Map.lookup var pm of
 															(Just l)			->	(ParsedExpr (Modifier mod pe l)
 																(Map.map (\m ->	if		m > l
@@ -472,10 +475,10 @@ quickParse str	=	case head (parse (
 -- Converts an expression to a string for human readability
 
 data UnparseTerm	=
-	FunctionTerm	UnparseTerm UnparseTerm	|
-	VariableTerm	String						|
-	ModifierTerm	ModifierType	[String]	|
-	ConstantTerm	Literal						deriving(Show, Eq)
+	FunctionTerm	UnparseTerm UnparseTerm					|
+	VariableTerm	String										|
+	ModifierTerm	ModifierType [String] UnparseTerm	|
+	ConstantTerm	Literal										deriving(Show, Eq)
 
 unparse			::	Operators -> Expression -> String
 unparse ops e	=	res
@@ -503,6 +506,18 @@ unparse ops e	=	res
 				ar		=	toTerm vars am a
 				br		=	toTerm (snd ar) bm b
 				res	=	(FunctionTerm (fst ar) (fst br), snd br)
+		toTerm vars m (Modifier t e i)	=	res
+			where
+				nvar	=	head vars
+				rvars	=	tail vars
+				nm		=	Map.insert i nvar (Map.mapKeys (\l ->	if		l >= i
+																				then	l + 1
+																				else	l) m)
+				subt	=	toTerm rvars nm e
+				res	=	case subt of
+					(ModifierTerm st sv sp, vs)
+						|	st == t						->	(ModifierTerm t (nvar:sv) sp, vs)
+					(s, vs)								->	(ModifierTerm t [nvar] s, vs)
 		
 		esize		=	boundVars e
 		emap		=	Map.fromList [(x, varList !! x) | x <- [0..(esize - 1)]]
@@ -513,6 +528,15 @@ unparse ops e	=	res
 		litToString x					=	case (Map.lookup x rconsts) of (Just x) -> x
 		
 		termToString	::	UnparseTerm -> String
+		termToString (ModifierTerm mt vrs subt)		=	res
+			where
+				modmap	=	Map.fromList [
+					(Forall, "forall"),
+					(Exists, "exists"),
+					(Lambda, "lambda"),
+					(Solve, "solve")]
+				
+				res	=	(case Map.lookup mt modmap of (Just x) ->  x) ++ " " ++ (concat $ List.intersperse ", " vrs) ++ " (" ++ termToString subt ++ ")"
 		termToString (FunctionTerm (FunctionTerm (ConstantTerm op) l) m)
 			|	isOperator (litToString op) ops	=	"(" ++ (termToString l) ++ ") " ++ (litToString op) ++ " (" ++ (termToString m) ++ ")"
 		termToString (FunctionTerm l (VariableTerm v))		=	termToString l ++ " " ++ v
