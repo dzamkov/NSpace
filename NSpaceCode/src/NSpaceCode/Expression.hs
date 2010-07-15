@@ -14,9 +14,7 @@ module NSpaceCode.Expression (
 	Instance(..),
 	Rule(..),
 	Query(..),
-	boundVars,
-	replaceVar,
-	reduce,
+	patternize,
 	compute
 ) where 
 
@@ -54,14 +52,32 @@ data ModifierType	=
 -- that produces a definite value.
 
 data Expression a	=	
-	Variable a										|
-	Constant Literal								|
-	Function Expression Expression			|
-	Modifier	ModifierType Expression a		deriving (Show, Eq, Ord)
+	Variable a											|
+	Constant Literal									|
+	Function (Expression a) (Expression a)		|
+	Modifier	ModifierType (Expression a) a		deriving (Show, Eq, Ord)
 
 -- A pattern is an expression with some terms missing, being instead replaced
 -- by a free variable.
 type Pattern a		=	Expression (Either Int a)
+
+-- Converts an expression into a pattern based on a list of free variables in
+-- the pattern.
+patternize	::	(Ord a) => Expression a -> (Set.Set a) -> Pattern a
+patternize e l		=	res
+	where
+		subpat startv vars (Variable var)
+			|	Set.member var vars				=	(startv + 1, Variable $ Left startv)
+			|	otherwise							=	(startv, Variable $ Right var)
+		subpat startv vars (Constant c)		=	(startv, Constant c)
+		subpat startv vars (Function q r)	=	(fst rp, Function (snd qp) (snd rp))	
+			where
+				qp		=	subpat startv vars q
+				rp		=	subpat (fst qp) vars r
+		subpat startv vars (Modifier m e v)	=	(fst ep, Modifier m (snd ep) (Right v))
+			where
+				ep		=	subpat startv (Set.delete v vars) e
+		res	=	snd $ subpat 0 l e
 
 -- Information about what "fits" into the free variables of a pattern. A pattern
 -- combined with an instance can be used to generate an expression.
@@ -96,3 +112,4 @@ data QueryResult a			=	QueryResult (Set.Set (Instance a)) [IntermediateQuery a]
 
 -- Tries to fill a query with an instance with a set of rules.
 compute	::	[Rule a] -> Query a -> Set.Set (Instance a)
+compute	=	error "Nope"

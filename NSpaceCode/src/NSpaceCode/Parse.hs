@@ -9,7 +9,6 @@
 module NSpaceCode.Parse (
 	Parser(..),
 	Operators(..),
-	ParsedExpr(..),
 	Associativity(..),
 	defaultOperators,
 	operatorInfo,
@@ -35,8 +34,7 @@ module NSpaceCode.Parse (
 	ignoreSpace,
 	fileParse,
 	quickParse,
-	interpret,
-	unparse
+	interpret
 ) where 
 
 import qualified Data.Set as Set
@@ -54,29 +52,6 @@ instance Monad Parser where
 	return a	=	Parser (\cs -> [(a, cs)])
 	p >>= f	=	Parser (\cs -> concat [parse (f a) cs' |
 						(a, cs') <- parse p cs])
-						
--- The result of an expression parse
-						
-data ParsedExpr	=	ParsedExpr Expression (Map.Map String Int) deriving (Show, Eq)
-
-functionCombine	::	ParsedExpr -> ParsedExpr -> ParsedExpr
-functionCombine (ParsedExpr fe fm) (ParsedExpr ae am)	= res
-	where
-		fsize			=	boundVars fe
-		
-		iam			=	Map.fromList $ map (uncurry (\l m -> (m, l))) $ Map.toList am
-		
-		fres			=	foldl (\a kv -> case kv of
-								(k, v)	->	case a of
-									(p, m, s)	->	case Map.lookup v fm of
-										(Just l)		->	(p, m, Set.insert (l, k) s)
-										Nothing		->	(p + 1, Map.insert v p m, s)
-							) (0, Map.empty, Set.empty) (Map.toAscList iam)
-		
-		nam			=	case fres of (_, l, _) -> l
-		nm				=	case fres of (_, _, l) -> l
-		res			=	ParsedExpr (Function fe ae nm) (Map.union fm $ Map.map (\l -> l + fsize) nam)
-		
 						
 -- Operator information
 	
@@ -260,7 +235,7 @@ intLiteral	=	do
 
 -- Parses a list literal defined by the start and end chacters ('[' and ']')
 						
-listLiteral				::	Char -> Char -> Operators -> Parser [ParsedExpr]
+listLiteral				::	Char -> Char -> Operators -> Parser [Expression String]
 listLiteral	s e ops	=	do
 									char s
 									possible whiteSpace
@@ -305,9 +280,9 @@ modifier x	=	do
 						
 -- Parses an expression	
 
-type Term	=	Either ParsedExpr String
+type Term	=	Either (Expression String) String
 	
-expr	::	Operators  -> Parser ParsedExpr
+expr	::	Operators  -> Parser (Expression String)
 expr ops  =	union [
 					(do
 						terms	<-	termParse
@@ -328,29 +303,19 @@ expr ops  =	union [
 										possible ignoreSpace
 										expr ops)
 						case nact of
-							(Just l)	->	return $ functionCombine (functionCombine
-								(functionCombine (ParsedExpr (Constant $ ITEL) Map.empty) cond) act) l 
-							Nothing	->	return $ functionCombine (functionCombine
-								(functionCombine (ParsedExpr (Constant $ ITEL) Map.empty) cond) act) 
-								(ParsedExpr (Constant $ LogicL $ True) Map.empty)),
+							(Just l)	->	return $ Function (Function (Function (Constant $ ITEL) cond) act) l 
+							Nothing	->	return $ Function (Function (Function (Constant $ ITEL) cond) act) (Constant $ LogicL $ True)),
 					modifierTest "forall" Forall,
 					modifierTest "exists" Exists,
 					modifierTest "lambda" Lambda,
 					modifierTest "solve" Solve]
 			where
-				modifierTest			::	String -> ModifierType -> Parser ParsedExpr
+				modifierTest			::	String -> ModifierType -> Parser (Expression String)
 				modifierTest s mod	=	do
 												vars	<-	modifier s
 												possible ignoreSpace
 												e		<-	expr ops
-												return $ foldr (\var ac -> case ac of
-														(ParsedExpr pe pm)	->	case Map.lookup var pm of
-															(Just l)			->	(ParsedExpr (Modifier mod pe l)
-																(Map.map (\m ->	if		m > l
-																						then	m - 1
-																						else	m) $
-																Map.delete var pm))
-													) e vars
+												return $ foldr (\var ac ->	(Modifier mod ac var)) e vars
 												
 			
 				termParse	::	Parser [Term]
@@ -360,32 +325,31 @@ expr ops  =	union [
 												r	<-	word
 												case operatorInfo r ops of
 													Just (str, asc)	->	return (Right r)
-													Nothing				->	return (Left $ ParsedExpr (Variable) (Map.singleton r 0))),
+													Nothing				->	return (Left $ Variable r)),
 											(do
 												char '('
 												possible ignoreSpace
 												e	<-	expr ops
 												possible ignoreSpace
 												char ')'
-												case e of
-													(ParsedExpr exp map)	->	return (Left $ ParsedExpr exp map)),
+												return (Left e)),
 											(do
 												str	<-	stringLiteral
-												return (Left $ ParsedExpr (
+												return (Left $
 													foldl (\c l -> 
-														Function c (Constant $ CharL l) Set.empty) 
-															(Constant $ ListL) str) Map.empty)),
+														Function c (Constant $ CharL l)
+													) (Constant $ ListL) str)),
 											(do
 												int	<-	intLiteral
-												return (Left $ ParsedExpr (Constant $ IntegerL int) Map.empty)),
+												return (Left $ Constant $ IntegerL int)),
 											(do
 												li		<-	listLiteral '[' ']' ops
-												return (Left $ foldl (\c l -> functionCombine c l) 
-													(ParsedExpr (Constant ListL) Map.empty) li)),
+												return (Left $ foldl (\c l -> Function c l) 
+													(Constant ListL) li)),
 											(do
 												li		<-	listLiteral '{' '}' ops
-												return (Left $ foldl (\c l -> functionCombine c l) 
-													(ParsedExpr (Constant SetL) Map.empty) li))]
+												return (Left $ foldl (\c l -> Function c l) 
+													(Constant SetL) li))]
 										rs	<-	conParse
 										return (term:rs)
 				conParse		::	Parser [Term]
@@ -394,12 +358,12 @@ expr ops  =	union [
 										case w of
 											(Just _)	->	termParse
 											Nothing	->	return []
-				termReduce		::	[Term] -> Maybe ParsedExpr
+				termReduce		::	[Term] -> Maybe (Expression String)
 				termReduce x	=	case operatorReduce $ functionReduce x of
 											[Left l]				->	Just l
 											_						->	Nothing
 					where
-						functionReduce	((Left x):(Left y):cs)	=	functionReduce $ (Left $ functionCombine x y):cs	
+						functionReduce	((Left x):(Left y):cs)	=	functionReduce $ (Left $ Function x y):cs	
 						functionReduce (x:rs)						=	x:(functionReduce rs)
 						functionReduce []								=	[]
 						
@@ -410,21 +374,24 @@ expr ops  =	union [
 								laOpReduce	::	[Term] -> Set.Set String -> [Term]
 								laOpReduce ((Left f):(Right op):(Left a):rs) opset
 									|	Set.member op opset	=	laOpReduce ((Left 
-																			(functionCombine 
-																				(functionCombine
-																					(ParsedExpr (Variable) (Map.singleton op 0))
+																			(Function
+																				(Function
+																					(Variable op)
 																					f)
 																				a)):rs) opset
 								laOpReduce (x:rs) opset	=	x:(laOpReduce rs opset)
 								laOpReduce [] _			=	[]
 								
 -- Replaces a variable in an expression with a constant
-replaceVarC	::	String -> Literal -> ParsedExpr -> ParsedExpr
-replaceVarC v t (ParsedExpr e m)	=	case Map.lookup v m of
-	(Just l)		->	ParsedExpr (replaceVar l (Constant t) e) (Map.map (\q -> if		q > l
-																									then	q - 1
-																									else	q) $ Map.delete v m)
-	Nothing		->	ParsedExpr e m
+replaceVarC	::	String -> Literal -> Expression String -> Expression String
+replaceVarC v t (Variable s)
+	|	s == v							=	Constant t
+	|	otherwise						=	Variable s
+replaceVarC v t (Function a b)	=	Function (replaceVarC v t a) (replaceVarC v t b)
+replaceVarC v t (Modifier m e p)
+	|	p == v							=	Modifier m e p
+	|	otherwise						=	Modifier m (replaceVarC v t e) p
+replaceVarC _ _ (Constant c)		=	Constant c
 	
 -- Mapping of constants and stringhs
 consts	=	Map.fromList [
@@ -459,97 +426,20 @@ rconsts	=	Map.fromList [
 	(NotL, "not")]
 	
 --	Replaces all constants that look like variables.
-replaceConsts		::	ParsedExpr -> ParsedExpr
+replaceConsts		::	Expression String -> Expression String
 replaceConsts x	=	Map.foldWithKey (\k v a -> replaceVarC k v a) x consts
 	
-quickParse		::	String -> Expression
-quickParse str	=	case head (parse (
+quickParse		::	String -> Expression String
+quickParse str	=	fst $ head (parse (
 							do
 								possible ignoreSpace
 								e	<-	expr defaultOperators
 								possible ignoreSpace
 								end
-								return (replaceConsts e)) str) of
-							(ParsedExpr x _, _)	->	x
+								return (replaceConsts e)) str)
 							
--- Converts an expression to a string for human readability
-
-data UnparseTerm	=
-	FunctionTerm	UnparseTerm UnparseTerm					|
-	VariableTerm	String										|
-	ModifierTerm	ModifierType [String] UnparseTerm	|
-	ConstantTerm	Literal										deriving(Show, Eq)
-
-unparse			::	Operators -> Expression -> String
-unparse ops e	=	res
-	where
-		varList	=	[[x] | x <- ['a'..'z']] ++ [x:y | y <- varList, x <- ['a'..'z']]
-		
-		-- Converts an expression to a term. The function is given a list of variables to
-		-- use as needed and returns the list of unused variables. It is also given a mapping
-		-- of variables assigned to it.
-		toTerm	::	[String] -> Map.Map Int String -> Expression -> (UnparseTerm, [String])
-		toTerm vars _ (Constant l)			=	(ConstantTerm l, vars)
-		toTerm vars m (Variable)			=	(VariableTerm (case Map.lookup 0 m of (Just x) -> x), vars)
-		toTerm vars m (Function a b s)	=	res
-			where
-				asize	=	boundVars a
-				bsize	=	boundVars b
-				am		=	m
-				bm		=	snd $ foldl (\ac it -> case (ac, Set.fold (\l m -> case l of
-															(x, y)	->	if		y == it
-																			then	Just x
-																			else	m) Nothing s) of
-									((ap, mp), Nothing)	->	(ap + 1, Map.insert it (case Map.lookup ap m of (Just x) -> x) mp)
-									((ap, mp), Just x)	->	(ap, Map.insert it (case Map.lookup x m of (Just x) -> x) mp)
-							) (asize, Map.empty) [0..(bsize - 1)]
-				ar		=	toTerm vars am a
-				br		=	toTerm (snd ar) bm b
-				res	=	(FunctionTerm (fst ar) (fst br), snd br)
-		toTerm vars m (Modifier t e i)	=	res
-			where
-				nvar	=	head vars
-				rvars	=	tail vars
-				nm		=	Map.insert i nvar (Map.mapKeys (\l ->	if		l >= i
-																				then	l + 1
-																				else	l) m)
-				subt	=	toTerm rvars nm e
-				res	=	case subt of
-					(ModifierTerm st sv sp, vs)
-						|	st == t						->	(ModifierTerm t (nvar:sv) sp, vs)
-					(s, vs)								->	(ModifierTerm t [nvar] s, vs)
-		
-		esize		=	boundVars e
-		emap		=	Map.fromList [(x, varList !! x) | x <- [0..(esize - 1)]]
-		eterm		=	fst $ toTerm (drop esize varList) emap e 
-		
-		litToString		::	Literal -> String
-		litToString (IntegerL x)	=	show x
-		litToString x					=	case (Map.lookup x rconsts) of (Just x) -> x
-		
-		termToString	::	UnparseTerm -> String
-		termToString (ModifierTerm mt vrs subt)		=	res
-			where
-				modmap	=	Map.fromList [
-					(Forall, "forall"),
-					(Exists, "exists"),
-					(Lambda, "lambda"),
-					(Solve, "solve")]
-				
-				res	=	(case Map.lookup mt modmap of (Just x) ->  x) ++ " " ++ (concat $ List.intersperse ", " vrs) ++ " (" ++ termToString subt ++ ")"
-		termToString (FunctionTerm (FunctionTerm (ConstantTerm op) l) m)
-			|	isOperator (litToString op) ops	=	"(" ++ (termToString l) ++ ") " ++ (litToString op) ++ " (" ++ (termToString m) ++ ")"
-		termToString (FunctionTerm l (VariableTerm v))		=	termToString l ++ " " ++ v
-		termToString (FunctionTerm l c@(ConstantTerm _))	=	termToString l ++ " " ++ termToString c
-		termToString (FunctionTerm l m)							=	(termToString l) ++ " (" ++ (termToString m) ++ ")" 
-		termToString (VariableTerm v)								=	v
-		termToString (ConstantTerm l)								=	litToString l
-		
-		res	=	termToString eterm
-		
-								
 -- Completely parses a file
-fileParse	::	String -> IO Expression
+fileParse	::	String -> IO (Expression String)
 fileParse s	=	do
 						str	<-	readFile s
 						return $ quickParse str
