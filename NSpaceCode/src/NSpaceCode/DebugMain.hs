@@ -13,4 +13,4 @@ import NSpaceCode.Parse
 import NSpaceCode.Axiom
 import Data.IORef
 
---main	=	interpret "../ns/axiom.ns"
+main	=	interpret axioms

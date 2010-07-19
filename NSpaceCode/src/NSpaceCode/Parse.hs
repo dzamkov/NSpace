@@ -445,24 +445,20 @@ fileParse s	=	do
 						return $ quickParse str
 					
 -- Interpreter mode					
-interpret	::	String -> IO ()
-interpret s	=	do
-						putStrLn	"Parsing axiom file..."
-						a	<-	id $! fileParse s
-						putStrLn "Producing rule set..."
-						--rs	<-	return $! (produceRules a)
-						putStrLn	"Contemplating the existance of a higher power..."
-						putStrLn "Starting interpreter..."
+interpret	::	[Rule String] -> IO ()
+interpret r	=	do
 						conInterpret
 						return ()
 				where
 					conInterpret	=	do
 												interpretCommand
 												conInterpret
-						
--- Interprets a single given command
-interpretCommand	:: IO ()
-interpretCommand	=	do
-								 putStr ">>> "
-								 l	<-	getLine
-								 return ()
+												
+					interpretCommand	=	do
+													 putStr ">>> "
+													 l	<-	getLine
+													 putStrLn (process l)
+													 return ()
+													 
+					process	::	String -> String
+					process w	=	w
