@@ -1,8 +1,0 @@
--- Define factorial function
-forall x
-	(ite (equals x 1)
-		(equals (fact x) 1)
-		(equals (fact x) (product x (fact (difference x 1)))))
-
--- Test expression
-equals ans (fact 5)
