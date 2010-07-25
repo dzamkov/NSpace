@@ -319,14 +319,18 @@ compute r c q o	=	res
 																						in		Set.map (\l -> Map.map (\m -> instintate m l) rp) insts
 										) Set.empty (case currentqr of (QueryResult _ x _) -> x)
 				nnreses			=	Set.union nreses $ case currentqr of
-											(QueryResult _ _ (Just (FunctionalSubQuery l m)))	->	case (Map.lookup l needqueriesres, Map.lookup m needqueriesres) of
-												(Just ls, Just ms)	->	Set.fold (\curl ac ->
-														Set.fold (\curm ac -> case condensedquery of
-															(Query pat exp)	->	case match pat (Function curl curm
-																							) of
-																(Just x)	->	Set.insert x ac
-																Nothing	->	ac
-														) ac ms
-													) Set.empty ls
+											(QueryResult _ _ (Just (FunctionalSubQuery l@(Query lp _) m@(Query mp _))))	->	
+												case (Map.lookup l needqueriesres, Map.lookup m needqueriesres) of
+													(Just ls, Just ms)	->	Set.fold (\curl ac ->
+															Set.fold (\curm ac -> case condensedquery of
+																(Query pat exp)	->	case match pat (Function 
+																									(instintate lp curl) 
+																									(instintate mp curm)
+																								) of
+																	(Just x)	->	Set.insert x ac
+																	Nothing	->	ac
+															) ac ms
+														) Set.empty ls
 											_																	->	Set.empty
+				
 		res	=	scompute c q o (Set.empty)
