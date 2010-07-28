@@ -152,7 +152,9 @@ data Query a		=	Query (Pattern a) (Expression a)
 
 -- A result given for a query. Such a result includes all sub queries to be completed (they may be partially
 -- computed) and gives a function which takes the processed queries and computes the instances for the main query.
-data QueryResult a	=	forall b. Ord b => QueryResult [Query b] ([[Instance b]] -> [Instance a])
+data QueryResult a	=	
+	SQueryResult [Query a] ([[Instance a]] -> [Instance a])							|
+	MQueryResult [Query (Maybe a)] ([[Instance (Maybe a)]] -> [Instance a])
 
 computeResult	:: (Ord a) => [Rule a] -> Query a -> QueryResult a
 computeResult rules qry@(Query tarpat tarexp)	=	res
@@ -184,7 +186,7 @@ computeResult rules qry@(Query tarpat tarexp)	=	res
 							)
 	
 		res	=	case (tarpat, tarexp) of
-						_		->	QueryResult ruleQrs ruleFn
+						_		->	SQueryResult ruleQrs ruleFn
 				
 -- Rules true for all systems allowing lambda terms.				
 lambdaAxioms	::	[Rule a]
