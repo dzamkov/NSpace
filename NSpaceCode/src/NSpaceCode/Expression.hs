@@ -39,12 +39,16 @@ data Literal	=
 	PlusL 					|
 	MinusL 					|
 	TimesL 					|
+	DivideL					|
 	AndL 						|
 	OrL 						|
 	XorL 						|
 	XandL 					|
 	ITEL 						|
-	NotL 						deriving (Show, Ord, Eq)
+	NotL 						|
+	SolveL					|
+	ExistsL					|
+	ForallL					deriving (Show, Ord, Eq)
 	
 -- A relation between variables, and functions
 -- that produces a definite value.

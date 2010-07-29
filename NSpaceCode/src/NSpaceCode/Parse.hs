@@ -21,7 +21,13 @@ module NSpaceCode.Parse (
 	newline,
 	delimit,
 	compose,
-	anystring
+	anystring,
+	linesplit,
+	prefer,
+	end,
+	Direction(..),
+	OperatorLookup(..),
+	ModifierLookup(..)
 ) where 
 
 import qualified Data.Set as Set
@@ -132,3 +138,81 @@ delimit m d	=	do
 												rs	<-	delimit m d
 												return (mr:rs)
 							Nothing	->	return [mr]
+							
+-- Acts like the first specified parser if the second fails. Acts like the second
+-- if it succeeds.
+prefer		::	Accum a b -> Accum a b -> Accum a b
+prefer x y	=	Accum (\cs	->	case (parse y cs) of
+						[]		->	parse x cs
+						y		->	y)
+						
+-- Forces the parsing of the end of a string
+end	::	Accum a ()
+end	=	Accum (\cs -> case cs of
+				[]	->	[((), [])]
+				_	->	[])
+						
+-- Parses a program into lines including indentation information and comment stripping.
+linesplit	::	Parser [(Int, String)]
+linesplit	=	do
+						lines	<-	makelines
+						return $ map (\l -> fst $ last $ parse parseline l) lines
+	where
+		makelines	=	delimit (multiple $ sat (\l -> case l of
+								'\n'	->	False
+								'\r'	->	False
+								_		->	True)) newline
+		parseline	=	do
+								tabs	<-	most $ multiple $ char '\t'
+								line	<-	prefer (multiple item) (do
+												line <- multiple item
+												string "--"
+												multiple item
+												return line)	
+								return (length tabs, line)
+								
+-- Direction for associativy and modifiers
+data	Direction	=	LeftDir
+						|	RightDir
+						
+-- Operator lookup information
+data	OperatorLookup	=	forall a.
+			OperatorLookup	{
+				getOperator	::	String -> Maybe a,
+				precedence	::	a -> a -> Direction }
+				
+-- Modifier lookup information
+data	ModifierLookup	=	forall a.
+			ModifierLookup	{
+				getModifier		::	String -> Maybe a,
+				modDirection	::	a -> Direction }
+		
+-- Gets the expression meaning of a string, if it has one.		
+meaning	::	String -> Maybe (Expression Literal)
+meaning "V"				=	Just $ Term UniversalL
+meaning "universal"	=	Just $ Term UniversalL
+meaning "="				=	Just $ Term EqualL
+meaning "equal"		=	Just $ Term EqualL
+meaning "+"				=	Just $ Term PlusL
+meaning "add"			=	Just $ Term PlusL
+meaning "-"				=	Just $ Term MinusL
+meaning "subtract"	=	Just $ Term MinusL
+meaning "*"				=	Just $ Term TimesL
+meaning "multiply"	=	Just $ Term TimesL
+meaning "/"				=	Just $ Term DivideL
+meaning "divide"		=	Just $ Term DivideL
+meaning "&"				=	Just $ Term AndL
+meaning "and"			=	Just $ Term AndL
+meaning "|"				=	Just $ Term OrL
+meaning "or"			=	Just $ Term OrL
+meaning "xor"			=	Just $ Term XorL
+meaning "xand"			=	Just $ Term XandL
+meaning "ite"			=	Just $ Term ITEL
+meaning "ifthenelse"	=	Just $ Term ITEL
+meaning "not"			=	Just $ Term NotL
+meaning "solve"		=	Just $ Term SolveL
+meaning "forall"		=	Just $ Term ForallL
+meaning "exists"		=	Just $ Term ExistsL
+meaning "lambda"		=	Just $ Lambda (Term Nothing)
+meaning "identity"	=	Just $ Lambda (Term Nothing)
+meaning x				=	Nothing
