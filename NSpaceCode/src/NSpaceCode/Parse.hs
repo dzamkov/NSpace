@@ -25,9 +25,15 @@ module NSpaceCode.Parse (
 	linesplit,
 	prefer,
 	end,
+	whiteSpace,
 	Direction(..),
 	OperatorLookup(..),
-	ModifierLookup(..)
+	ModifierLookup(..),
+	listOperatorLookup,
+	listModifierLookup,
+	defaultOperators,
+	defaultModifiers,
+	expr
 ) where 
 
 import qualified Data.Set as Set
@@ -171,21 +177,68 @@ linesplit	=	do
 												return line)	
 								return (length tabs, line)
 								
+-- Parses whitespace
+whiteSpace	::	Parser ()
+whiteSpace	=	fmap (\l -> ()) $ multiple $ sat (\l -> case l of
+						' '	->	True
+						'\n'	->	True
+						'\r'	->	True
+						'\t'	->	True
+						_		->	False)
+			
+-- Parses a string that can act as a variable			
+variable	::	Parser String
+variable	=	multiple $ sat (\l -> Set.member l $ Set.fromList $
+					['A'..'Z'] ++
+					['a'..'z'] ++
+					"+-=_*&^%$#@!|<>?:`/~")
+								
 -- Direction for associativy and modifiers
 data	Direction	=	LeftDir
-						|	RightDir
+						|	RightDir deriving(Show, Eq)
 						
 -- Operator lookup information
-data	OperatorLookup	=	forall a.
-			OperatorLookup	{
+data	OperatorLookup a	=	OperatorLookup	{
 				getOperator	::	String -> Maybe a,
 				precedence	::	a -> a -> Direction }
 				
 -- Modifier lookup information
-data	ModifierLookup	=	forall a.
-			ModifierLookup	{
+data	ModifierLookup a	=	ModifierLookup	{
 				getModifier		::	String -> Maybe a,
 				modDirection	::	a -> Direction }
+				
+-- Expression obtained from parsing
+type ParsedExpression	=	Expression (Either String Literal)
+		
+-- Intermediate expression parse information.
+data ParseTree a b	=	Operator 		a (ParseTree a b) (ParseTree a b)
+							|	Modifier 		b String (ParseTree a b)
+							|	Application		(ParseTree a b) (ParseTree a b)
+							|	RawExpression	ParsedExpression
+							
+-- Creates an operator lookup based on a list (ordered by bind strength) of operators.
+listOperatorLookup		::	[(Direction, [String])]	->	OperatorLookup (Int, Direction)
+listOperatorLookup ops	=	OperatorLookup go po
+	where
+		opmap	=	foldl (\ac it -> case it of
+						(cur, (dir, strs))	->	foldl (\ac it -> Map.insert it (cur, dir) ac) ac strs 
+					) Map.empty (zip [0..] ops)
+		
+		go x							=	Map.lookup x opmap
+		po (l, ldir) (r, rdir)
+			|	l < r								=	LeftDir
+			|	r > l								=	RightDir
+			|	l == r && ldir == LeftDir	=	LeftDir
+			|	otherwise						=	RightDir
+			
+-- Creates a modifier lookup based on a list of modifiers.
+listModifierLookup		::	[(Direction, String)]	->	ModifierLookup Direction
+listModifierLookup mods	=	ModifierLookup gm id
+	where
+		modmap	=	foldl (\ac it -> case it of
+							(dir, str)	->	Map.insert str dir ac
+						) Map.empty mods
+		gm x		=	Map.lookup x modmap
 		
 -- Gets the expression meaning of a string, if it has one.		
 meaning	::	String -> Maybe (Expression Literal)
@@ -216,3 +269,48 @@ meaning "exists"		=	Just $ Term ExistsL
 meaning "lambda"		=	Just $ Lambda (Term Nothing)
 meaning "identity"	=	Just $ Lambda (Term Nothing)
 meaning x				=	Nothing
+
+-- List of default operators
+defaultOperators	=	[
+	(LeftDir, ["*", "/"]),
+	(LeftDir, ["+", "-"]),
+	(LeftDir, ["&", "|"]),
+	(LeftDir, ["="]),
+	(LeftDir, ["or", "xor"]),
+	(LeftDir, ["and", "xand"])]
+	
+-- List of default modifiers
+defaultModifiers	=	[
+	(RightDir, "forall"),
+	(RightDir, "exists"),
+	(RightDir, "lambda"),
+	(RightDir, "solve")]
+
+-- Parses an expression given an operator/modifier lookup and a leading term (expression applied at the
+-- end of the string).
+expr	::	OperatorLookup a -> ModifierLookup b -> Maybe ParsedExpression -> Parser ParsedExpression
+expr ops mods lead	=	term
+	where
+		-- A symbol not based on other positionally-dependant symbols.
+		atom	=	union	[
+								(do
+									v	<-	variable
+									return $ Term $ Left v),
+								(do
+									char '('
+									exp	<-	expr ops mods Nothing
+									char ')'
+									return exp),
+								(do
+									possible whiteSpace
+									end
+									case lead of
+										(Just x)	->	return x
+										Nothing	->	mzero)]
+	
+		-- Atoms stringed together as functions that are bound more tightly than operators.
+		term	=	do
+						atoms	<-	delimit atom whiteSpace
+						case atoms of
+							[]			->	mzero
+							(x:xs)	->	return $ foldl (\ac it -> Function ac it) x xs
