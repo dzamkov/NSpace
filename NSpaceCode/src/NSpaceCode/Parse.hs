@@ -179,19 +179,27 @@ linesplit	=	do
 								
 -- Parses whitespace
 whiteSpace	::	Parser ()
-whiteSpace	=	fmap (\l -> ()) $ multiple $ sat (\l -> case l of
-						' '	->	True
-						'\n'	->	True
-						'\r'	->	True
-						'\t'	->	True
-						_		->	False)
+whiteSpace	=	do
+						ms	<-	multiple $ sat (\l -> case l of
+							' '	->	True
+							'\n'	->	True
+							'\r'	->	True
+							'\t'	->	True
+							_		->	False)
+						case ms of
+							[]	->	mzero
+							_	->	return ()
 			
 -- Parses a string that can act as a variable			
 variable	::	Parser String
-variable	=	multiple $ sat (\l -> Set.member l $ Set.fromList $
-					['A'..'Z'] ++
-					['a'..'z'] ++
-					"+-=_*&^%$#@!|<>?:`/~")
+variable	=	do
+					ms	<-	multiple $ sat (\l -> Set.member l $ Set.fromList $
+						['A'..'Z'] ++
+						['a'..'z'] ++
+						"+-=_*&^%$#@!|<>?:`/~")
+					case ms of
+						[]	->	mzero
+						x	->	return x
 								
 -- Direction for associativy and modifiers
 data	Direction	=	LeftDir
@@ -199,46 +207,50 @@ data	Direction	=	LeftDir
 						
 -- Operator lookup information
 data	OperatorLookup a	=	OperatorLookup	{
-				getOperator	::	String -> Maybe a,
-				precedence	::	a -> a -> Direction }
+				getOperator		::	String -> Maybe a,
+				precedence		::	a -> a -> Direction,
+				operatorName	::	a -> String	}
 				
 -- Modifier lookup information
 data	ModifierLookup a	=	ModifierLookup	{
 				getModifier		::	String -> Maybe a,
-				modDirection	::	a -> Direction }
+				modDirection	::	a -> Direction,
+				modifierName	::	a -> String }
 				
 -- Expression obtained from parsing
 type ParsedExpression	=	Expression (Either String Literal)
 		
 -- Intermediate expression parse information.
-data ParseTree a b	=	Operator 		a (ParseTree a b) (ParseTree a b)
-							|	Modifier 		b String (ParseTree a b)
-							|	Application		(ParseTree a b) (ParseTree a b)
-							|	RawExpression	ParsedExpression
+data OperatorTree a		=	OperatorExp 	a (OperatorTree a) (OperatorTree a)
+								|	OperatorTerm	ParsedExpression
 							
 -- Creates an operator lookup based on a list (ordered by bind strength) of operators.
-listOperatorLookup		::	[(Direction, [String])]	->	OperatorLookup (Int, Direction)
-listOperatorLookup ops	=	OperatorLookup go po
+listOperatorLookup		::	[(Direction, [String])]	->	OperatorLookup (String, Int, Direction)
+listOperatorLookup ops	=	OperatorLookup go po (\l -> case l of (n, _, _) -> n)
 	where
 		opmap	=	foldl (\ac it -> case it of
 						(cur, (dir, strs))	->	foldl (\ac it -> Map.insert it (cur, dir) ac) ac strs 
 					) Map.empty (zip [0..] ops)
 		
-		go x							=	Map.lookup x opmap
-		po (l, ldir) (r, rdir)
+		go x							=	case Map.lookup x opmap of
+												(Just (bind, dir))	-> (Just (x, bind, dir))
+												Nothing					->	Nothing
+		po (_, l, ldir) (_, r, rdir)
 			|	l < r								=	LeftDir
 			|	r > l								=	RightDir
 			|	l == r && ldir == LeftDir	=	LeftDir
 			|	otherwise						=	RightDir
 			
 -- Creates a modifier lookup based on a list of modifiers.
-listModifierLookup		::	[(Direction, String)]	->	ModifierLookup Direction
-listModifierLookup mods	=	ModifierLookup gm id
+listModifierLookup		::	[(Direction, String)]	->	ModifierLookup (String, Direction)
+listModifierLookup mods	=	ModifierLookup gm (\l -> snd l) (\l -> fst l)
 	where
 		modmap	=	foldl (\ac it -> case it of
 							(dir, str)	->	Map.insert str dir ac
 						) Map.empty mods
-		gm x		=	Map.lookup x modmap
+		gm x		=	case Map.lookup x modmap of
+							(Just dir)	->	(Just (x, dir))
+							(Nothing)	->	Nothing
 		
 -- Gets the expression meaning of a string, if it has one.		
 meaning	::	String -> Maybe (Expression Literal)
@@ -289,18 +301,30 @@ defaultModifiers	=	[
 -- Parses an expression given an operator/modifier lookup and a leading term (expression applied at the
 -- end of the string).
 expr	::	OperatorLookup a -> ModifierLookup b -> Maybe ParsedExpression -> Parser ParsedExpression
-expr ops mods lead	=	term
+expr ops mods lead	=	do
+									t		<-	term
+									nxt	<-	possible $ opaccum (OperatorTerm t)
+									case nxt of
+										(Nothing)		->	return $ t
+										(Just optree)	->	return $ untree optree
 	where
 		-- A symbol not based on other positionally-dependant symbols.
 		atom	=	union	[
 								(do
 									v	<-	variable
-									return $ Term $ Left v),
+									case (getOperator ops v, getModifier mods v) of
+										(Nothing, Nothing)	->	return $ Term $ Left v
+										_							->	mzero),
 								(do
 									char '('
 									exp	<-	expr ops mods Nothing
 									char ')'
 									return exp),
+								(do
+									char '('
+									v	<-	variable
+									char ')'
+									return $ Term $ Left v),
 								(do
 									possible whiteSpace
 									end
@@ -314,3 +338,28 @@ expr ops mods lead	=	term
 						case atoms of
 							[]			->	mzero
 							(x:xs)	->	return $ foldl (\ac it -> Function ac it) x xs
+		
+		-- Combines an operator tree with an operator and a term
+		opcombine leftterm@(OperatorExp opa left right) opb rightterm
+			|	precedence ops opa opb == LeftDir		=	(OperatorExp opb leftterm rightterm)
+			|	otherwise										=	(OperatorExp opa left (opcombine right opb rightterm))
+		opcombine x opb term									=	(OperatorExp opb x term)
+		
+		untree (OperatorExp op left right)	=	(Function (Function (Term $ Left $ operatorName ops op) (untree left)) (untree right))
+		untree (OperatorTerm term)				=	term
+		
+		-- Operator + Term parser
+		opaccum optree	=	do
+									whiteSpace
+									o	<-	variable
+									case getOperator ops o of
+										(Nothing)	->	mzero
+										(Just op)	->	do
+																whiteSpace
+																t				<-	term
+																let noptree	=	opcombine optree op (OperatorTerm t)
+																nxt			<-	possible (opaccum noptree)
+																case nxt of
+																	(Nothing)	->	return noptree
+																	(Just y)		->	return y
+																
