@@ -10,5 +10,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import NSpaceCode.Expression
 import NSpaceCode.Parse
---import NSpaceCode.Axiom
+import NSpaceCode.Interpret
 import Data.IORef
+
+main	=	interactive

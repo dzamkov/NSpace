@@ -13,6 +13,8 @@ module NSpaceCode.Expression (
 	exprMap,
 	instantiate,
 	match,
+	exprFold,
+	lambdify,
 	correspond,
 	patternMatch,
 	Rule(..),
@@ -83,6 +85,20 @@ exprMaybeMap f (Lambda e)		=	case exprMaybeMap (\l -> case l of
 													Nothing		->	Nothing) e of
 												(Just ne)	->	Just $ Lambda ne
 												(Nothing)	->	Nothing
+												
+--	Creates a lambda expression based on a variable and a term
+lambdify	::	Eq a => Expression a -> a -> Expression a
+lambdify t v	=	Lambda $ exprMap (\l -> if		v == l
+														then	Term Nothing
+														else	Term $ Just $ l) t
+														
+--	Folds over all terms in an expression
+exprFold	::	(a -> b -> b) -> b -> Expression a -> b
+exprFold	f c (Term x)			=	f x c
+exprFold f c (Function l r)	=	(exprFold f (exprFold f c l) r)
+exprFold f c (Lambda e)			=	exprFold (\l c -> case l of 
+												(Just x)	->	f x c
+												Nothing	->	c) c e
 
 -- Given a pattern expression and an instance, creates a concrete expression.
 instantiate	:: Pattern a -> Instance a -> Expression a

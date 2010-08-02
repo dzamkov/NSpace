@@ -1,13 +1,13 @@
 -----------------------------------------------------------------------------
 --
--- Module      :  NSpaceCode.Axiom
+-- Module      :  NSpaceCode.Interpret
 -- Copyright   :  (c) 2010, Dmitry Zamkov
 -- License     :  BSD3 (See LICENSE)
 --
 -----------------------------------------------------------------------------
 
-module NSpaceCode.Axiom (
-	axioms
+module NSpaceCode.Interpret (
+	interactive
 ) where 
 
 import qualified Data.Set as Set
@@ -15,14 +15,9 @@ import qualified Data.Map as Map
 import NSpaceCode.Expression
 import NSpaceCode.Parse
 
-(^-^)			::	String -> [String] -> Pattern String
-(^-^) p l	=	patternize (quickParse p) l
-
---	Set of axiomatic rules for expressions.
-
-axioms			=	[
-		Rule 
-			(Constant $ LogicL True)
-			("solve x x = y"		^-^	["y"])
-			("{y}"					^-^	["y"])
-	]
+-- Starts interactive interpreter mode.
+interactive	::	IO ()
+interactive	=	do
+						putStr	">>> "
+						com		<-	getLine
+						interactive

@@ -35,7 +35,8 @@ module NSpaceCode.Parse (
 	defaultOperators,
 	defaultModifiers,
 	expr,
-	quickParse
+	quickParse,
+	varClear
 ) where 
 
 import qualified Data.Set as Set
@@ -283,6 +284,10 @@ meaning "xand"			=	Just $ Term XandL
 meaning "ite"			=	Just $ Term ITEL
 meaning "ifthenelse"	=	Just $ Term ITEL
 meaning "not"			=	Just $ Term NotL
+meaning "T"				=	Just $ Term $ LogicL True
+meaning "F"				=	Just $ Term $ LogicL False
+meaning "true"			=	Just $ Term $ LogicL True
+meaning "false"		=	Just $ Term $ LogicL False
 meaning "solve"		=	Just $ Term SolveL
 meaning "forall"		=	Just $ Term ForallL
 meaning "exists"		=	Just $ Term ExistsL
@@ -339,7 +344,24 @@ expr ops mods lead	=	do
 									char '('
 									v	<-	variable
 									char ')'
-									return $ Term $ Left v)]
+									return $ Term $ Left v),
+								(do
+									-- Modifier
+									v	<-	variable
+									case getModifier mods v of
+										(Just mod)	->	do
+																whiteSpace
+																vars	<-	delimit variable (do
+																				possible whiteSpace
+																				char ','
+																				possible whiteSpace
+																				return ())
+																whiteSpace
+																inner	<-	term
+																case modDirection mods mod of
+																	(LeftDir)	->	return $ foldl (\ac it -> Function (Term $ Left $ v) (lambdify ac (Left it))) inner vars
+																	(RightDir)	->	return $ foldr (\it ac -> Function (Term $ Left $ v) (lambdify ac (Left it))) inner vars
+										Nothing		->	mzero)]
 	
 		-- Atoms stringed together as functions that are bound more tightly than operators.
 		term	=	do
@@ -352,7 +374,7 @@ expr ops mods lead	=	do
 												Nothing	->	return atoms
 						case atoms of
 							[]			->	mzero
-							(x:xs)	->	return $ foldl (\ac it -> Function ac it) x xs
+							(x:xs)	->	return $ meaningreplace $ foldl (\ac it -> Function ac it) x xs
 		
 		-- Combines an operator tree with an operator and a term
 		opcombine leftterm@(OperatorExp opa left right) opb rightterm
@@ -362,6 +384,13 @@ expr ops mods lead	=	do
 		
 		untree (OperatorExp op left right)	=	(Function (Function (Term $ Left $ operatorName ops op) (untree left)) (untree right))
 		untree (OperatorTerm term)				=	term
+		
+		-- Replaces special variables in the expression with their meaning.
+		meaningreplace	e	=	exprMap (\l -> case l of
+										(Left var)		->	case meaning var of
+											(Nothing)		->	Term l
+											(Just (x))		->	exprMap (\l -> Term $ Right $ l) x
+										x					->	Term x) e
 		
 		-- Operator + Term parser
 		opaccum optree	=	do
@@ -377,6 +406,16 @@ expr ops mods lead	=	do
 																case nxt of
 																	(Nothing)	->	return noptree
 																	(Just y)		->	return y
+			
+-- Puts all remaining unbound variables in an existential quantifier			
+varClear	::	ParsedExpression -> Expression Literal
+varClear	pe	=	res
+	where
+		unbound	=	exprFold (\it ac -> case it of
+							(Left var)	->	Set.insert var ac
+							(Right _)	->	ac) Set.empty pe
+		litexp	=	Set.fold (\it ac -> (Function (Term $ Right $ ExistsL) (lambdify ac (Left it)))) pe unbound
+		res		=	exprMap (\l -> case l of (Right x) -> Term x) litexp
 			
 -- Parses a single line with the default operator and modifier set.			
 quickParse		::	String -> ParsedExpression
