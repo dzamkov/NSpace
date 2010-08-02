@@ -26,6 +26,7 @@ module NSpaceCode.Parse (
 	prefer,
 	end,
 	whiteSpace,
+	integer,
 	Direction(..),
 	OperatorLookup(..),
 	ModifierLookup(..),
@@ -33,7 +34,8 @@ module NSpaceCode.Parse (
 	listModifierLookup,
 	defaultOperators,
 	defaultModifiers,
-	expr
+	expr,
+	quickParse
 ) where 
 
 import qualified Data.Set as Set
@@ -200,6 +202,12 @@ variable	=	do
 					case ms of
 						[]	->	mzero
 						x	->	return x
+		
+-- Parses an integer		
+integer	::	Parser Integer
+integer	=	do
+					s	<-	multiple $ sat (\l -> l >= '0' && l <= '9')
+					return (read s)
 								
 -- Direction for associativy and modifiers
 data	Direction	=	LeftDir
@@ -311,30 +319,37 @@ expr ops mods lead	=	do
 		-- A symbol not based on other positionally-dependant symbols.
 		atom	=	union	[
 								(do
+									-- Simple variable
 									v	<-	variable
 									case (getOperator ops v, getModifier mods v) of
 										(Nothing, Nothing)	->	return $ Term $ Left v
 										_							->	mzero),
 								(do
+									-- Numeric literal
+									i	<-	integer
+									return $ Term $ Right $ IntegerL i),
+								(do
+									-- Enclosed expression
 									char '('
 									exp	<-	expr ops mods Nothing
 									char ')'
 									return exp),
 								(do
+									-- Unbinding operators and modifiers
 									char '('
 									v	<-	variable
 									char ')'
-									return $ Term $ Left v),
-								(do
-									possible whiteSpace
-									end
-									case lead of
-										(Just x)	->	return x
-										Nothing	->	mzero)]
+									return $ Term $ Left v)]
 	
 		-- Atoms stringed together as functions that are bound more tightly than operators.
 		term	=	do
-						atoms	<-	delimit atom whiteSpace
+						atoms		<-	delimit atom whiteSpace
+						natoms	<-	prefer (return atoms) $ do
+											possible whiteSpace
+											end
+											case lead of
+												(Just x)	->	return (atoms ++ [x])
+												Nothing	->	return atoms
 						case atoms of
 							[]			->	mzero
 							(x:xs)	->	return $ foldl (\ac it -> Function ac it) x xs
@@ -362,4 +377,10 @@ expr ops mods lead	=	do
 																case nxt of
 																	(Nothing)	->	return noptree
 																	(Just y)		->	return y
-																
+			
+-- Parses a single line with the default operator and modifier set.			
+quickParse		::	String -> ParsedExpression
+quickParse s	=	fst $ last $ parse (do
+							e	<-	expr (listOperatorLookup defaultOperators) (listModifierLookup defaultModifiers) Nothing
+							end
+							return e) s
