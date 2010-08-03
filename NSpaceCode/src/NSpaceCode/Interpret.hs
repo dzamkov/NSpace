@@ -67,7 +67,7 @@ interactive	=	do
 				subcompute _ _ 0									=	([], 0)
 				subcompute rules (qry:remainqry) maxcom	=	case (computeQuery rules qry (maxcom `div` 2)) of
 																				(qryreses, ucom)	->	case (subcompute rules remainqry (maxcom - ucom - 1)) of
-																					(rqryreses, nucom)	->	(qryreses:rqryreses, (maxcom - ucom - 1 - nucom))
+																					(rqryreses, nucom)	->	(qryreses:rqryreses, (ucom + nucom + 1))
 				subcompute rules [] maxcom						=	([], 0)
 		
 		-- Reduces the complexity of an expression
