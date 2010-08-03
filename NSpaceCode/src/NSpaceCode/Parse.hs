@@ -208,7 +208,9 @@ variable	=	do
 integer	::	Parser Integer
 integer	=	do
 					s	<-	multiple $ sat (\l -> l >= '0' && l <= '9')
-					return (read s)
+					case s of
+						[]	->	mzero
+						_	->	return (read s)
 								
 -- Direction for associativy and modifiers
 data	Direction	=	LeftDir

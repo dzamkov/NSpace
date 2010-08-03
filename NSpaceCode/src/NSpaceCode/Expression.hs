@@ -21,7 +21,9 @@ module NSpaceCode.Expression (
 	Query(..),
 	QueryResult(..),
 	computeResult,
-	lambdaAxioms
+	lambdaAxioms,
+	literalAxioms,
+	abstractifyAxioms
 ) where 
 
 import qualified Data.Set as Set
@@ -219,3 +221,26 @@ lambdaAxioms	=	[
 			(Function (Term $ Left 1) (Term $ Left 0))
 		)
 	]
+	
+-- Axioms for literal terms
+literalAxioms	::	[Rule Literal]
+literalAxioms	=	[
+		(Rule
+			(Function (Term $ Right NotL) (Term $ Right $ LogicL True))
+			(Term $ Right $ LogicL False)
+		),
+		(Rule
+			(Function (Term $ Right NotL) (Term $ Right $ LogicL False))
+			(Term $ Right $ LogicL True)
+		)
+	]
+	
+-- Abstractifies (allows unknown values) in a set of axioms.
+abstractifyAxioms	::	[Rule a] -> [Rule (Maybe a)]
+abstractifyAxioms axioms	=	map (\l -> case l of
+											(Rule x y)	->	Rule (abspat x) (abspat y)
+										) axioms
+	where
+		abspat p	=	exprMap (\m -> case m of
+							(Left x)		->	Term $ Left x
+							(Right y)	->	Term $ Right $ Just y) p
