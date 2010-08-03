@@ -76,7 +76,7 @@ interactive	=	do
 			where
 				axioms	=	lambdaAxioms ++ literalAxioms
 				comqry	=	computeQuery axioms (Query (Term $ Left $ 0) expr) 1000
-				exprres	=	map (\l -> Map.fold (\it ac -> it) expr l) $ fst comqry
+				exprres	=	expr:(map (\l -> Map.fold (\it ac -> it) expr l) $ fst comqry)
 				res		=	minimumBy (\l m -> compare (complexity l) (complexity m)) exprres
 				
 				

@@ -181,6 +181,9 @@ data QueryResult a	=
 computeResult	:: (Ord a) => [Rule a] -> Query a -> QueryResult a
 computeResult rules qry@(Query tarpat tarexp)	=	res
 	where
+		simpreses	=	case match tarpat tarexp of
+								(Just x)	->	[x]
+								Nothing	->	[]
 	
 		-- Creates a function which can create instances of the main query by getting
 		-- the results of sub queries.
@@ -208,7 +211,7 @@ computeResult rules qry@(Query tarpat tarexp)	=	res
 							)
 	
 		res	=	case (tarpat, tarexp) of
-						_		->	SQueryResult ruleQrs ruleFn
+						_		->	SQueryResult ruleQrs (\l -> ruleFn l ++ simpreses)
 				
 -- Rules true for all systems allowing lambda terms.				
 lambdaAxioms	::	[Rule a]
@@ -216,7 +219,7 @@ lambdaAxioms	=	[
 		(Rule
 			(Function (Lambda (Term Nothing)) (Term $ Left 0))
 			(Term $ Left 0)
-		), (Rule
+		),	(Rule
 			(Function (Lambda (Function (Term $ Just $ Left 1) (Term Nothing))) (Term $ Left 0))
 			(Function (Term $ Left 1) (Term $ Left 0))
 		)
