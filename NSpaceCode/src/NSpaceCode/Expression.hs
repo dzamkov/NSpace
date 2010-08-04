@@ -211,7 +211,15 @@ computeResult rules qry@(Query tarpat tarexp)	=	res
 							)
 	
 		res	=	case (tarpat, tarexp) of
-						_		->	SQueryResult ruleQrs (\l -> ruleFn l ++ simpreses)
+						(Term (Left x), Function l r)	->	SQueryResult ((Query (Term $ Left 0) l):(Query (Term $ Left 0) r):ruleQrs) (\l -> case l of
+																		(linsts:rinsts:ruleinsts)	->	foldl (\ac li -> 
+																													foldl (\ac ri ->
+																														(Map.singleton x (Function (li ! 0) (ri ! 0))):ac
+																													) ac rinsts
+																												) [] linsts ++ ruleFn ruleinsts ++ simpreses
+																	)
+						_										->	SQueryResult ruleQrs (\l -> ruleFn l ++ simpreses)
+						
 				
 -- Rules true for all systems allowing lambda terms.				
 lambdaAxioms	::	[Rule a]

@@ -64,7 +64,7 @@ interactive	=	do
 				
 				-- Computes an amount of sorted subqueries
 				subcompute	::	(Ord a) => [Rule a] -> [Query a] -> Integer -> ([[Instance a]], Integer)
-				subcompute _ _ 0									=	([], 0)
+				subcompute _ qrys 0								=	(map (\l -> []) qrys, 0)
 				subcompute rules (qry:remainqry) maxcom	=	case (computeQuery rules qry (maxcom `div` 2)) of
 																				(qryreses, ucom)	->	case (subcompute rules remainqry (maxcom - ucom - 1)) of
 																					(rqryreses, nucom)	->	(qryreses:rqryreses, (ucom + nucom + 1))
